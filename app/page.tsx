@@ -12,10 +12,10 @@ export default function Home() {
       padding: '1rem'
     }}>
       <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: '800', background: 'linear-gradient(to right, #3b82f6, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          FitPlan
+        <h1 style={{ fontSize: '4rem', fontWeight: '800', color: '#F25F29', textShadow: '0 0 20px rgba(242, 95, 41, 0.5)', marginBottom: '0.5rem' }}>
+          SHaiPT
         </h1>
-        <p style={{ color: '#888', marginTop: '0.5rem' }}>Professional Workout Planning</p>
+        <p style={{ color: '#888', fontSize: '1.2rem' }}>Professional Workout Planning</p>
       </div>
 
       <LoginForm />

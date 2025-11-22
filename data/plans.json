@@ -1,1 +1,79 @@
-[]
+[
+  {
+    "id": "de9a0aa1-9ffa-48fe-8dec-52b8775a93ea",
+    "name": "arms",
+    "traineeId": "186f1431-9de3-4c43-a12a-62c816adedad",
+    "trainerId": "7b6de7a2-45e8-4d96-b142-60f528b86ce8",
+    "exercises": [
+      {
+        "id": "5e9e010d-dafc-43b0-9d64-6b0e34b8f9b3",
+        "name": "standing barbel curl",
+        "link": "",
+        "sets": [
+          {
+            "targetReps": "20",
+            "targetWeight": ""
+          },
+          {
+            "targetReps": "10",
+            "targetWeight": ""
+          },
+          {
+            "targetReps": "10",
+            "targetWeight": ""
+          }
+        ]
+      },
+      {
+        "id": "d378a3c2-f57f-4020-be9a-e01c41686542",
+        "name": "triceps push down",
+        "link": "",
+        "sets": [
+          {
+            "targetReps": "20",
+            "targetWeight": ""
+          },
+          {
+            "targetReps": "15",
+            "targetWeight": ""
+          }
+        ]
+      }
+    ],
+    "createdAt": "2025-11-22T21:43:21.615Z"
+  },
+  {
+    "id": "906448f1-35ed-4915-8fba-484c6eb41317",
+    "name": "Plan 1 Updated",
+    "traineeId": "facded65-6b6b-4a87-ac5f-559546279e43",
+    "trainerId": "16466639-6926-4482-a13d-a40d65f143a1",
+    "exercises": [],
+    "createdAt": "2025-11-22T21:50:38.211Z"
+  },
+  {
+    "id": "662e5e65-fe10-4971-9ac1-d3a08c82fe00",
+    "name": "Plan 2",
+    "traineeId": "facded65-6b6b-4a87-ac5f-559546279e43",
+    "trainerId": "16466639-6926-4482-a13d-a40d65f143a1",
+    "exercises": [],
+    "createdAt": "2025-11-22T21:50:39.217Z"
+  },
+  {
+    "id": "3f8b8b43-af01-4ff0-8dc4-f4ff9bca467a",
+    "name": "Test Plan",
+    "traineeId": "f16f9b65-2056-40de-9e78-a6132b73dc15",
+    "trainerId": "71227386-a1ec-4366-b79d-5a3df66765be",
+    "exercises": [
+      {
+        "id": "ex1",
+        "name": "Pushups",
+        "sets": [
+          {
+            "targetReps": "10"
+          }
+        ]
+      }
+    ],
+    "createdAt": "2025-11-22T22:01:25.065Z"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cd7b8b22-fcce-4f0b-823f-62ab2d7a117a",
+    "planId": "3f8b8b43-af01-4ff0-8dc4-f4ff9bca467a",
+    "traineeId": "f16f9b65-2056-40de-9e78-a6132b73dc15",
+    "exercises": [
+      {
+        "exerciseId": "ex1",
+        "name": "Pushups",
+        "sets": [
+          {
+            "setNumber": 1,
+            "reps": "12",
+            "weight": "0",
+            "isPr": true,
+            "startTime": 1763848825066,
+            "endTime": 1763848885066,
+            "duration": 60
+          }
+        ],
+        "comments": "Great workout!"
+      }
+    ],
+    "date": "2025-11-22T22:01:25.103Z"
+  }
+]

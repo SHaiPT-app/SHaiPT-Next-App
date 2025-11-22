@@ -5,6 +5,7 @@ import { User, WorkoutPlan } from './types';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const PLANS_FILE = path.join(DATA_DIR, 'plans.json');
+const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
 
 // Helper to read JSON
 function readJson<T>(filePath: string): T {
@@ -61,6 +62,16 @@ export const db = {
                 return plan;
             }
             return null;
+        }
+    },
+    logs: {
+        getAll: () => readJson<any[]>(LOGS_FILE),
+        getByTrainee: (traineeId: string) => readJson<any[]>(LOGS_FILE).filter(l => l.traineeId === traineeId),
+        create: (log: any) => {
+            const logs = readJson<any[]>(LOGS_FILE);
+            logs.push(log);
+            writeJson(LOGS_FILE, logs);
+            return log;
         }
     }
 };

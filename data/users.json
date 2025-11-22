@@ -1,1 +1,52 @@
-[]
+[
+  {
+    "id": "7b6de7a2-45e8-4d96-b142-60f528b86ce8",
+    "username": "ali",
+    "password": "ali",
+    "role": "trainer"
+  },
+  {
+    "id": "4005bfce-e40f-4fb2-91c4-8fe1ef2bea32",
+    "username": "trainer_1763847567896",
+    "password": "password",
+    "role": "trainer"
+  },
+  {
+    "id": "48c6e246-32df-43c0-9de3-b716af62f461",
+    "username": "trainee_1763847567896",
+    "password": "password",
+    "role": "trainee",
+    "trainerId": "4005bfce-e40f-4fb2-91c4-8fe1ef2bea32"
+  },
+  {
+    "id": "186f1431-9de3-4c43-a12a-62c816adedad",
+    "username": "mamad",
+    "password": "mamad",
+    "role": "trainee",
+    "trainerId": "7b6de7a2-45e8-4d96-b142-60f528b86ce8"
+  },
+  {
+    "id": "16466639-6926-4482-a13d-a40d65f143a1",
+    "username": "trainer_1763848237998",
+    "password": "password",
+    "role": "trainer"
+  },
+  {
+    "id": "facded65-6b6b-4a87-ac5f-559546279e43",
+    "username": "trainee_1763848237998",
+    "password": "password",
+    "role": "trainee"
+  },
+  {
+    "id": "71227386-a1ec-4366-b79d-5a3df66765be",
+    "username": "trainer_1763848884822",
+    "password": "password",
+    "role": "trainer"
+  },
+  {
+    "id": "f16f9b65-2056-40de-9e78-a6132b73dc15",
+    "username": "trainee_1763848884822",
+    "password": "password",
+    "role": "trainee"
+  }
+]
