@@ -1,77 +1,82 @@
-import fs from 'fs';
-import path from 'path';
-import { User, WorkoutPlan } from './types';
+import { firestore } from './firebaseAdmin';
+import { User, WorkoutPlan, WorkoutLog } from './types';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const PLANS_FILE = path.join(DATA_DIR, 'plans.json');
-const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
-
-// Helper to read JSON
-function readJson<T>(filePath: string): T {
-    if (!fs.existsSync(filePath)) {
-        return [] as unknown as T;
-    }
-    const data = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(data);
-}
-
-// Helper to write JSON
-function writeJson<T>(filePath: string, data: T): void {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-}
+// Helper to get collection reference
+const usersCollection = firestore.collection('users');
+const plansCollection = firestore.collection('plans');
+const logsCollection = firestore.collection('logs');
 
 export const db = {
     users: {
-        getAll: () => readJson<User[]>(USERS_FILE),
-        getById: (id: string) => readJson<User[]>(USERS_FILE).find(u => u.id === id),
-        getByUsername: (username: string) => readJson<User[]>(USERS_FILE).find(u => u.username === username),
-        create: (user: User) => {
-            const users = readJson<User[]>(USERS_FILE);
-            users.push(user);
-            writeJson(USERS_FILE, users);
-            return user;
+        getAll: async (): Promise<User[]> => {
+            const snapshot = await usersCollection.get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         },
-        update: (user: User) => {
-            const users = readJson<User[]>(USERS_FILE);
-            const index = users.findIndex(u => u.id === user.id);
-            if (index !== -1) {
-                users[index] = user;
-                writeJson(USERS_FILE, users);
+        getById: async (id: string): Promise<User | undefined> => {
+            const doc = await usersCollection.doc(id).get();
+            return doc.exists ? ({ id: doc.id, ...doc.data() } as User) : undefined;
+        },
+        getByUsername: async (username: string): Promise<User | undefined> => {
+            const snapshot = await usersCollection.where('username', '==', username).limit(1).get();
+            if (snapshot.empty) return undefined;
+            const doc = snapshot.docs[0];
+            return { id: doc.id, ...doc.data() } as User;
+        },
+        create: async (user: User): Promise<User> => {
+            // If user has an ID, use it, otherwise auto-gen (but usually we want to use Auth UID)
+            if (user.id) {
+                await usersCollection.doc(user.id).set(user);
                 return user;
+            } else {
+                const docRef = await usersCollection.add(user);
+                return { ...user, id: docRef.id };
             }
-            return null;
+        },
+        update: async (user: User): Promise<User | null> => {
+            if (!user.id) return null;
+            await usersCollection.doc(user.id).update(user as any);
+            return user;
         }
     },
     plans: {
-        getAll: () => readJson<WorkoutPlan[]>(PLANS_FILE),
-        getByTrainee: (traineeId: string) => readJson<WorkoutPlan[]>(PLANS_FILE).filter(p => p.traineeId === traineeId),
-        getByTrainer: (trainerId: string) => readJson<WorkoutPlan[]>(PLANS_FILE).filter(p => p.trainerId === trainerId),
-        create: (plan: WorkoutPlan) => {
-            const plans = readJson<WorkoutPlan[]>(PLANS_FILE);
-            plans.push(plan);
-            writeJson(PLANS_FILE, plans);
-            return plan;
+        getAll: async (): Promise<WorkoutPlan[]> => {
+            const snapshot = await plansCollection.get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkoutPlan));
         },
-        update: (plan: WorkoutPlan) => {
-            const plans = readJson<WorkoutPlan[]>(PLANS_FILE);
-            const index = plans.findIndex(p => p.id === plan.id);
-            if (index !== -1) {
-                plans[index] = plan;
-                writeJson(PLANS_FILE, plans);
-                return plan;
-            }
-            return null;
+        getByTrainee: async (traineeId: string): Promise<WorkoutPlan[]> => {
+            const snapshot = await plansCollection.where('traineeId', '==', traineeId).get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkoutPlan));
+        },
+        getByTrainer: async (trainerId: string): Promise<WorkoutPlan[]> => {
+            const snapshot = await plansCollection.where('trainerId', '==', trainerId).get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkoutPlan));
+        },
+        create: async (plan: WorkoutPlan): Promise<WorkoutPlan> => {
+            const docRef = plansCollection.doc(); // Auto ID
+            const newPlan = { ...plan, id: docRef.id };
+            await docRef.set(newPlan);
+            return newPlan;
+        },
+        update: async (plan: WorkoutPlan): Promise<WorkoutPlan | null> => {
+            if (!plan.id) return null;
+            await plansCollection.doc(plan.id).update(plan as any);
+            return plan;
         }
     },
     logs: {
-        getAll: () => readJson<any[]>(LOGS_FILE),
-        getByTrainee: (traineeId: string) => readJson<any[]>(LOGS_FILE).filter(l => l.traineeId === traineeId),
-        create: (log: any) => {
-            const logs = readJson<any[]>(LOGS_FILE);
-            logs.push(log);
-            writeJson(LOGS_FILE, logs);
-            return log;
+        getAll: async (): Promise<WorkoutLog[]> => {
+            const snapshot = await logsCollection.get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkoutLog));
+        },
+        getByTrainee: async (traineeId: string): Promise<WorkoutLog[]> => {
+            const snapshot = await logsCollection.where('traineeId', '==', traineeId).get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkoutLog));
+        },
+        create: async (log: any): Promise<WorkoutLog> => {
+            const docRef = logsCollection.doc();
+            const newLog = { ...log, id: docRef.id, date: new Date().toISOString() };
+            await docRef.set(newLog);
+            return newLog;
         }
     }
 };

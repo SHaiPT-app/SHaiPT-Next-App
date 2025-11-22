@@ -7,14 +7,17 @@ export async function POST(request: Request) {
     try {
         const planData = await request.json();
 
-        const newPlan: WorkoutPlan = {
-            id: uuidv4(),
+        // Basic validation
+        if (!planData.name || !planData.trainerId || !planData.traineeId) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const newPlan = await db.plans.create({
             ...planData,
             createdAt: new Date().toISOString(),
-        };
+        });
 
-        db.plans.create(newPlan);
-        return NextResponse.json({ plan: newPlan });
+        return NextResponse.json({ plan: newPlan }, { status: 201 });
     } catch (error) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
@@ -31,7 +34,7 @@ export async function PUT(request: Request) {
         // In a real app, we'd fetch first to ensure it exists and preserve createdAt if not sent
         // For this mock DB, we'll assume the client sends the full object or we merge it.
         // But let's just update it.
-        db.plans.update(planData);
+        await db.plans.update(planData);
 
         return NextResponse.json({ plan: planData });
     } catch (error) {

@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@types/uuid": "^10.0.0",
+    "firebase": "^12.6.0",
+    "firebase-admin": "^13.6.0",
     "next": "16.0.3",
     "node-fetch": "^2.7.0",
     "react": "19.2.0",

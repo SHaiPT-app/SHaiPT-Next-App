@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function LoginForm() {
     const [isLogin, setIsLogin] = useState(true);
@@ -15,26 +17,52 @@ export default function LoginForm() {
         e.preventDefault();
         setError('');
 
-        const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
-
         try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, role }),
-            });
+            if (isLogin) {
+                // Firebase Login
+                const email = `${username}@shaipt.app`;
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const token = await userCredential.user.getIdToken();
 
-            if (res.ok) {
-                const data = await res.json();
-                // Store user info in localStorage for easy access in client components
-                localStorage.setItem('user', JSON.stringify(data.user));
-                router.push('/dashboard');
+                // Exchange token for session cookie
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token }),
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    router.push('/dashboard');
+                } else {
+                    const data = await res.json();
+                    setError(data.error || 'Login failed');
+                }
             } else {
-                const data = await res.json();
-                setError(data.error || 'Authentication failed');
+                // Signup (via API)
+                const res = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, role }),
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    router.push('/dashboard');
+                } else {
+                    const data = await res.json();
+                    setError(data.error || 'Signup failed');
+                }
             }
-        } catch (err) {
-            setError('An error occurred');
+        } catch (err: any) {
+            console.error(err);
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+                setError('Invalid username or password');
+            } else {
+                setError(err.message || 'An error occurred');
+            }
         }
     };
 

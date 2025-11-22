@@ -7,14 +7,12 @@ export async function POST(request: Request) {
     try {
         const logData = await request.json();
 
-        const newLog: WorkoutLog = {
-            id: uuidv4(),
+        const newLog = await db.logs.create({
             ...logData,
             date: new Date().toISOString(),
-        };
+        });
 
-        db.logs.create(newLog);
-        return NextResponse.json({ log: newLog });
+        return NextResponse.json({ log: newLog }, { status: 201 });
     } catch (error) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }

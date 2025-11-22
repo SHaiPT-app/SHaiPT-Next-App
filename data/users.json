@@ -48,5 +48,12 @@
     "username": "trainee_1763848884822",
     "password": "password",
     "role": "trainee"
+  },
+  {
+    "id": "3d568a47-8638-407f-86d8-8fdf8530ceeb",
+    "username": "ahmad",
+    "password": "ahmad",
+    "role": "trainee",
+    "trainerId": "7b6de7a2-45e8-4d96-b142-60f528b86ce8"
   }
 ]

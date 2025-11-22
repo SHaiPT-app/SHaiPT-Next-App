@@ -6,15 +6,15 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const trainerId = searchParams.get('trainerId');
 
-        const users = db.users.getAll();
-        let trainees = users.filter(u => u.role === 'trainee');
+        const allUsers = await db.users.getAll();
+        let trainees = allUsers.filter(u => u.role === 'trainee');
 
         if (trainerId) {
             trainees = trainees.filter(u => u.trainerId === trainerId);
         }
 
-        // Remove passwords
-        const safeTrainees = trainees.map(({ password, ...u }) => u);
+        // Return without passwords
+        const safeTrainees = trainees.map(({ password, ...user }) => user);
         return NextResponse.json({ trainees: safeTrainees });
     } catch (error) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

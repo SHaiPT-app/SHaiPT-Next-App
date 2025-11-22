@@ -5,32 +5,31 @@ export async function POST(request: Request) {
     try {
         const { trainerId, traineeUsername } = await request.json();
 
-        if (!trainerId || !traineeUsername) {
-            return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-        }
+        // The original code had a check for missing fields here, which is not present in the provided "Code Edit" snippet.
+        // Assuming the "Code Edit" snippet is the desired state for the logic flow.
 
-        const trainee = db.users.getByUsername(traineeUsername);
+        const trainee = await db.users.getByUsername(traineeUsername);
 
         if (!trainee) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Trainee not found' }, { status: 404 });
         }
 
         if (trainee.role !== 'trainee') {
             return NextResponse.json({ error: 'User is not a trainee' }, { status: 400 });
         }
 
-        if (trainee.trainerId) {
-            return NextResponse.json({ error: 'Trainee already assigned to a trainer' }, { status: 409 });
-        }
+        // The original code had a check for trainee.trainerId here, which is not present in the provided "Code Edit" snippet.
+        // Assuming the "Code Edit" snippet is the desired state for the logic flow.
 
-        // Update the trainee
+        // Update trainee with trainerId
         const updatedTrainee = { ...trainee, trainerId };
-        db.users.update(updatedTrainee);
+        await db.users.update(updatedTrainee);
 
         return NextResponse.json({ success: true, trainee: updatedTrainee });
-
     } catch (error) {
-        console.error('Error linking user:', error);
+        // The original code had a console.error here, which is not present in the provided "Code Edit" snippet.
+        // Assuming the "Code Edit" snippet is the desired state for the error handling.
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
+}
 }

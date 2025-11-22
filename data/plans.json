@@ -75,5 +75,29 @@
       }
     ],
     "createdAt": "2025-11-22T22:01:25.065Z"
+  },
+  {
+    "id": "0909ad69-8612-45e7-9393-c0cf736bf02f",
+    "name": "chest",
+    "traineeId": "3d568a47-8638-407f-86d8-8fdf8530ceeb",
+    "trainerId": "7b6de7a2-45e8-4d96-b142-60f528b86ce8",
+    "exercises": [
+      {
+        "id": "68ebd4b2-20f2-43cc-b3b4-0b715df62a70",
+        "name": "barbell chest press",
+        "link": "",
+        "sets": [
+          {
+            "targetReps": "10",
+            "targetWeight": ""
+          },
+          {
+            "targetReps": "8",
+            "targetWeight": ""
+          }
+        ]
+      }
+    ],
+    "createdAt": "2025-11-22T22:11:59.815Z"
   }
 ]
