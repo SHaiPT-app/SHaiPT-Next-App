@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, WorkoutPlan } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
 import PlanCreator from './PlanCreator';
 
 export default function TrainerDashboard({ user }: { user: User }) {
@@ -71,15 +72,75 @@ export default function TrainerDashboard({ user }: { user: User }) {
 
     useEffect(() => {
         if (selectedTrainee) {
-            fetch(`/api/plans?traineeId=${selectedTrainee.id}`)
-                .then(res => res.json())
-                .then(data => setPlans(data.plans || []));
+            const fetchPlans = async () => {
+                try {
+                    // Wait for auth state to be ready and retry if session is not available
+                    let session = null;
+                    let retryCount = 0;
+                    const maxRetries = 5;
+                    
+                    while (!session && retryCount < maxRetries) {
+                        const { data: { session: currentSession } } = await supabase.auth.getSession();
+                        if (currentSession) {
+                            session = currentSession;
+                            break;
+                        }
+                        
+                        // Wait briefly before retrying
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        retryCount++;
+                    }
+                    
+                    if (!session) {
+                        console.error('No valid session found after retries');
+                        return;
+                    }
+                    
+                    const headers: any = { 'Content-Type': 'application/json' };
+                    if (session?.access_token) {
+                        headers.Authorization = `Bearer ${session.access_token}`;
+                    }
+
+                    console.log(`Fetching plans for trainee:`, {
+                        id: selectedTrainee.id,
+                        username: selectedTrainee.username,
+                        email: selectedTrainee.email
+                    });
+
+                    const res = await fetch(`/api/plans?traineeId=${selectedTrainee.id}`, {
+                        headers
+                    });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        setPlans(data.plans || []);
+                        console.log(`Loaded ${data.plans?.length || 0} plans for trainee:`, selectedTrainee.username);
+                        
+                        if (data.plans?.length > 0) {
+                            console.log('Plans found by trainer:', data.plans.map(p => ({
+                                id: p.id,
+                                name: p.name,
+                                trainee_id: p.trainee_id,
+                                trainer_id: p.trainer_id
+                            })));
+                        }
+                    } else {
+                        console.error('Failed to fetch plans:', res.status);
+                        setPlans([]);
+                    }
+                } catch (error) {
+                    console.error('Error fetching plans:', error);
+                    setPlans([]);
+                }
+            };
+
+            fetchPlans();
         }
     }, [selectedTrainee, isCreating, editingPlan]);
 
     const sortedPlans = [...plans].sort((a, b) => {
-        const dateA = new Date(a.created_at || a.createdAt || '').getTime();
-        const dateB = new Date(b.created_at || b.createdAt || '').getTime();
+        const dateA = new Date(a.created_at || '').getTime();
+        const dateB = new Date(b.created_at || '').getTime();
         return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
 
@@ -135,8 +196,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                         style={{
                                             padding: '0.75rem',
                                             cursor: 'pointer',
-                                            borderBottom: '1px solid var(--glass-border)',
-                                            hover: { background: 'rgba(255,255,255,0.1)' }
+                                            borderBottom: '1px solid var(--glass-border)'
                                         }}
                                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -233,7 +293,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                                         <div>
                                             <h3 style={{ marginBottom: '0.25rem' }}>{plan.name}</h3>
-                                            <p style={{ color: '#888', fontSize: '0.875rem' }}>Created: {new Date(plan.created_at || plan.createdAt || '').toLocaleDateString()}</p>
+                                            <p style={{ color: '#888', fontSize: '0.875rem' }}>Created: {new Date(plan.created_at || '').toLocaleDateString()}</p>
                                         </div>
                                         <button
                                             onClick={() => setEditingPlan(plan)}

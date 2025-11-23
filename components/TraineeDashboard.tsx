@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, WorkoutPlan, WorkoutLog } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
 import PlanViewer from './PlanViewer';
 
 export default function TraineeDashboard({ user }: { user: User }) {
@@ -11,13 +12,81 @@ export default function TraineeDashboard({ user }: { user: User }) {
     const [viewingPlan, setViewingPlan] = useState<WorkoutPlan | null>(null);
 
     useEffect(() => {
-        fetch(`/api/plans?traineeId=${user.id}`)
-            .then(res => res.json())
-            .then(data => setPlans(data.plans || []));
+        const fetchData = async () => {
+            try {
+                // Wait for auth state to be ready and retry if session is not available
+                let session = null;
+                let retryCount = 0;
+                const maxRetries = 5;
+                
+                while (!session && retryCount < maxRetries) {
+                    const { data: { session: currentSession } } = await supabase.auth.getSession();
+                    if (currentSession) {
+                        session = currentSession;
+                        break;
+                    }
+                    
+                    // Wait briefly before retrying
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    retryCount++;
+                }
+                
+                if (!session) {
+                    console.error('No valid session found after retries');
+                    return;
+                }
+                
+                const headers: any = { 'Content-Type': 'application/json' };
+                if (session?.access_token) {
+                    headers.Authorization = `Bearer ${session.access_token}`;
+                }
 
-        fetch(`/api/logs?traineeId=${user.id}`)
-            .then(res => res.json())
-            .then(data => setLogs(data.logs || []));
+                // Fetch plans
+                console.log(`Fetching plans for trainee ID: ${user.id} (${user.username})`);
+                const plansRes = await fetch(`/api/plans?traineeId=${user.id}`, { headers });
+                
+                if (plansRes.ok) {
+                    const plansData = await plansRes.json();
+                    setPlans(plansData.plans || []);
+                    console.log(`Trainee loaded ${plansData.plans?.length || 0} plans for user:`, {
+                        userId: user.id,
+                        username: user.username,
+                        email: user.email,
+                        plansFound: plansData.plans?.length || 0
+                    });
+                    
+                    if (plansData.plans?.length > 0) {
+                        console.log('Plans received:', plansData.plans.map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            trainee_id: p.trainee_id,
+                            trainer_id: p.trainer_id
+                        })));
+                    }
+                } else {
+                    const errorText = await plansRes.text();
+                    console.error('Failed to fetch plans:', plansRes.status, errorText);
+                    setPlans([]);
+                }
+
+                // Fetch logs
+                const logsRes = await fetch(`/api/logs?traineeId=${user.id}`, { headers });
+                if (logsRes.ok) {
+                    const logsData = await logsRes.json();
+                    setLogs(logsData.logs || []);
+                    console.log(`Trainee loaded ${logsData.logs?.length || 0} logs`);
+                } else {
+                    console.error('Failed to fetch logs:', logsRes.status);
+                    setLogs([]);
+                }
+            } catch (error) {
+                console.error('Error fetching trainee data:', error);
+                setPlans([]);
+                setLogs([]);
+            }
+        };
+
+        fetchData();
     }, [user.id, selectedPlan]); // Refresh logs when returning from plan view
 
     if (selectedPlan) {

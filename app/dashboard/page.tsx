@@ -3,24 +3,53 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
 // We will implement these components next
 import TrainerDashboard from '@/components/TrainerDashboard';
 import TraineeDashboard from '@/components/TraineeDashboard';
 
 export default function Dashboard() {
     const [user, setUser] = useState<User | null>(null);
+    const [authReady, setAuthReady] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) {
-            router.push('/');
-            return;
-        }
-        setUser(JSON.parse(storedUser));
+        const initializeAuth = async () => {
+            // First check localStorage for user data
+            const storedUser = localStorage.getItem('user');
+            if (!storedUser) {
+                router.push('/');
+                return;
+            }
+
+            // Then verify Supabase session is available
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                console.error('No valid Supabase session found');
+                localStorage.removeItem('user');
+                router.push('/');
+                return;
+            }
+
+            // Both localStorage user and Supabase session are valid
+            setUser(JSON.parse(storedUser));
+            setAuthReady(true);
+        };
+
+        initializeAuth();
+
+        // Also listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                localStorage.removeItem('user');
+                router.push('/');
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, [router]);
 
-    if (!user) {
+    if (!user || !authReady) {
         return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
     }
 

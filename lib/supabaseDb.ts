@@ -1,4 +1,21 @@
 import { supabase } from './supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Server-side Supabase client with service role (bypasses RLS)
+// Only create admin client if service role key is available
+let supabaseAdmin: any = null;
+if (typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
+        }
+    );
+}
 
 export interface Profile {
     id: string;
@@ -56,6 +73,7 @@ export interface ExerciseInstruction {
     instruction_text: string;
 }
 
+// Regular client (uses RLS)
 export const db = {
     profiles: {
         getAll: async (): Promise<Profile[]> => {
@@ -179,12 +197,25 @@ export const db = {
         },
 
         create: async (plan: Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>): Promise<WorkoutPlan> => {
+            console.log('Supabase DB: Creating workout plan with data:', JSON.stringify(plan, null, 2));
+            
             const { data, error } = await supabase
                 .from('workout_plans')
                 .insert([plan])
                 .select()
                 .single();
-            if (error) throw error;
+                
+            if (error) {
+                console.error('Supabase insert error:', {
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    code: error.code
+                });
+                throw error;
+            }
+            
+            console.log('Supabase DB: Plan created successfully:', data);
             return data;
         },
 
@@ -308,6 +339,62 @@ export const db = {
                 .order('step_number');
             if (error) throw error;
             return data || [];
+        }
+    }
+};
+
+// Admin client (bypasses RLS) - for server-side operations
+export const dbAdmin = {
+    ...db, // Inherit all the same functions
+    
+    // Override workout plans with admin client
+    workoutPlans: {
+        ...db.workoutPlans,
+        
+        create: async (plan: Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>): Promise<WorkoutPlan> => {
+            console.log('Admin Supabase: Creating workout plan with data:', JSON.stringify(plan, null, 2));
+            
+            if (!supabaseAdmin) {
+                throw new Error('Service role key not configured. Cannot create workout plan.');
+            }
+            
+            const { data, error } = await supabaseAdmin
+                .from('workout_plans')
+                .insert([plan])
+                .select()
+                .single();
+                
+            if (error) {
+                console.error('Admin Supabase insert error:', {
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    code: error.code
+                });
+                throw error;
+            }
+            
+            console.log('Admin Supabase: Plan created successfully:', data);
+            return data;
+        },
+        
+        update: async (id: string, updates: Partial<WorkoutPlan>): Promise<WorkoutPlan> => {
+            const { data, error } = await supabaseAdmin
+                .from('workout_plans')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabaseAdmin
+                .from('workout_plans')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
         }
     }
 };

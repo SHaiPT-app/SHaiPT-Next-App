@@ -9,7 +9,7 @@ export default function UsernameSetup() {
     const searchParams = useSearchParams();
     const [username, setUsername] = useState('');
     const [role, setRole] = useState<'trainer' | 'trainee'>('trainee');
-    const [error, setError] = useState('');
+    const [error, setError] = useState<React.ReactNode>('');
     const [loading, setLoading] = useState(false);
     
     const userId = searchParams.get('userId');

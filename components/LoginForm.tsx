@@ -11,31 +11,64 @@ export default function LoginForm() {
     const [identifier, setIdentifier] = useState(''); // Can be email or username
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [error, setError] = useState<React.ReactNode>('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+
+    // Check for existing session on component mount
+    useEffect(() => {
+        const checkExistingSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                console.log('Found existing session on mount:', session.user.email);
+            } else {
+                console.log('No existing session found');
+            }
+        };
+        checkExistingSession();
+    }, []);
 
     // Listen for auth state changes
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state change:', event, session);
+            console.log('Auth state change:', event, session?.user?.email || 'No session');
             
             if (event === 'SIGNED_IN' && session) {
-                console.log('User signed in:', session.user);
+                console.log('User signed in via:', session.user.app_metadata.provider || 'unknown', 'Email:', session.user.email);
                 
                 try {
-                    // Check if user profile exists by auth ID first
-                    let profile = await db.profiles.getById(session.user.id);
+                    console.log('Checking if user profile exists for:', session.user.id);
+                    
+                    // Use the authenticated session to check profile
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single();
+                    
+                    console.log('Profile lookup result:', { profile: !!profile, error: profileError });
                     
                     if (profile) {
                         // User exists, redirect to dashboard
+                        console.log('Found existing profile, redirecting to dashboard');
                         localStorage.setItem('user', JSON.stringify(profile));
                         router.push('/dashboard');
                         return;
+                    } else if (profileError && profileError.code !== 'PGRST116') {
+                        // PGRST116 means "no rows found", anything else is a real error
+                        console.error('Profile lookup failed with error:', profileError);
+                        throw profileError;
+                    } else {
+                        console.log('No profile found for user, treating as new user');
                     }
 
-                    // Check if email already exists (different auth user)
-                    const existingEmailProfile = await db.profiles.getByEmail(session.user.email || '');
+                    // Check if email already exists (different auth user) using authenticated session
+                    const { data: existingEmailProfile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('email', session.user.email || '')
+                        .neq('id', session.user.id)
+                        .single();
                     
                     if (existingEmailProfile) {
                         // Email exists with different auth method
@@ -170,37 +203,77 @@ export default function LoginForm() {
                 // Signup flow
                 const email = identifier; // For signup, identifier is always email
 
-                // Check if email already exists
-                const existingProfile = await db.profiles.getByEmail(email);
-                if (existingProfile) {
-                    setError(
-                        <>
-                            Account already exists.{' '}
-                            <span
-                                onClick={() => setIsLogin(true)}
-                                style={{ 
-                                    color: 'var(--primary)', 
-                                    textDecoration: 'underline', 
-                                    cursor: 'pointer',
-                                    fontSize: 'inherit'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                            >
-                                Log in
-                            </span>
-                        </>
-                    );
+                // Basic validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    setError('Please enter a valid email address.');
                     setLoading(false);
                     return;
                 }
 
-                // Check if username is already taken
-                const existingUsername = await db.profiles.getByUsername(username);
-                if (existingUsername) {
-                    setError('Username already taken. Please choose another.');
+                if (password.length < 6) {
+                    setError('Password must be at least 6 characters long.');
                     setLoading(false);
                     return;
+                }
+
+                if (username.length < 3) {
+                    setError('Username must be at least 3 characters long.');
+                    setLoading(false);
+                    return;
+                }
+
+                // Check if email already exists using authenticated client
+                try {
+                    const { data: existingEmailProfile } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('email', email)
+                        .single();
+                        
+                    if (existingEmailProfile) {
+                        setError(
+                            <>
+                                Account already exists.{' '}
+                                <span
+                                    onClick={() => setIsLogin(true)}
+                                    style={{ 
+                                        color: 'var(--primary)', 
+                                        textDecoration: 'underline', 
+                                        cursor: 'pointer',
+                                        fontSize: 'inherit'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                                >
+                                    Log in
+                                </span>
+                            </>
+                        );
+                        setLoading(false);
+                        return;
+                    }
+                } catch (emailCheckError) {
+                    // If error is not "no rows found", it's a real error
+                    console.log('Email check result: no existing account found (or unable to check)');
+                }
+
+                // Check if username is already taken
+                try {
+                    const { data: existingUsername } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('username', username)
+                        .single();
+                        
+                    if (existingUsername) {
+                        setError('Username already taken. Please choose another.');
+                        setLoading(false);
+                        return;
+                    }
+                } catch (usernameCheckError) {
+                    // If error is not "no rows found", it's a real error
+                    console.log('Username check result: no existing username found (or unable to check)');
                 }
 
                 // Wait a moment for auth user to be fully created
