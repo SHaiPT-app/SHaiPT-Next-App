@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
     try {
-        const { username, password, role } = await request.json();
+        const { username, role, firebaseUid } = await request.json();
 
         // Check if username exists in Firestore (we use username as a unique field in our app)
         const existingUser = await db.users.getByUsername(username);
@@ -13,18 +13,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Username already exists' }, { status: 400 });
         }
 
-        // Create user in Firebase Auth
-        // We'll use username@shaipt.app as a fake email since Firebase requires email
-        const email = `${username}@shaipt.app`;
-        const userRecord = await auth.createUser({
-            email,
-            password,
-            displayName: username,
-        });
-
-        // Create user in Firestore
+        // Create user in Firestore (Firebase Auth user already created on client-side)
         const newUser = await db.users.create({
-            id: userRecord.uid,
+            id: firebaseUid,
             username,
             password: 'HASHED_IN_FIREBASE_AUTH', // Don't store actual password
             role,

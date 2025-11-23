@@ -1,22 +1,25 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/supabaseDb';
 
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const trainerId = searchParams.get('trainerId');
 
-        const allUsers = await db.users.getAll();
-        let trainees = allUsers.filter(u => u.role === 'trainee');
-
         if (trainerId) {
-            trainees = trainees.filter(u => u.trainerId === trainerId);
+            // Get trainees for this specific trainer
+            const trainees = await db.profiles.getTrainees(trainerId);
+            return NextResponse.json({ trainees });
+        } else {
+            // Get all trainees (if needed for admin purposes)
+            const allProfiles = await db.profiles.getAll();
+            const trainees = allProfiles.filter(u => u.role === 'trainee');
+            return NextResponse.json({ trainees });
         }
-
-        // Return without passwords
-        const safeTrainees = trainees.map(({ password, ...user }) => user);
-        return NextResponse.json({ trainees: safeTrainees });
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Get trainees error:', error);
+        return NextResponse.json({ 
+            error: error.message || 'Internal server error' 
+        }, { status: 500 });
     }
 }

@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/supabaseDb';
 
 export async function POST(request: Request) {
     try {
         const { trainerId, traineeUsername } = await request.json();
 
-        // The original code had a check for missing fields here, which is not present in the provided "Code Edit" snippet.
-        // Assuming the "Code Edit" snippet is the desired state for the logic flow.
+        if (!trainerId || !traineeUsername) {
+            return NextResponse.json({ error: 'Missing trainerId or traineeUsername' }, { status: 400 });
+        }
 
-        const trainee = await db.users.getByUsername(traineeUsername);
+        // Find trainee by username
+        const trainee = await db.profiles.getByUsername(traineeUsername);
 
         if (!trainee) {
             return NextResponse.json({ error: 'Trainee not found' }, { status: 404 });
@@ -18,18 +20,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'User is not a trainee' }, { status: 400 });
         }
 
-        // The original code had a check for trainee.trainerId here, which is not present in the provided "Code Edit" snippet.
-        // Assuming the "Code Edit" snippet is the desired state for the logic flow.
+        if (trainee.trainer_id) {
+            return NextResponse.json({ error: 'Trainee already has a trainer' }, { status: 400 });
+        }
 
-        // Update trainee with trainerId
-        const updatedTrainee = { ...trainee, trainerId };
-        await db.users.update(updatedTrainee);
+        // Update trainee with trainer_id
+        const updatedTrainee = await db.profiles.update(trainee.id, { 
+            trainer_id: trainerId 
+        });
 
         return NextResponse.json({ success: true, trainee: updatedTrainee });
-    } catch (error) {
-        // The original code had a console.error here, which is not present in the provided "Code Edit" snippet.
-        // Assuming the "Code Edit" snippet is the desired state for the error handling.
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Link trainee error:', error);
+        return NextResponse.json({ 
+            error: error.message || 'Internal server error' 
+        }, { status: 500 });
     }
-}
 }

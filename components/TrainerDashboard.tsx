@@ -13,6 +13,8 @@ export default function TrainerDashboard({ user }: { user: User }) {
     const [isAddingClient, setIsAddingClient] = useState(false);
     const [newClientUsername, setNewClientUsername] = useState('');
     const [addClientError, setAddClientError] = useState('');
+    const [searchResults, setSearchResults] = useState<User[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
     useEffect(() => {
@@ -25,18 +27,39 @@ export default function TrainerDashboard({ user }: { user: User }) {
             .then(data => setTrainees(data.trainees || []));
     };
 
-    const handleAddClient = async () => {
+    const searchTrainees = async (query: string) => {
+        if (query.length === 0) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=trainee`);
+            const data = await res.json();
+            setSearchResults(data.users || []);
+            setShowDropdown(data.users?.length > 0);
+        } catch (err) {
+            console.error('Search error:', err);
+            setSearchResults([]);
+            setShowDropdown(false);
+        }
+    };
+
+    const handleAddClient = async (username: string) => {
         setAddClientError('');
         try {
             const res = await fetch('/api/users/link', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ trainerId: user.id, traineeUsername: newClientUsername })
+                body: JSON.stringify({ trainerId: user.id, traineeUsername: username })
             });
             const data = await res.json();
             if (res.ok) {
                 setIsAddingClient(false);
                 setNewClientUsername('');
+                setSearchResults([]);
+                setShowDropdown(false);
                 fetchTrainees();
             } else {
                 setAddClientError(data.error || 'Failed to add client');
@@ -55,8 +78,8 @@ export default function TrainerDashboard({ user }: { user: User }) {
     }, [selectedTrainee, isCreating, editingPlan]);
 
     const sortedPlans = [...plans].sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
+        const dateA = new Date(a.created_at || a.createdAt || '').getTime();
+        const dateB = new Date(b.created_at || b.createdAt || '').getTime();
         return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
 
@@ -76,18 +99,71 @@ export default function TrainerDashboard({ user }: { user: User }) {
                 </div>
 
                 {isAddingClient && (
-                    <div style={{ marginBottom: '1rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '1rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', position: 'relative' }}>
                         <input
                             type="text"
-                            placeholder="Username"
+                            placeholder="Search trainee by username..."
                             value={newClientUsername}
-                            onChange={e => setNewClientUsername(e.target.value)}
+                            onChange={e => {
+                                setNewClientUsername(e.target.value);
+                                searchTrainees(e.target.value);
+                            }}
                             style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
                         />
+                        
+                        {/* Dropdown with search results */}
+                        {showDropdown && searchResults.length > 0 && (
+                            <div style={{ 
+                                position: 'absolute', 
+                                top: '100%', 
+                                left: '0.5rem', 
+                                right: '0.5rem', 
+                                background: 'rgba(0,0,0,0.9)', 
+                                border: '1px solid var(--glass-border)', 
+                                borderRadius: '4px', 
+                                zIndex: 1000,
+                                maxHeight: '200px',
+                                overflowY: 'auto'
+                            }}>
+                                {searchResults.map(trainee => (
+                                    <div
+                                        key={trainee.id}
+                                        onClick={() => {
+                                            setNewClientUsername(trainee.username);
+                                            handleAddClient(trainee.username);
+                                        }}
+                                        style={{
+                                            padding: '0.75rem',
+                                            cursor: 'pointer',
+                                            borderBottom: '1px solid var(--glass-border)',
+                                            hover: { background: 'rgba(255,255,255,0.1)' }
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <div style={{ fontWeight: 'bold' }}>{trainee.username}</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#888' }}>{trainee.email}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {addClientError && <p style={{ color: 'red', fontSize: '0.75rem', marginBottom: '0.5rem' }}>{addClientError}</p>}
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button onClick={handleAddClient} style={{ flex: 1, padding: '0.25rem', background: 'var(--primary)', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer' }}>Add</button>
-                            <button onClick={() => { setIsAddingClient(false); setAddClientError(''); }} style={{ flex: 1, padding: '0.25rem', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: '4px', color: '#ccc', cursor: 'pointer' }}>Cancel</button>
+                            <button 
+                                onClick={() => handleAddClient(newClientUsername)} 
+                                style={{ flex: 1, padding: '0.25rem', background: 'var(--primary)', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer' }}
+                                disabled={!newClientUsername}
+                            >
+                                Add
+                            </button>
+                            <button onClick={() => { 
+                                setIsAddingClient(false); 
+                                setAddClientError(''); 
+                                setNewClientUsername(''); 
+                                setSearchResults([]);
+                                setShowDropdown(false);
+                            }} style={{ flex: 1, padding: '0.25rem', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: '4px', color: '#ccc', cursor: 'pointer' }}>Cancel</button>
                         </div>
                     </div>
                 )}
@@ -157,7 +233,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                                         <div>
                                             <h3 style={{ marginBottom: '0.25rem' }}>{plan.name}</h3>
-                                            <p style={{ color: '#888', fontSize: '0.875rem' }}>Created: {new Date(plan.createdAt).toLocaleDateString()}</p>
+                                            <p style={{ color: '#888', fontSize: '0.875rem' }}>Created: {new Date(plan.created_at || plan.createdAt || '').toLocaleDateString()}</p>
                                         </div>
                                         <button
                                             onClick={() => setEditingPlan(plan)}
