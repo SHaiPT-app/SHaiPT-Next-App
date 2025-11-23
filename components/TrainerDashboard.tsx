@@ -117,7 +117,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                         console.log(`Loaded ${data.plans?.length || 0} plans for trainee:`, selectedTrainee.username);
                         
                         if (data.plans?.length > 0) {
-                            console.log('Plans found by trainer:', data.plans.map(p => ({
+                            console.log('Plans found by trainer:', data.plans.map((p: WorkoutPlan) => ({
                                 id: p.id,
                                 name: p.name,
                                 trainee_id: p.trainee_id,

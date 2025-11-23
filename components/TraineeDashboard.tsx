@@ -56,7 +56,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
                     });
                     
                     if (plansData.plans?.length > 0) {
-                        console.log('Plans received:', plansData.plans.map(p => ({
+                        console.log('Plans received:', plansData.plans.map((p: WorkoutPlan) => ({
                             id: p.id,
                             name: p.name,
                             trainee_id: p.trainee_id,

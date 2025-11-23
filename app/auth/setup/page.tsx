@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/supabaseDb';
 
-export default function UsernameSetup() {
+function UsernameSetupForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [username, setUsername] = useState('');
@@ -205,5 +205,23 @@ export default function UsernameSetup() {
                 </form>
             </div>
         </div>
+    );
+}
+
+export default function UsernameSetup() {
+    return (
+        <Suspense fallback={
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                minHeight: '100vh',
+                color: '#888'
+            }}>
+                Loading...
+            </div>
+        }>
+            <UsernameSetupForm />
+        </Suspense>
     );
 }

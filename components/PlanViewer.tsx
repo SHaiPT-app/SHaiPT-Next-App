@@ -165,16 +165,6 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
                     <div key={exercise.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{ color: 'var(--primary)' }}>{exercise.name}</h3>
-                            {exercise.link && (
-                                <a
-                                    href={exercise.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ color: 'var(--accent)', fontSize: '0.875rem', textDecoration: 'underline' }}
-                                >
-                                    View Instructions
-                                </a>
-                            )}
                         </div>
 
                         <div className="set-header" style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr 50px 80px', gap: '1rem', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888', textAlign: 'center' }}>
