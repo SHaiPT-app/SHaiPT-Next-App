@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { WorkoutPlan, WorkoutLog, LogExercise, LogSet } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
 
 interface PlanViewerProps {
     plan: WorkoutPlan;
@@ -83,24 +84,61 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
     const handleFinish = async () => {
         setSaving(true);
         try {
+            // Wait for auth state to be ready and retry if session is not available
+            let session = null;
+            let retryCount = 0;
+            const maxRetries = 5;
+            
+            while (!session && retryCount < maxRetries) {
+                const { data: { session: currentSession } } = await supabase.auth.getSession();
+                if (currentSession) {
+                    session = currentSession;
+                    break;
+                }
+                
+                // Wait briefly before retrying
+                await new Promise(resolve => setTimeout(resolve, 200));
+                retryCount++;
+            }
+            
+            if (!session) {
+                console.error('No valid session found after retries');
+                setSaving(false);
+                return;
+            }
+            
+            const headers: any = { 'Content-Type': 'application/json' };
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`;
+                console.log('Added auth header for workout log submission');
+            }
+
+            console.log('Submitting workout log:', {
+                planId: plan.id,
+                traineeId,
+                exerciseCount: logs.length
+            });
+
             const res = await fetch('/api/logs', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
-                    planId: plan.id,
-                    traineeId,
+                    plan_id: plan.id,  // Use snake_case to match database schema
+                    trainee_id: traineeId,
                     exercises: logs
                 }),
             });
 
             if (res.ok) {
-                alert('Workout logged successfully!');
+                console.log('Workout logged successfully!');
                 onBack();
             } else {
+                const errorText = await res.text();
+                console.error('Failed to log workout:', res.status, errorText);
                 alert('Failed to log workout');
             }
         } catch (error) {
-            console.error(error);
+            console.error('Error logging workout:', error);
             alert('Error logging workout');
         } finally {
             setSaving(false);
@@ -127,16 +165,6 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
                     <div key={exercise.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{ color: 'var(--primary)' }}>{exercise.name}</h3>
-                            {exercise.link && (
-                                <a
-                                    href={exercise.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ color: 'var(--accent)', fontSize: '0.875rem', textDecoration: 'underline' }}
-                                >
-                                    View Instructions
-                                </a>
-                            )}
                         </div>
 
                         <div className="set-header" style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr 50px 80px', gap: '1rem', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888', textAlign: 'center' }}>
