@@ -32,22 +32,22 @@ export default function LoginForm() {
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('Auth state change:', event, session?.user?.email || 'No session');
-            
+
             if (event === 'SIGNED_IN' && session) {
                 console.log('User signed in via:', session.user.app_metadata.provider || 'unknown', 'Email:', session.user.email);
-                
+
                 try {
                     console.log('Checking if user profile exists for:', session.user.id);
-                    
+
                     // Use the authenticated session to check profile
                     const { data: profile, error: profileError } = await supabase
                         .from('profiles')
                         .select('*')
                         .eq('id', session.user.id)
                         .single();
-                    
+
                     console.log('Profile lookup result:', { profile: !!profile, error: profileError });
-                    
+
                     if (profile) {
                         // User exists, redirect to dashboard
                         console.log('Found existing profile, redirecting to dashboard');
@@ -69,7 +69,7 @@ export default function LoginForm() {
                         .eq('email', session.user.email || '')
                         .neq('id', session.user.id)
                         .single();
-                    
+
                     if (existingEmailProfile) {
                         // Email exists with different auth method
                         console.log('Email already exists with different auth method');
@@ -79,9 +79,9 @@ export default function LoginForm() {
                                 Account with this email already exists. Please{' '}
                                 <span
                                     onClick={() => setIsLogin(true)}
-                                    style={{ 
-                                        color: 'var(--primary)', 
-                                        textDecoration: 'underline', 
+                                    style={{
+                                        color: 'var(--primary)',
+                                        textDecoration: 'underline',
                                         cursor: 'pointer',
                                         fontSize: 'inherit'
                                     }}
@@ -140,11 +140,11 @@ export default function LoginForm() {
         try {
             if (isLogin) {
                 console.log('Starting login process with identifier:', identifier);
-                
+
                 // Check if identifier is email or username
                 const isEmail = identifier.includes('@');
                 let email = identifier;
-                
+
                 if (!isEmail) {
                     console.log('Identifier is username, looking up email...');
                     // It's a username, find the email
@@ -179,7 +179,7 @@ export default function LoginForm() {
 
                 // Get user profile from database
                 const profile = await db.profiles.getById(data.user.id);
-                
+
                 if (!profile) {
                     // Profile doesn't exist, create it from auth user metadata
                     console.log('Profile not found, creating from auth user...');
@@ -190,7 +190,7 @@ export default function LoginForm() {
                         role: data.user.user_metadata?.role || 'trainee',
                         display_name: data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'user'
                     });
-                    
+
                     localStorage.setItem('user', JSON.stringify(newProfile));
                     router.push('/dashboard');
                     return;
@@ -230,16 +230,16 @@ export default function LoginForm() {
                         .select('id')
                         .eq('email', email)
                         .single();
-                        
+
                     if (existingEmailProfile) {
                         setError(
                             <>
                                 Account already exists.{' '}
                                 <span
                                     onClick={() => setIsLogin(true)}
-                                    style={{ 
-                                        color: 'var(--primary)', 
-                                        textDecoration: 'underline', 
+                                    style={{
+                                        color: 'var(--primary)',
+                                        textDecoration: 'underline',
                                         cursor: 'pointer',
                                         fontSize: 'inherit'
                                     }}
@@ -265,7 +265,7 @@ export default function LoginForm() {
                         .select('id')
                         .eq('username', username)
                         .single();
-                        
+
                     if (existingUsername) {
                         setError('Username already taken. Please choose another.');
                         setLoading(false);
@@ -279,7 +279,7 @@ export default function LoginForm() {
                 // Wait a moment for auth user to be fully created
                 console.log('Waiting for auth user to be fully created...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                
+
                 // Supabase Signup
                 console.log('Creating Supabase auth user...');
                 const { data, error } = await supabase.auth.signUp({
@@ -304,7 +304,7 @@ export default function LoginForm() {
                     // Create profile in database
                     console.log('Creating user profile in database...');
                     console.log('Auth user ID:', data.user.id);
-                    
+
                     try {
                         const profile = await db.profiles.create({
                             id: data.user.id,
@@ -315,7 +315,7 @@ export default function LoginForm() {
                         });
 
                         console.log('Profile created:', profile);
-                        
+
                         // Save user info and redirect
                         localStorage.setItem('user', JSON.stringify(profile));
                         router.push('/dashboard');
@@ -333,7 +333,7 @@ export default function LoginForm() {
         } catch (err: any) {
             console.error('Auth error:', err);
             console.error('Error details:', JSON.stringify(err));
-            
+
             if (err?.code) {
                 setError(`Error: ${err.message || err.code}`);
             } else if (err?.message) {
@@ -425,9 +425,9 @@ export default function LoginForm() {
                     </div>
                 )}
 
-                <button 
-                    type="submit" 
-                    className="btn-primary" 
+                <button
+                    type="submit"
+                    className="btn-primary"
                     style={{ width: '100%', marginBottom: '1rem' }}
                     disabled={loading}
                 >
@@ -458,10 +458,10 @@ export default function LoginForm() {
                     }}
                 >
                     <svg width="18" height="18" viewBox="0 0 18 18">
-                        <path fill="#4285F4" d="M16.51,8H8.98v3h4.3c-0.18,0.95-0.75,1.77-1.58,2.26v1.69h2.55C15.47,13.78,16.51,11.17,16.51,8z"/>
-                        <path fill="#34A853" d="M8.98,17c2.16,0,3.97-0.72,5.3-1.94l-2.55-1.69c-0.75,0.5-1.71,0.8-2.75,0.8c-2.11,0-3.9-1.43-4.54-3.35H1.83v1.71C3.15,15.04,5.83,17,8.98,17z"/>
-                        <path fill="#FBBC05" d="M4.43,10.77c-0.16-0.5-0.26-1.04-0.26-1.58s0.09-1.08,0.26-1.58V5.9H1.83C1.29,7.01,1,8.25,1,9.6s0.29,2.59,0.83,3.69L4.43,10.77z"/>
-                        <path fill="#EA4335" d="M8.98,3.58c1.19,0,2.26,0.41,3.1,1.22l2.3-2.3C13.94,1.19,11.7,0,8.98,0C5.83,0,3.15,1.96,1.83,4.47l2.6,2.02C5.08,5.01,6.87,3.58,8.98,3.58z"/>
+                        <path fill="#4285F4" d="M16.51,8H8.98v3h4.3c-0.18,0.95-0.75,1.77-1.58,2.26v1.69h2.55C15.47,13.78,16.51,11.17,16.51,8z" />
+                        <path fill="#34A853" d="M8.98,17c2.16,0,3.97-0.72,5.3-1.94l-2.55-1.69c-0.75,0.5-1.71,0.8-2.75,0.8c-2.11,0-3.9-1.43-4.54-3.35H1.83v1.71C3.15,15.04,5.83,17,8.98,17z" />
+                        <path fill="#FBBC05" d="M4.43,10.77c-0.16-0.5-0.26-1.04-0.26-1.58s0.09-1.08,0.26-1.58V5.9H1.83C1.29,7.01,1,8.25,1,9.6s0.29,2.59,0.83,3.69L4.43,10.77z" />
+                        <path fill="#EA4335" d="M8.98,3.58c1.19,0,2.26,0.41,3.1,1.22l2.3-2.3C13.94,1.19,11.7,0,8.98,0C5.83,0,3.15,1.96,1.83,4.47l2.6,2.02C5.08,5.01,6.87,3.58,8.98,3.58z" />
                     </svg>
                     Continue with Google
                 </button>
@@ -477,6 +477,7 @@ export default function LoginForm() {
                     </button>
                 </p>
             </form>
-        </div>
+
+        </div >
     );
 }

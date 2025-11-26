@@ -8,10 +8,22 @@ export async function POST(request: Request) {
         const logData = await request.json();
         console.log('Creating workout log with data:', JSON.stringify(logData, null, 2));
 
+        // DEV BYPASS
+        if (logData.trainee_id === 'dev-user-id') {
+            console.log('Dev user detected, returning mock log creation');
+            return NextResponse.json({
+                log: {
+                    id: `mock-log-${Date.now()}`,
+                    ...logData,
+                    created_at: new Date().toISOString()
+                }
+            }, { status: 201 });
+        }
+
         // Create authenticated Supabase client for this request
         const authHeader = request.headers.get('Authorization');
         console.log('Logs POST Auth header:', authHeader ? 'Present' : 'Missing');
-        
+
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -64,10 +76,34 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const traineeId = searchParams.get('traineeId');
 
+        // DEV BYPASS
+        if (traineeId === 'dev-user-id') {
+            console.log('Dev user detected, returning mock logs');
+            return NextResponse.json({
+                logs: [
+                    {
+                        id: 'mock-log-1',
+                        plan_id: 'mock-plan-1',
+                        trainee_id: 'dev-user-id',
+                        date: new Date().toISOString(),
+                        completed_at: new Date().toISOString(),
+                        exercises: [
+                            {
+                                name: 'Bench Press',
+                                sets: [
+                                    { setNumber: 1, reps: '10', weight: '135', isPr: false }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            });
+        }
+
         // Create authenticated Supabase client for this request
         const authHeader = request.headers.get('Authorization');
         console.log('Logs GET Auth header:', authHeader ? 'Present' : 'Missing');
-        
+
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -86,12 +122,12 @@ export async function GET(request: Request) {
                 .select('*')
                 .eq('trainee_id', traineeId)
                 .order('date', { ascending: false });
-            
+
             if (error) {
                 console.error('Logs fetch error:', error);
                 throw error;
             }
-            
+
             console.log(`Found ${data?.length || 0} logs for trainee`);
             return NextResponse.json({ logs: data || [] });
         }

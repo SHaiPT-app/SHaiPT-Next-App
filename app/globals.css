@@ -1,5 +1,5 @@
 :root {
-  --background: #0a0a0a;
+  --background: #15151F;
   --foreground: #ffffff;
   --primary: #F25F29;
   --primary-hover: #d94e1b;
@@ -89,9 +89,24 @@ a {
     font-size: 2.5rem !important;
   }
 
+  h2 {
+    font-size: 1.8rem !important;
+  }
+
   .input-field {
     font-size: 16px !important;
     /* Prevent zoom on iOS */
+  }
+
+  /* Make buttons more touch-friendly */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Stack chat interface better on mobile */
+  [style*="maxWidth: '700px'"] {
+    max-width: 100% !important;
   }
 }
 
@@ -110,5 +125,46 @@ a {
   .set-row {
     grid-template-columns: 30px 1fr 1fr 40px 60px !important;
     gap: 0.5rem !important;
+  }
+
+  /* Make tables responsive */
+  table {
+    font-size: 0.85rem;
+  }
+
+  /* Improve spacing on small screens */
+  .glass-panel {
+    margin: 0.5rem !important;
+  }
+}
+
+/* Responsive utilities */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 2rem;
+  }
+}
+
+/* Touch-friendly interactive elements */
+@media (hover: none) and (pointer: coarse) {
+
+  button,
+  a,
+  input,
+  select {
+    min-height: 44px;
+  }
+
+  /* Increase tap target size */
+  [role="button"],
+  .clickable {
+    padding: 0.75rem;
   }
 }
