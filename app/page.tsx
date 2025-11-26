@@ -1,24 +1,13 @@
-import LoginForm from '@/components/LoginForm';
+import Hero from '@/components/landing/Hero';
+import Features from '@/components/landing/Features';
+import Footer from '@/components/landing/Footer';
 
 export default function Home() {
   return (
-    <main style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'radial-gradient(circle at top right, #1e1b4b, #0a0a0a)',
-      padding: '1rem'
-    }}>
-      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '4rem', fontWeight: '800', color: '#F25F29', textShadow: '0 0 20px rgba(242, 95, 41, 0.5)', marginBottom: '0.5rem' }}>
-          SHaiPT
-        </h1>
-        <p style={{ color: '#888', fontSize: '1.2rem' }}>Professional Workout Planning</p>
-      </div>
-
-      <LoginForm />
-    </main>
+    <>
+      <Hero />
+      <Features />
+      <Footer />
+    </>
   );
 }

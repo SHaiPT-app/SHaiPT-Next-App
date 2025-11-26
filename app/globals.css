@@ -1,5 +1,5 @@
 :root {
-  --background: #0a0a0a;
+  --background: #15151F;
   --foreground: #ffffff;
   --primary: #F25F29;
   --primary-hover: #d94e1b;
@@ -154,12 +154,17 @@ a {
 
 /* Touch-friendly interactive elements */
 @media (hover: none) and (pointer: coarse) {
-  button, a, input, select {
+
+  button,
+  a,
+  input,
+  select {
     min-height: 44px;
   }
-  
+
   /* Increase tap target size */
-  [role="button"], .clickable {
+  [role="button"],
+  .clickable {
     padding: 0.75rem;
   }
 }
