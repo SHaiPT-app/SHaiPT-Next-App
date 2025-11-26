@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Message {
     type: 'bot' | 'user';
@@ -80,11 +80,18 @@ export default function ChatInterface({ questions, onComplete, title, loading }:
     };
 
     // Show first question initially
-    if (messages.length === 1 && currentQuestionIndex === 0) {
-        setTimeout(() => {
-            setMessages(prev => [...prev, { type: 'bot', text: currentQuestion.prompt }]);
-        }, 500);
-    }
+    useEffect(() => {
+        if (messages.length === 1 && currentQuestionIndex === 0) {
+            const timer = setTimeout(() => {
+                setMessages(prev => {
+                    // Prevent duplicate if it was already added
+                    if (prev.length > 1) return prev;
+                    return [...prev, { type: 'bot', text: questions[0].prompt }];
+                });
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [messages.length, currentQuestionIndex, questions]);
 
     return (
         <div style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: '600px' }}>
