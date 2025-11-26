@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "SHaiPT - AI Personal Training",
   description: "Your AI-powered fitness companion with personalized workout plans, nutrition guidance, and form checking",
   icons: {
-    icon: '/favicon.png',
+    icon: '/logo_transparent.png',
   },
 };
 
