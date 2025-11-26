@@ -1,23 +1,63 @@
-
 'use client';
 
 import { useState } from 'react';
+import ChatInterface from './ChatInterface';
+
+interface Question {
+    id: string;
+    prompt: string;
+    type: 'text' | 'number' | 'select';
+    options?: string[];
+    validation?: (value: any) => boolean;
+    placeholder?: string;
+}
+
+const workoutQuestions: Question[] = [
+    {
+        id: 'fitness_level',
+        prompt: "What's your current fitness level?",
+        type: 'select',
+        options: ['beginner', 'intermediate', 'advanced']
+    },
+    {
+        id: 'goals',
+        prompt: "What's your primary goal?",
+        type: 'select',
+        options: ['muscle_gain', 'weight_loss', 'strength', 'endurance']
+    },
+    {
+        id: 'workout_days_per_week',
+        prompt: "How many days per week can you dedicate to working out?",
+        type: 'number',
+        placeholder: 'e.g., 4',
+        validation: (val) => val >= 1 && val <= 7
+    },
+    {
+        id: 'session_duration_minutes',
+        prompt: "How many minutes per session? (15-180)",
+        type: 'number',
+        placeholder: 'e.g., 60',
+        validation: (val) => val >= 15 && val <= 180
+    },
+    {
+        id: 'available_equipment',
+        prompt: "What equipment do you have access to?",
+        type: 'text',
+        placeholder: 'e.g., dumbbells, barbell, bench, gym membership'
+    },
+    {
+        id: 'injuries_or_limitations',
+        prompt: "Do you have any injuries or limitations? (Type 'none' if not)",
+        type: 'text',
+        placeholder: 'e.g., lower back pain, knee issues, or none'
+    }
+];
 
 export default function AIWorkoutPlanner({ user }: { user: any }) {
     const [loading, setLoading] = useState(false);
     const [plan, setPlan] = useState<any>(null);
-    const [formData, setFormData] = useState({
-        fitness_level: 'intermediate',
-        goals: ['muscle_gain'],
-        available_equipment: ['gym'],
-        workout_days_per_week: 4,
-        session_duration_minutes: 60,
-        injuries_or_limitations: '',
-        preferred_workout_types: ''
-    });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleChatComplete = async (answers: Record<string, any>) => {
         setLoading(true);
         try {
             const response = await fetch('/api/ai-coach/workout', {
@@ -26,12 +66,16 @@ export default function AIWorkoutPlanner({ user }: { user: any }) {
                 body: JSON.stringify({
                     userProfile: {
                         name: user.username,
-                        age: 25, // Default or fetch from profile if available
-                        ...formData,
-                        goals: Array.isArray(formData.goals) ? formData.goals : [formData.goals],
-                        available_equipment: Array.isArray(formData.available_equipment) ? formData.available_equipment : [formData.available_equipment],
-                        injuries_or_limitations: formData.injuries_or_limitations ? formData.injuries_or_limitations.split(',').map(s => s.trim()) : [],
-                        preferred_workout_types: formData.preferred_workout_types ? formData.preferred_workout_types.split(',').map(s => s.trim()) : []
+                        age: 25,
+                        fitness_level: answers.fitness_level,
+                        goals: [answers.goals],
+                        available_equipment: answers.available_equipment.split(',').map((s: string) => s.trim()),
+                        workout_days_per_week: answers.workout_days_per_week,
+                        session_duration_minutes: answers.session_duration_minutes,
+                        injuries_or_limitations: answers.injuries_or_limitations !== 'none'
+                            ? answers.injuries_or_limitations.split(',').map((s: string) => s.trim())
+                            : [],
+                        preferred_workout_types: []
                     }
                 })
             });
@@ -50,86 +94,12 @@ export default function AIWorkoutPlanner({ user }: { user: any }) {
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>AI Workout Planner</h2>
 
             {!plan ? (
-                <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px' }}>
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Fitness Level</label>
-                        <select
-                            value={formData.fitness_level}
-                            onChange={e => setFormData({ ...formData, fitness_level: e.target.value })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        >
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate">Intermediate</option>
-                            <option value="advanced">Advanced</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Primary Goal</label>
-                        <select
-                            value={formData.goals[0]}
-                            onChange={e => setFormData({ ...formData, goals: [e.target.value] })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        >
-                            <option value="muscle_gain">Muscle Gain</option>
-                            <option value="weight_loss">Weight Loss</option>
-                            <option value="endurance">Endurance</option>
-                            <option value="strength">Strength</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Days per Week</label>
-                        <input
-                            type="number"
-                            min="1"
-                            max="7"
-                            value={formData.workout_days_per_week}
-                            onChange={e => setFormData({ ...formData, workout_days_per_week: parseInt(e.target.value) })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        />
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Session Duration (minutes)</label>
-                        <input
-                            type="number"
-                            min="15"
-                            max="180"
-                            value={formData.session_duration_minutes}
-                            onChange={e => setFormData({ ...formData, session_duration_minutes: parseInt(e.target.value) })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        />
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Equipment (comma separated)</label>
-                        <input
-                            type="text"
-                            value={formData.available_equipment}
-                            onChange={e => setFormData({ ...formData, available_equipment: [e.target.value] })}
-                            placeholder="e.g. dumbbells, bench, pull-up bar"
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            background: 'var(--accent)',
-                            color: 'white',
-                            padding: '0.75rem',
-                            borderRadius: '6px',
-                            border: 'none',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            marginTop: '1rem',
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        {loading ? 'Generating Plan...' : 'Generate Workout Plan'}
-                    </button>
-                </form>
+                <ChatInterface
+                    questions={workoutQuestions}
+                    onComplete={handleChatComplete}
+                    title="Workout Planner"
+                    loading={loading}
+                />
             ) : (
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>

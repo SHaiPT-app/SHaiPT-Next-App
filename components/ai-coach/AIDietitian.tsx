@@ -1,30 +1,77 @@
-
 'use client';
 
 import { useState } from 'react';
+import ChatInterface from './ChatInterface';
+
+interface Question {
+    id: string;
+    prompt: string;
+    type: 'text' | 'number' | 'select';
+    options?: string[];
+    validation?: (value: any) => boolean;
+    placeholder?: string;
+}
+
+const dietQuestions: Question[] = [
+    {
+        id: 'age',
+        prompt: "How old are you?",
+        type: 'number',
+        placeholder: 'e.g., 25',
+        validation: (val) => val >= 10 && val <= 100
+    },
+    {
+        id: 'gender',
+        prompt: "What's your gender?",
+        type: 'select',
+        options: ['male', 'female']
+    },
+    {
+        id: 'weight_kg',
+        prompt: "What's your current weight in kg?",
+        type: 'number',
+        placeholder: 'e.g., 70',
+        validation: (val) => val > 0 && val < 300
+    },
+    {
+        id: 'height_cm',
+        prompt: "What's your height in cm?",
+        type: 'number',
+        placeholder: 'e.g., 175',
+        validation: (val) => val > 0 && val < 300
+    },
+    {
+        id: 'activity_level',
+        prompt: "How active are you?",
+        type: 'select',
+        options: ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active']
+    },
+    {
+        id: 'fitness_goals',
+        prompt: "What's your fitness goal?",
+        type: 'select',
+        options: ['weight_loss', 'muscle_gain', 'maintenance', 'aggressive_cut']
+    },
+    {
+        id: 'meals_per_day',
+        prompt: "How many meals per day do you prefer?",
+        type: 'number',
+        placeholder: 'e.g., 3',
+        validation: (val) => val >= 2 && val <= 6
+    },
+    {
+        id: 'allergies',
+        prompt: "Do you have any food allergies? (Type 'none' if not)",
+        type: 'text',
+        placeholder: 'e.g., peanuts, dairy, or none'
+    }
+];
 
 export default function AIDietitian({ user }: { user: any }) {
     const [loading, setLoading] = useState(false);
     const [plan, setPlan] = useState<any>(null);
-    const [formData, setFormData] = useState({
-        age: 25,
-        gender: 'male',
-        weight_kg: 70,
-        height_cm: 175,
-        activity_level: 'moderately_active',
-        fitness_goals: ['maintenance'],
-        dietary_preferences: [],
-        meals_per_day: 3,
-        budget_level: 'moderate',
-        cooking_skill: 'intermediate',
-        meal_prep_time_minutes: 30,
-        allergies: '',
-        food_dislikes: '',
-        medical_conditions: ''
-    });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleChatComplete = async (answers: Record<string, any>) => {
         setLoading(true);
         try {
             const response = await fetch('/api/ai-coach/diet', {
@@ -33,12 +80,22 @@ export default function AIDietitian({ user }: { user: any }) {
                 body: JSON.stringify({
                     profile: {
                         name: user.username,
-                        ...formData,
-                        fitness_goals: Array.isArray(formData.fitness_goals) ? formData.fitness_goals : [formData.fitness_goals],
-                        dietary_preferences: Array.isArray(formData.dietary_preferences) ? formData.dietary_preferences : [],
-                        allergies: formData.allergies ? formData.allergies.split(',').map(s => s.trim()) : [],
-                        food_dislikes: formData.food_dislikes ? formData.food_dislikes.split(',').map(s => s.trim()) : [],
-                        medical_conditions: formData.medical_conditions ? formData.medical_conditions.split(',').map(s => s.trim()) : []
+                        age: answers.age,
+                        gender: answers.gender,
+                        weight_kg: answers.weight_kg,
+                        height_cm: answers.height_cm,
+                        activity_level: answers.activity_level,
+                        fitness_goals: [answers.fitness_goals],
+                        dietary_preferences: [],
+                        meals_per_day: answers.meals_per_day,
+                        budget_level: 'moderate',
+                        cooking_skill: 'intermediate',
+                        meal_prep_time_minutes: 30,
+                        allergies: answers.allergies !== 'none'
+                            ? answers.allergies.split(',').map((s: string) => s.trim())
+                            : [],
+                        food_dislikes: [],
+                        medical_conditions: []
                     }
                 })
             });
@@ -57,96 +114,12 @@ export default function AIDietitian({ user }: { user: any }) {
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>AI Dietitian</h2>
 
             {!plan ? (
-                <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px' }}>
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Age</label>
-                        <input
-                            type="number"
-                            value={formData.age}
-                            onChange={e => setFormData({ ...formData, age: parseInt(e.target.value) })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        />
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Gender</label>
-                        <select
-                            value={formData.gender}
-                            onChange={e => setFormData({ ...formData, gender: e.target.value })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        >
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Weight (kg)</label>
-                        <input
-                            type="number"
-                            value={formData.weight_kg}
-                            onChange={e => setFormData({ ...formData, weight_kg: parseFloat(e.target.value) })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        />
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Height (cm)</label>
-                        <input
-                            type="number"
-                            value={formData.height_cm}
-                            onChange={e => setFormData({ ...formData, height_cm: parseFloat(e.target.value) })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        />
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Activity Level</label>
-                        <select
-                            value={formData.activity_level}
-                            onChange={e => setFormData({ ...formData, activity_level: e.target.value })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        >
-                            <option value="sedentary">Sedentary</option>
-                            <option value="lightly_active">Lightly Active</option>
-                            <option value="moderately_active">Moderately Active</option>
-                            <option value="very_active">Very Active</option>
-                            <option value="extremely_active">Extremely Active</option>
-                        </select>
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>Goal</label>
-                        <select
-                            value={formData.fitness_goals[0]}
-                            onChange={e => setFormData({ ...formData, fitness_goals: [e.target.value] })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #444' }}
-                        >
-                            <option value="weight_loss">Weight Loss</option>
-                            <option value="muscle_gain">Muscle Gain</option>
-                            <option value="maintenance">Maintenance</option>
-                            <option value="aggressive_cut">Aggressive Cut</option>
-                        </select>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            gridColumn: '1 / -1',
-                            background: 'var(--accent)',
-                            color: 'white',
-                            padding: '0.75rem',
-                            borderRadius: '6px',
-                            border: 'none',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            marginTop: '1rem',
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        {loading ? 'Generating Plan...' : 'Generate Diet Plan'}
-                    </button>
-                </form>
+                <ChatInterface
+                    questions={dietQuestions}
+                    onComplete={handleChatComplete}
+                    title="Dietitian"
+                    loading={loading}
+                />
             ) : (
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
