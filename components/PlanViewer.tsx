@@ -85,28 +85,40 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
         setSaving(true);
         try {
             // Wait for auth state to be ready and retry if session is not available
+            // Wait for auth state to be ready and retry if session is not available
             let session = null;
+
+            // DEV BYPASS
+            if (traineeId === 'dev-user-id') {
+                console.log('Dev user detected, skipping Supabase session check for log submission');
+                // Mock success
+                await new Promise(resolve => setTimeout(resolve, 500));
+                console.log('Workout logged successfully (MOCKED)!');
+                onBack();
+                return;
+            }
+
             let retryCount = 0;
             const maxRetries = 5;
-            
+
             while (!session && retryCount < maxRetries) {
                 const { data: { session: currentSession } } = await supabase.auth.getSession();
                 if (currentSession) {
                     session = currentSession;
                     break;
                 }
-                
+
                 // Wait briefly before retrying
                 await new Promise(resolve => setTimeout(resolve, 200));
                 retryCount++;
             }
-            
+
             if (!session) {
                 console.error('No valid session found after retries');
                 setSaving(false);
                 return;
             }
-            
+
             const headers: any = { 'Content-Type': 'application/json' };
             if (session?.access_token) {
                 headers.Authorization = `Bearer ${session.access_token}`;

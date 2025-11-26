@@ -11,7 +11,7 @@ export async function POST(request: Request) {
         // Create authenticated Supabase client for this request
         const authHeader = request.headers.get('Authorization');
         console.log('Auth header:', authHeader ? 'Present' : 'Missing');
-        
+
         // Create a Supabase client with the user's session
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -55,10 +55,10 @@ export async function POST(request: Request) {
 
         console.log('Attempting to create plan with validated data...');
         console.log('Database functions available:', Object.keys(db));
-        
+
         // Log exercises data structure
         console.log('Exercises data:', JSON.stringify(planData.exercises, null, 2));
-        
+
         // Ensure exercises is a valid JSONB array
         const exercises = Array.isArray(planData.exercises) ? planData.exercises : [];
         console.log('Processed exercises:', exercises);
@@ -71,24 +71,24 @@ export async function POST(request: Request) {
             description: planData.description || '',
             exercises: exercises
         };
-        
+
         // Remove any undefined values from the payload
         const planPayload = Object.fromEntries(
             Object.entries(cleanPayload).filter(([_, value]) => value !== undefined)
         );
-        
+
         console.log('Final plan payload:', JSON.stringify(planPayload, null, 2));
 
         // Check if trainer and trainee exist in profiles table
         console.log('Validating trainer and trainee exist...');
-        
+
         const trainer = await db.profiles.getById(planData.trainer_id);
         if (!trainer) {
             console.error('Trainer not found:', planData.trainer_id);
             return NextResponse.json({ error: `Trainer not found: ${planData.trainer_id}` }, { status: 400 });
         }
         console.log('Trainer found:', trainer.username);
-        
+
         const trainee = await db.profiles.getById(planData.trainee_id);
         if (!trainee) {
             console.error('Trainee not found:', planData.trainee_id);
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
             hint: error.hint,
             stack: error.stack
         });
-        return NextResponse.json({ 
+        return NextResponse.json({
             error: error.message || 'Internal server error',
             details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         }, { status: 500 });
@@ -161,13 +161,51 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const trainerId = searchParams.get('trainerId');
         const traineeId = searchParams.get('traineeId');
-        
+
         console.log('Getting plans with params:', { trainerId, traineeId });
+
+        // DEV BYPASS
+        if (traineeId === 'dev-user-id') {
+            console.log('Dev user detected, returning mock plans');
+            return NextResponse.json({
+                plans: [
+                    {
+                        id: 'mock-plan-1',
+                        name: 'Dev Workout Plan',
+                        description: 'A test plan for development',
+                        trainee_id: 'dev-user-id',
+                        trainer_id: 'dev-trainer-id',
+                        is_active: true,
+                        created_at: new Date().toISOString(),
+                        exercises: [
+                            {
+                                id: 'ex-1',
+                                name: 'Bench Press',
+                                sets: [
+                                    { targetReps: '10', targetWeight: '135' },
+                                    { targetReps: '8', targetWeight: '155' },
+                                    { targetReps: '6', targetWeight: '175' }
+                                ]
+                            },
+                            {
+                                id: 'ex-2',
+                                name: 'Squat',
+                                sets: [
+                                    { targetReps: '5', targetWeight: '225' },
+                                    { targetReps: '5', targetWeight: '225' },
+                                    { targetReps: '5', targetWeight: '225' }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            });
+        }
 
         // Create authenticated Supabase client for this request
         const authHeader = request.headers.get('Authorization');
         console.log('GET Auth header:', authHeader ? 'Present' : 'Missing');
-        
+
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -187,27 +225,27 @@ export async function GET(request: Request) {
                 .select('*')
                 .eq('trainer_id', trainerId)
                 .order('created_at', { ascending: false });
-            
+
             if (error) throw error;
             plans = data || [];
         } else if (traineeId) {
             console.log(`Searching for plans with trainee_id = ${traineeId}`);
-            
+
             const { data, error } = await supabase
                 .from('workout_plans')
                 .select('*')
                 .eq('trainee_id', traineeId)
                 .eq('is_active', true)
                 .order('created_at', { ascending: false });
-            
+
             if (error) {
                 console.error('Trainee plans query error:', error);
                 throw error;
             }
-            
+
             plans = data || [];
             console.log(`Query result: Found ${plans.length} plans for trainee ${traineeId}`);
-            
+
             if (plans.length > 0) {
                 console.log('Plans found:', plans.map(p => ({
                     id: p.id,
@@ -222,7 +260,7 @@ export async function GET(request: Request) {
                     .from('workout_plans')
                     .select('*')
                     .eq('trainee_id', traineeId);
-                    
+
                 console.log(`Total plans for trainee ${traineeId} (including inactive): ${allPlans?.length || 0}`);
                 if (allPlans && allPlans.length > 0) {
                     console.log('All plans (including inactive):', allPlans.map(p => ({
@@ -237,7 +275,7 @@ export async function GET(request: Request) {
                 .from('workout_plans')
                 .select('*')
                 .order('created_at', { ascending: false });
-            
+
             if (error) throw error;
             plans = data || [];
         }

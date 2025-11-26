@@ -76,26 +76,32 @@ export default function TrainerDashboard({ user }: { user: User }) {
                 try {
                     // Wait for auth state to be ready and retry if session is not available
                     let session = null;
-                    let retryCount = 0;
-                    const maxRetries = 5;
-                    
-                    while (!session && retryCount < maxRetries) {
-                        const { data: { session: currentSession } } = await supabase.auth.getSession();
-                        if (currentSession) {
-                            session = currentSession;
-                            break;
+
+                    // DEV BYPASS
+                    if (user.id === 'dev-user-id') {
+                        console.log('Dev user detected, skipping Supabase session check');
+                    } else {
+                        let retryCount = 0;
+                        const maxRetries = 5;
+
+                        while (!session && retryCount < maxRetries) {
+                            const { data: { session: currentSession } } = await supabase.auth.getSession();
+                            if (currentSession) {
+                                session = currentSession;
+                                break;
+                            }
+
+                            // Wait briefly before retrying
+                            await new Promise(resolve => setTimeout(resolve, 200));
+                            retryCount++;
                         }
-                        
-                        // Wait briefly before retrying
-                        await new Promise(resolve => setTimeout(resolve, 200));
-                        retryCount++;
+
+                        if (!session) {
+                            console.error('No valid session found after retries');
+                            return;
+                        }
                     }
-                    
-                    if (!session) {
-                        console.error('No valid session found after retries');
-                        return;
-                    }
-                    
+
                     const headers: any = { 'Content-Type': 'application/json' };
                     if (session?.access_token) {
                         headers.Authorization = `Bearer ${session.access_token}`;
@@ -110,12 +116,12 @@ export default function TrainerDashboard({ user }: { user: User }) {
                     const res = await fetch(`/api/plans?traineeId=${selectedTrainee.id}`, {
                         headers
                     });
-                    
+
                     if (res.ok) {
                         const data = await res.json();
                         setPlans(data.plans || []);
                         console.log(`Loaded ${data.plans?.length || 0} plans for trainee:`, selectedTrainee.username);
-                        
+
                         if (data.plans?.length > 0) {
                             console.log('Plans found by trainer:', data.plans.map((p: WorkoutPlan) => ({
                                 id: p.id,
@@ -171,17 +177,17 @@ export default function TrainerDashboard({ user }: { user: User }) {
                             }}
                             style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
                         />
-                        
+
                         {/* Dropdown with search results */}
                         {showDropdown && searchResults.length > 0 && (
-                            <div style={{ 
-                                position: 'absolute', 
-                                top: '100%', 
-                                left: '0.5rem', 
-                                right: '0.5rem', 
-                                background: 'rgba(0,0,0,0.9)', 
-                                border: '1px solid var(--glass-border)', 
-                                borderRadius: '4px', 
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: '0.5rem',
+                                right: '0.5rem',
+                                background: 'rgba(0,0,0,0.9)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '4px',
                                 zIndex: 1000,
                                 maxHeight: '200px',
                                 overflowY: 'auto'
@@ -210,17 +216,17 @@ export default function TrainerDashboard({ user }: { user: User }) {
 
                         {addClientError && <p style={{ color: 'red', fontSize: '0.75rem', marginBottom: '0.5rem' }}>{addClientError}</p>}
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button 
-                                onClick={() => handleAddClient(newClientUsername)} 
+                            <button
+                                onClick={() => handleAddClient(newClientUsername)}
                                 style={{ flex: 1, padding: '0.25rem', background: 'var(--primary)', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer' }}
                                 disabled={!newClientUsername}
                             >
                                 Add
                             </button>
-                            <button onClick={() => { 
-                                setIsAddingClient(false); 
-                                setAddClientError(''); 
-                                setNewClientUsername(''); 
+                            <button onClick={() => {
+                                setIsAddingClient(false);
+                                setAddClientError('');
+                                setNewClientUsername('');
                                 setSearchResults([]);
                                 setShowDropdown(false);
                             }} style={{ flex: 1, padding: '0.25rem', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: '4px', color: '#ccc', cursor: 'pointer' }}>Cancel</button>

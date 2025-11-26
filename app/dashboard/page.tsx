@@ -22,6 +22,16 @@ export default function Dashboard() {
                 return;
             }
 
+            const parsedUser = JSON.parse(storedUser);
+
+            // DEV BYPASS
+            if (parsedUser.id === 'dev-user-id') {
+                console.log('Dev user detected, skipping Supabase session check');
+                setUser(parsedUser);
+                setAuthReady(true);
+                return;
+            }
+
             // Then verify Supabase session is available
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
@@ -32,7 +42,7 @@ export default function Dashboard() {
             }
 
             // Both localStorage user and Supabase session are valid
-            setUser(JSON.parse(storedUser));
+            setUser(parsedUser);
             setAuthReady(true);
         };
 
