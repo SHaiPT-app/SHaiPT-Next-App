@@ -478,36 +478,6 @@ export default function LoginForm() {
                 </p>
             </form>
 
-            {/* Dev Login Bypass */}
-            <div style={{ marginTop: '2rem', borderTop: '1px solid #333', paddingTop: '1rem' }}>
-                <button
-                    type="button"
-                    onClick={() => {
-                        const mockUser = {
-                            id: 'dev-user-id',
-                            username: 'DevTrainee',
-                            email: 'dev@example.com',
-                            role: 'trainee',
-                            display_name: 'Developer Trainee'
-                        };
-                        localStorage.setItem('user', JSON.stringify(mockUser));
-                        router.push('/dashboard');
-                    }}
-                    style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        background: '#333',
-                        border: '1px dashed #666',
-                        borderRadius: '6px',
-                        color: '#aaa',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem'
-                    }}
-                >
-                    [DEV] Bypass Login (Trainee)
-                </button>
-            </div>
-
         </div >
     );
 }
