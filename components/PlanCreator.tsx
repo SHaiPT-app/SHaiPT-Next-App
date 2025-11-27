@@ -5,6 +5,7 @@ import { PlanExercise, Exercise, ExerciseSet } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase';
 import ExerciseSearch from './ExerciseSearch';
+import { cleanExercisesData } from '@/lib/utils';
 
 import { WorkoutPlan } from '@/lib/types';
 
@@ -78,31 +79,9 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
         try {
             const url = plan ? '/api/plans' : '/api/plans';
             const method = plan ? 'PUT' : 'POST';
-            
+
             // Clean exercises data - remove any undefined or circular references
-            const cleanedExercises = exercises.map(exercise => ({
-                id: exercise.id,
-                name: exercise.name || '',
-                exercise_id: exercise.exercise_id || undefined,
-                gif_url: exercise.gif_url || undefined,
-                notes: exercise.notes || undefined,
-                sets: exercise.sets.map(set => ({
-                    targetReps: set.targetReps || '10',
-                    targetWeight: set.targetWeight || '',
-                    actualReps: set.actualReps || undefined,
-                    actualWeight: set.actualWeight || undefined,
-                    pr: set.pr || false
-                }))
-            })).map(exercise => {
-                // Remove undefined values from exercise object
-                const cleaned: any = {};
-                Object.entries(exercise).forEach(([key, value]) => {
-                    if (value !== undefined) {
-                        cleaned[key] = value;
-                    }
-                });
-                return cleaned;
-            });
+            const cleanedExercises = cleanExercisesData(exercises);
 
             const body: any = {
                 name: planName,
@@ -135,27 +114,27 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
             let session = null;
             let retryCount = 0;
             const maxRetries = 5;
-            
+
             while (!session && retryCount < maxRetries) {
                 const { data: { session: currentSession } } = await supabase.auth.getSession();
                 if (currentSession) {
                     session = currentSession;
                     break;
                 }
-                
+
                 // Wait briefly before retrying
                 await new Promise(resolve => setTimeout(resolve, 200));
                 retryCount++;
             }
-            
+
             if (!session) {
                 console.error('No valid session found after retries');
                 setLoading(false);
                 return;
             }
-            
+
             console.log('Session status:', session ? 'Active' : 'No session');
-            
+
             const headers: any = { 'Content-Type': 'application/json' };
             if (session?.access_token) {
                 headers.Authorization = `Bearer ${session.access_token}`;
@@ -202,13 +181,13 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
                                 <h4 style={{ color: 'var(--primary)' }}>
                                     Exercise {i + 1}
                                     {exercise.exercise_id && (
-                                        <span style={{ 
-                                            fontSize: '0.6rem', 
-                                            background: 'var(--primary)', 
-                                            color: 'white', 
-                                            padding: '2px 6px', 
-                                            borderRadius: '10px', 
-                                            marginLeft: '8px' 
+                                        <span style={{
+                                            fontSize: '0.6rem',
+                                            background: 'var(--primary)',
+                                            color: 'white',
+                                            padding: '2px 6px',
+                                            borderRadius: '10px',
+                                            marginLeft: '8px'
                                         }}>
                                             DB
                                         </span>
@@ -246,20 +225,20 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
                                 </div>
                             ) : (
                                 <div style={{ marginBottom: '0.5rem' }}>
-                                    <ExerciseSearch 
+                                    <ExerciseSearch
                                         onSelectExercise={(selectedExercise) => handleExerciseSelect(i, selectedExercise)}
                                         placeholder={exercise.name || "Search for an exercise..."}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowingManualEntry(i)}
-                                        style={{ 
+                                        style={{
                                             marginTop: '0.25rem',
-                                            background: 'none', 
-                                            border: 'none', 
-                                            color: '#888', 
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#888',
                                             fontSize: '0.75rem',
-                                            cursor: 'pointer' 
+                                            cursor: 'pointer'
                                         }}
                                     >
                                         Enter manually instead
@@ -290,7 +269,7 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
                                         className="input-field"
                                         value={exercise.notes || ''}
                                         onChange={(e) => updateExercise(i, 'notes', e.target.value)}
-                                        style={{ 
+                                        style={{
                                             marginTop: '0.5rem',
                                             minHeight: '80px',
                                             resize: 'vertical',

@@ -44,7 +44,7 @@ export default function Hero() {
                 {/* Logo */}
                 <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
                     <Image
-                        src="/logo.png"
+                        src="/hero_logo_transparent.png"
                         alt="SHaiPT Logo"
                         width={300}
                         height={300}

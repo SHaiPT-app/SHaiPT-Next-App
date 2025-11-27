@@ -43,3 +43,11 @@ next-env.d.ts
 
 # Using pnpm, so ignore npm lock file
 package-lock.json
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
