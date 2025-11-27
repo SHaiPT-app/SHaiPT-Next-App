@@ -1,6 +1,7 @@
-# SHaiPT - AI Personal Trainer
-
-![SHaiPT Logo](public/hero_logo_transparent.png)
+<div align="center">
+  <img src="public/logo_app_icon.png" alt="SHaiPT Logo" width="200">
+  <h1>SHaiPT - AI Personal Trainer</h1>
+</div>
 
 **SHaiPT** is a cutting-edge AI-powered personal training application designed to help users build personalized workout routines, track their progress, and receive intelligent coaching. Built with modern web technologies, SHaiPT leverages generative AI to provide a tailored fitness experience.
 
