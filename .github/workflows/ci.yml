@@ -31,4 +31,7 @@ jobs:
       run: pnpm test
       
     - name: Build
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "dummy-key"
       run: pnpm run build
