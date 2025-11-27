@@ -164,43 +164,7 @@ export async function GET(request: Request) {
 
         console.log('Getting plans with params:', { trainerId, traineeId });
 
-        // DEV BYPASS
-        if (traineeId === 'dev-user-id') {
-            console.log('Dev user detected, returning mock plans');
-            return NextResponse.json({
-                plans: [
-                    {
-                        id: 'mock-plan-1',
-                        name: 'Dev Workout Plan',
-                        description: 'A test plan for development',
-                        trainee_id: 'dev-user-id',
-                        trainer_id: 'dev-trainer-id',
-                        is_active: true,
-                        created_at: new Date().toISOString(),
-                        exercises: [
-                            {
-                                id: 'ex-1',
-                                name: 'Bench Press',
-                                sets: [
-                                    { targetReps: '10', targetWeight: '135' },
-                                    { targetReps: '8', targetWeight: '155' },
-                                    { targetReps: '6', targetWeight: '175' }
-                                ]
-                            },
-                            {
-                                id: 'ex-2',
-                                name: 'Squat',
-                                sets: [
-                                    { targetReps: '5', targetWeight: '225' },
-                                    { targetReps: '5', targetWeight: '225' },
-                                    { targetReps: '5', targetWeight: '225' }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            });
-        }
+
 
         // Create authenticated Supabase client for this request
         const authHeader = request.headers.get('Authorization');

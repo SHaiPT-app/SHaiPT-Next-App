@@ -31,83 +31,18 @@ export default function LoginForm() {
     // Listen for auth state changes
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state change:', event, session?.user?.email || 'No session');
-
             if (event === 'SIGNED_IN' && session) {
-                console.log('User signed in via:', session.user.app_metadata.provider || 'unknown', 'Email:', session.user.email);
-
-                try {
-                    console.log('Checking if user profile exists for:', session.user.id);
-
-                    // Use the authenticated session to check profile
-                    const { data: profile, error: profileError } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', session.user.id)
-                        .single();
-
-                    console.log('Profile lookup result:', { profile: !!profile, error: profileError });
-
-                    if (profile) {
-                        // User exists, redirect to dashboard
-                        console.log('Found existing profile, redirecting to dashboard');
-                        localStorage.setItem('user', JSON.stringify(profile));
-                        router.push('/dashboard');
-                        return;
-                    } else if (profileError && profileError.code !== 'PGRST116') {
-                        // PGRST116 means "no rows found", anything else is a real error
-                        console.error('Profile lookup failed with error:', profileError);
-                        throw profileError;
-                    } else {
-                        console.log('No profile found for user, treating as new user');
-                    }
-
-                    // Check if email already exists (different auth user) using authenticated session
-                    const { data: existingEmailProfile } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('email', session.user.email || '')
-                        .neq('id', session.user.id)
-                        .single();
-
-                    if (existingEmailProfile) {
-                        // Email exists with different auth method
-                        console.log('Email already exists with different auth method');
-                        await supabase.auth.signOut();
-                        setError(
-                            <>
-                                Account with this email already exists. Please{' '}
-                                <span
-                                    onClick={() => setIsLogin(true)}
-                                    style={{
-                                        color: 'var(--primary)',
-                                        textDecoration: 'underline',
-                                        cursor: 'pointer',
-                                        fontSize: 'inherit'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                                >
-                                    log in
-                                </span>
-                                {' '}with your email and password instead.
-                            </>
-                        );
-                        return;
-                    }
-
-                    // New Google user, redirect to username setup
-                    router.push(`/auth/setup?userId=${session.user.id}&email=${session.user.email}`);
-                } catch (error: any) {
-                    console.error('Profile check error:', error);
-                    await supabase.auth.signOut();
-                    setError('Authentication error. Please try again.');
+                // Only handle initial session check or external provider sign-ins here
+                // Manual sign-ins are handled in handleSubmit to avoid race conditions
+                if (session.user.app_metadata.provider === 'google') {
+                    // Google sign-in handling is done in callback page or here if needed
+                    // For now, we let the callback page handle the redirection logic for OAuth
                 }
             }
         });
 
         return () => subscription.unsubscribe();
-    }, [router]);
+    }, []);
 
     const handleGoogleAuth = async () => {
         try {
@@ -116,7 +51,11 @@ export default function LoginForm() {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback`
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    },
                 }
             });
             console.log('OAuth response:', { data, error });
