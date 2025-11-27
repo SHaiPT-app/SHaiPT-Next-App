@@ -14,7 +14,10 @@ const config: Config = {
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',
+        '^uuid$': '<rootDir>/__mocks__/uuid.ts',
     },
+    transformIgnorePatterns: ['node_modules/(?!(uuid)/)'],
+    testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/'],
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
