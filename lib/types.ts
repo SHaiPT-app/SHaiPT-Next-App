@@ -11,6 +11,10 @@ export interface User {
     avatar_url?: string; // text, nullable
     created_at?: string; // timestamp with time zone, nullable, default now()
     updated_at?: string; // timestamp with time zone, nullable, default now()
+    height?: string; // text, nullable
+    weight?: string; // text, nullable
+    experience?: string; // text, nullable
+    dob?: string; // date string, nullable
 }
 
 // Exercise data structures for workout plans

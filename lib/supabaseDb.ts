@@ -27,6 +27,10 @@ export interface Profile {
     avatar_url?: string;
     created_at?: string;
     updated_at?: string;
+    height?: string;
+    weight?: string;
+    experience?: string;
+    dob?: string;
 }
 
 export interface WorkoutPlan {
@@ -198,13 +202,13 @@ export const db = {
 
         create: async (plan: Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>): Promise<WorkoutPlan> => {
             console.log('Supabase DB: Creating workout plan with data:', JSON.stringify(plan, null, 2));
-            
+
             const { data, error } = await supabase
                 .from('workout_plans')
                 .insert([plan])
                 .select()
                 .single();
-                
+
             if (error) {
                 console.error('Supabase insert error:', {
                     message: error.message,
@@ -214,7 +218,7 @@ export const db = {
                 });
                 throw error;
             }
-            
+
             console.log('Supabase DB: Plan created successfully:', data);
             return data;
         },
@@ -346,24 +350,24 @@ export const db = {
 // Admin client (bypasses RLS) - for server-side operations
 export const dbAdmin = {
     ...db, // Inherit all the same functions
-    
+
     // Override workout plans with admin client
     workoutPlans: {
         ...db.workoutPlans,
-        
+
         create: async (plan: Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>): Promise<WorkoutPlan> => {
             console.log('Admin Supabase: Creating workout plan with data:', JSON.stringify(plan, null, 2));
-            
+
             if (!supabaseAdmin) {
                 throw new Error('Service role key not configured. Cannot create workout plan.');
             }
-            
+
             const { data, error } = await supabaseAdmin
                 .from('workout_plans')
                 .insert([plan])
                 .select()
                 .single();
-                
+
             if (error) {
                 console.error('Admin Supabase insert error:', {
                     message: error.message,
@@ -373,11 +377,11 @@ export const dbAdmin = {
                 });
                 throw error;
             }
-            
+
             console.log('Admin Supabase: Plan created successfully:', data);
             return data;
         },
-        
+
         update: async (id: string, updates: Partial<WorkoutPlan>): Promise<WorkoutPlan> => {
             const { data, error } = await supabaseAdmin
                 .from('workout_plans')
@@ -388,7 +392,7 @@ export const dbAdmin = {
             if (error) throw error;
             return data;
         },
-        
+
         delete: async (id: string): Promise<void> => {
             const { error } = await supabaseAdmin
                 .from('workout_plans')
