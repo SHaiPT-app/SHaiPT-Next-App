@@ -11,9 +11,58 @@ export default function LoginForm() {
     const [identifier, setIdentifier] = useState(''); // Can be email or username
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [resendCooldown, setResendCooldown] = useState(0);
     const [error, setError] = useState<React.ReactNode>('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+
+    const passwordRules = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        numberOrSpecial: /[0-9!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)
+    };
+
+    const passwordStrength = (() => {
+        let score = 0;
+        if (password.length > 0) {
+            if (password.length >= 8) score++;
+            if (password.length >= 12) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) score++;
+        }
+        return score;
+    })();
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (resendCooldown > 0) {
+            interval = setInterval(() => {
+                setResendCooldown((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [resendCooldown]);
+
+    const handleResendEmail = async () => {
+        if (resendCooldown > 0) return;
+
+        try {
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email: identifier,
+            });
+
+            if (error) throw error;
+
+            setResendCooldown(60);
+            setError('Confirmation email resent! Please check your inbox.');
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
 
     // Check for existing session on component mount
     useEffect(() => {
@@ -150,8 +199,26 @@ export default function LoginForm() {
                     return;
                 }
 
-                if (password.length < 6) {
-                    setError('Password must be at least 6 characters long.');
+                if (password.length < 8) {
+                    setError('Password must be at least 8 characters long.');
+                    setLoading(false);
+                    return;
+                }
+
+                if (!passwordRules.uppercase) {
+                    setError('Password must contain at least one uppercase letter.');
+                    setLoading(false);
+                    return;
+                }
+
+                if (!passwordRules.numberOrSpecial) {
+                    setError('Password must contain at least one number or special character.');
+                    setLoading(false);
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    setError('Passwords do not match.');
                     setLoading(false);
                     return;
                 }
@@ -240,6 +307,20 @@ export default function LoginForm() {
                 }
 
                 if (data.user) {
+                    // Check if email confirmation is required and missing
+                    // If session is null, it means confirmation is required (standard Supabase behavior)
+                    // If session exists but email is not confirmed (Auto-sign-in enabled), we still want to enforce confirmation
+                    // to avoid the "trap" where they can't log in again later.
+                    if (!data.session || !data.user.email_confirmed_at) {
+                        if (data.session) {
+                            await supabase.auth.signOut();
+                        }
+                        setError('Account created! Please check your email to confirm your account.');
+                        setLoading(false);
+                        setIsLogin(true);
+                        return;
+                    }
+
                     // Create profile in database
                     console.log('Creating user profile in database...');
                     console.log('Auth user ID:', data.user.id);
@@ -349,18 +430,129 @@ export default function LoginForm() {
                         required
                     />
                 )}
-                <input
-                    type="password"
-                    placeholder="Password"
-                    className="input-field"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+                <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        className="input-field"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        style={{ width: '100%', paddingRight: '40px' }}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#888',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                    >
+                        {showPassword ? (
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        ) : (
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        )}
+                    </button>
+                </div>
+
+                {!isLogin && (
+                    <>
+                        <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Confirm Password"
+                                className="input-field"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                style={{ width: '100%', paddingRight: '40px' }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '10px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#888',
+                                    padding: 0,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                {showPassword ? (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                ) : (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                )}
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>
+                            <div style={{ display: 'flex', gap: '4px', marginBottom: '8px', height: '4px' }}>
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                    <div key={i} style={{
+                                        flex: 1,
+                                        background: i <= passwordStrength ?
+                                            (passwordStrength < 3 ? 'var(--error)' : passwordStrength < 5 ? 'var(--warning)' : 'var(--success)')
+                                            : 'rgba(255,255,255,0.1)',
+                                        borderRadius: '2px',
+                                        transition: 'all 0.3s'
+                                    }} />
+                                ))}
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                                <div style={{ color: passwordRules.length ? 'var(--success)' : '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>{passwordRules.length ? '✓' : '○'}</span> 8+ characters
+                                </div>
+                                <div style={{ color: passwordRules.uppercase ? 'var(--success)' : '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>{passwordRules.uppercase ? '✓' : '○'}</span> Uppercase
+                                </div>
+                                <div style={{ color: passwordRules.numberOrSpecial ? 'var(--success)' : '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>{passwordRules.numberOrSpecial ? '✓' : '○'}</span> Number/Special
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {error && (
                     <div style={{ color: 'var(--error)', marginBottom: '1rem', fontSize: '0.875rem' }}>
                         {error}
+                        {typeof error === 'string' && error.includes('check your email') && (
+                            <button
+                                type="button"
+                                onClick={handleResendEmail}
+                                disabled={resendCooldown > 0}
+                                style={{
+                                    display: 'block',
+                                    marginTop: '0.5rem',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--primary)',
+                                    textDecoration: 'underline',
+                                    cursor: resendCooldown > 0 ? 'default' : 'pointer',
+                                    opacity: resendCooldown > 0 ? 0.5 : 1,
+                                    fontSize: 'inherit'
+                                }}
+                            >
+                                {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'Resend Confirmation Email'}
+                            </button>
+                        )}
                     </div>
                 )}
 
