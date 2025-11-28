@@ -75,7 +75,30 @@ export default function AuthCallback() {
                 localStorage.setItem('user', JSON.stringify(profile));
                 router.push('/dashboard');
             } else {
-                // New Google user, redirect to username setup
+                // Check if we have metadata from signup (email flow)
+                const { username, role } = session.user.user_metadata || {};
+
+                if (username && role) {
+                    console.log('Found metadata from signup, creating profile automatically...');
+                    try {
+                        const newProfile = await db.profiles.create({
+                            id: session.user.id,
+                            username,
+                            email: session.user.email,
+                            role,
+                            display_name: username
+                        });
+
+                        localStorage.setItem('user', JSON.stringify(newProfile));
+                        router.push('/dashboard');
+                        return;
+                    } catch (err) {
+                        console.error('Auto-creation of profile failed:', err);
+                        // Fall through to setup page
+                    }
+                }
+
+                // New Google user or failed auto-creation, redirect to username setup
                 router.push(`/auth/setup?userId=${session.user.id}&email=${session.user.email}`);
             }
         };
