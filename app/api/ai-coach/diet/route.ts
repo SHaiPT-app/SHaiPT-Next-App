@@ -31,12 +31,17 @@ export async function POST(req: NextRequest) {
 
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
+        // Parse weight and height (handle string or number)
+        const weight = parseFloat(String(profile.weight || profile.weight_kg || 0));
+        const height = parseFloat(String(profile.height || profile.height_cm || 0));
+        const age = parseInt(String(profile.age || 0));
+
         // Calculate BMR and TDEE (simplified logic ported from python)
         let bmr;
-        if (profile.gender.toLowerCase() === 'male') {
-            bmr = (10 * profile.weight_kg) + (6.25 * profile.height_cm) - (5 * profile.age) + 5;
+        if (String(profile.gender).toLowerCase() === 'male') {
+            bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
         } else {
-            bmr = (10 * profile.weight_kg) + (6.25 * profile.height_cm) - (5 * profile.age) - 161;
+            bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
         }
 
         const activityMultipliers: Record<string, number> = {
@@ -87,8 +92,8 @@ You are an expert registered dietitian and sports nutritionist. Create a detaile
 
 USER PROFILE:
 - Name: ${profile.name}
-- Age: ${profile.age}, Gender: ${profile.gender}
-- Weight: ${profile.weight_kg} kg, Height: ${profile.height_cm} cm
+- Age: ${age}, Gender: ${profile.gender}
+- Weight: ${weight} kg, Height: ${height} cm
 - Activity Level: ${profile.activity_level}
 - Fitness Goals: ${profile.fitness_goals.join(', ')}
 - Dietary Preferences: ${profile.dietary_preferences.join(', ')}

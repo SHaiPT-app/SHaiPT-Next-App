@@ -41,6 +41,9 @@ You are an expert personal trainer and fitness consultant. Create a detailed, pe
 USER PROFILE:
 - Name: ${userProfile.name}
 - Age: ${userProfile.age}
+- Gender: ${userProfile.gender}
+- Height: ${userProfile.height} cm
+- Weight: ${userProfile.weight} kg
 - Fitness Level: ${userProfile.fitness_level}
 - Goals: ${userProfile.goals.join(', ')}
 - Available Equipment: ${userProfile.available_equipment.join(', ')}
