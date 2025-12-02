@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import ChatInterface, { Message } from './ChatInterface';
 import FeatureGate from '@/components/FeatureGate';
 import { User } from '@/lib/types';
@@ -10,15 +11,17 @@ interface AIWorkoutPlannerProps {
 }
 
 export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
+    const router = useRouter();
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [plan, setPlan] = useState<any>(null);
     const [showForm, setShowForm] = useState(true);
 
     // Form State
     const [formData, setFormData] = useState({
         age: user.dob ? new Date().getFullYear() - new Date(user.dob).getFullYear() : '',
-        gender: '', // Not in User type yet, user needs to input
+        gender: '',
         height: user.height || '',
         weight: user.weight || '',
         fitness_level: user.experience || 'beginner',
@@ -74,46 +77,77 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
         }
     };
 
+    const handleSavePlan = async () => {
+        if (!plan || !plan.weekly_schedule) return;
+        setSaving(true);
+
+        try {
+            // Transform AI plan to DB format
+            // The AI returns a weekly schedule. We'll take "Week 1" as the template for the sessions.
+            // Or if it varies, we might need a different strategy.
+            // For now, let's assume Week 1 represents the split.
+
+            const week1 = plan.weekly_schedule.week_1 || Object.values(plan.weekly_schedule)[0];
+            if (!week1) throw new Error("Invalid plan structure");
+
+            const sessions = Object.entries(week1).map(([dayKey, dayData]: [string, any]) => ({
+                id: dayKey,
+                name: dayData.focus || dayKey.replace('_', ' '),
+                exercises: dayData.main_workout.map((ex: any) => ({
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: ex.exercise,
+                    sets: Array(parseInt(ex.sets) || 3).fill({
+                        targetReps: ex.reps?.toString() || "10",
+                        targetWeight: "",
+                    }),
+                    notes: ex.notes
+                }))
+            }));
+
+            const payload = {
+                name: `AI Plan - ${formData.goals.join(', ') || 'Custom'}`,
+                trainee_id: user.id,
+                // trainer_id is omitted (needs DB migration to be nullable)
+                exercises: sessions, // This maps to the 'exercises' jsonb column which holds sessions
+                assigned_at: new Date().toISOString(),
+            };
+
+            const res = await fetch('/api/plans', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to save plan');
+            }
+
+            alert('Plan saved successfully!');
+            router.push('/dashboard'); // Redirect to dashboard to see the plan
+
+        } catch (error) {
+            console.error(error);
+            alert('Failed to save plan. Make sure you have run the database migration.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleSendMessage = async (content: string) => {
         const userMessage: Message = { id: Date.now().toString(), role: 'user', content };
         setMessages(prev => [...prev, userMessage]);
         setLoading(true);
 
         try {
-            // Here we would ideally call a chat endpoint that has context of the plan
-            // For now, we'll reuse the workout endpoint or a generic chat endpoint
-            // But since the requirement is just about the initial prompt, we focus on that.
-            // We can send the plan context with the message if needed, or just chat generic.
-
-            // For this refactor, let's assume a simple chat response for follow-ups
-            // Or we can use the same endpoint if it handles chat.
-            // Let's assume we need a separate chat handler or modified one.
-            // For now, I will mock a simple response to keep scope on the Input Form.
-
-            // ACTUALLY, to be useful, it should probably hit the same endpoint or a chat one.
-            // Let's use the existing structure but pass messages.
             const res = await fetch('/api/ai-coach/workout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
-                    // We might need to pass the plan context here in a real app
                 }),
             });
-            const data = await res.json();
-            // This part depends on how the API handles chat vs plan generation.
-            // The current API is designed for plan generation.
-            // I will leave the chat part simple for now as the user request was about the INPUT.
-
-            // Wait, the previous code used /api/ai-coach/workout for chat too?
-            // No, looking at the previous code, it sent `messages` AND `userProfile`.
-            // The API generated a plan.
-
-            // I will implement a basic echo or simple response for now to not break it,
-            // or better, I will update the API to handle "chat" mode vs "plan" mode.
-            // But first, let's get the form working.
-
-            // Let's just simulate a response for now to avoid breaking the chat UI.
+            // Simulate response for now as discussed
             setTimeout(() => {
                 setMessages(prev => [...prev, {
                     id: Date.now().toString(),
@@ -288,12 +322,22 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                         <div style={{ display: 'grid', gap: '1rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h3 style={{ color: 'var(--accent)' }}>Your Workout Plan</h3>
-                                <button
-                                    onClick={() => setShowForm(true)}
-                                    style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: '#888', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer' }}
-                                >
-                                    Edit Preferences
-                                </button>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button
+                                        onClick={handleSavePlan}
+                                        disabled={saving}
+                                        className="btn-primary"
+                                        style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                                    >
+                                        {saving ? 'Saving...' : 'Save to My Plans'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowForm(true)}
+                                        style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: '#888', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer' }}
+                                    >
+                                        Edit
+                                    </button>
+                                </div>
                             </div>
 
                             {plan?.weekly_schedule ? (

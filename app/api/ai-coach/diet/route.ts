@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from '@supabase/supabase-js';
 
 // Initialize Gemini API
 const apiKey = process.env.GEMINI_API_KEY;
@@ -30,6 +31,53 @@ export async function POST(req: NextRequest) {
         }
 
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+        // Fetch active workout plan
+        let workoutContext = '';
+        if (profile.id) {
+            try {
+                const supabase = createClient(
+                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                    {
+                        global: {
+                            headers: {
+                                Authorization: req.headers.get('Authorization') || ''
+                            }
+                        }
+                    }
+                );
+
+                const { data: plans } = await supabase
+                    .from('workout_plans')
+                    .select('*')
+                    .eq('trainee_id', profile.id)
+                    .eq('is_active', true)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (plans && plans.length > 0) {
+                    const plan = plans[0];
+                    // Summarize the plan
+                    let scheduleSummary = '';
+                    if (plan.exercises && Array.isArray(plan.exercises)) {
+                        scheduleSummary = plan.exercises.map((s: any) =>
+                            `- ${s.name}: ${s.exercises?.length || 0} exercises`
+                        ).join('\n');
+                    }
+
+                    workoutContext = `
+CURRENT WORKOUT PLAN:
+- Name: ${plan.name}
+- Schedule:
+${scheduleSummary}
+- Description: ${plan.description || 'N/A'}
+`;
+                }
+            } catch (err) {
+                console.error('Error fetching workout plan:', err);
+            }
+        }
 
         // Parse weight and height (handle string or number)
         const weight = parseFloat(String(profile.weight || profile.weight_kg || 0));
@@ -101,6 +149,7 @@ USER PROFILE:
 - Budget Level: ${profile.budget_level}
 - Cooking Skill: ${profile.cooking_skill}
 - Meal Prep Time: ${profile.meal_prep_time_minutes} minutes${allergiesText}${dislikesText}${medicalText}
+${workoutContext}
 
 CALCULATED NUTRITION TARGETS:
 - Daily Calories: ${dailyCalories} kcal
