@@ -1,19 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, WorkoutPlan } from '@/lib/types';
+import { User, WorkoutPlan, AIFeatures } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import PlanCreator from './PlanCreator';
+import PlanViewer from './PlanViewer';
 
 export default function TrainerDashboard({ user }: { user: User }) {
     const [trainees, setTrainees] = useState<User[]>([]);
     const [selectedTrainee, setSelectedTrainee] = useState<User | null>(null);
-    const [plans, setPlans] = useState<WorkoutPlan[]>([]);
-    const [isCreating, setIsCreating] = useState(false);
-    const [editingPlan, setEditingPlan] = useState<WorkoutPlan | undefined>(undefined);
-    const [isAddingClient, setIsAddingClient] = useState(false);
-    const [newClientUsername, setNewClientUsername] = useState('');
+    const [showAddClient, setShowAddClient] = useState(false);
+    const [addClientUsername, setAddClientUsername] = useState('');
     const [addClientError, setAddClientError] = useState('');
+    const [plans, setPlans] = useState<WorkoutPlan[]>([]);
+    const [isCreating, setCreatingPlan] = useState(false);
+    const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
+
+    // AI Toolkit State
+    const [showAIToolkit, setShowAIToolkit] = useState(false);
+    const [updatingFeatures, setUpdatingFeatures] = useState(false);
+    const [selectedTraineeFeatures, setSelectedTraineeFeatures] = useState<AIFeatures>({
+        workout_planner: false,
+        dietitian: false,
+        form_checker: false
+    });
     const [searchResults, setSearchResults] = useState<User[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -22,10 +32,20 @@ export default function TrainerDashboard({ user }: { user: User }) {
         fetchTrainees();
     }, []);
 
-    const fetchTrainees = () => {
-        fetch(`/api/users/trainees?trainerId=${user.id}`)
-            .then(res => res.json())
-            .then(data => setTrainees(data.trainees || []));
+    const fetchTrainees = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: any = {};
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`;
+            }
+
+            const res = await fetch(`/api/users/trainees?trainerId=${user.id}`, { headers });
+            const data = await res.json();
+            setTrainees(data.trainees || []);
+        } catch (error) {
+            console.error('Error fetching trainees:', error);
+        }
     };
 
     const searchTrainees = async (query: string) => {
@@ -36,7 +56,13 @@ export default function TrainerDashboard({ user }: { user: User }) {
         }
 
         try {
-            const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=trainee`);
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: any = {};
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`;
+            }
+
+            const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=trainee`, { headers });
             const data = await res.json();
             setSearchResults(data.users || []);
             setShowDropdown(data.users?.length > 0);
@@ -50,15 +76,28 @@ export default function TrainerDashboard({ user }: { user: User }) {
     const handleAddClient = async (username: string) => {
         setAddClientError('');
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                setAddClientError('You must be logged in to add a client');
+                return;
+            }
+
             const res = await fetch('/api/users/link', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ trainerId: user.id, traineeUsername: username })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    trainerId: user.id,
+                    traineeUsername: username,
+                    action: 'link'
+                })
             });
             const data = await res.json();
             if (res.ok) {
-                setIsAddingClient(false);
-                setNewClientUsername('');
+                setShowAddClient(false);
+                setAddClientUsername('');
                 setSearchResults([]);
                 setShowDropdown(false);
                 fetchTrainees();
@@ -107,7 +146,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                         headers.Authorization = `Bearer ${session.access_token}`;
                     }
 
-                    console.log(`Fetching plans for trainee:`, {
+                    console.log(`Fetching plans for trainee: `, {
                         id: selectedTrainee.id,
                         username: selectedTrainee.username,
                         email: selectedTrainee.email
@@ -120,7 +159,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                     if (res.ok) {
                         const data = await res.json();
                         setPlans(data.plans || []);
-                        console.log(`Loaded ${data.plans?.length || 0} plans for trainee:`, selectedTrainee.username);
+                        console.log(`Loaded ${data.plans?.length || 0} plans for trainee: `, selectedTrainee.username);
 
                         if (data.plans?.length > 0) {
                             console.log('Plans found by trainer:', data.plans.map((p: WorkoutPlan) => ({
@@ -144,6 +183,68 @@ export default function TrainerDashboard({ user }: { user: User }) {
         }
     }, [selectedTrainee, isCreating, editingPlan]);
 
+    const openAIToolkit = (trainee: User) => {
+        setSelectedTrainee(trainee); // Ensure selectedTrainee is set if not already
+        setSelectedTraineeFeatures(trainee.ai_features || {
+            workout_planner: false,
+            dietitian: false,
+            form_checker: false
+        });
+        setShowAIToolkit(true);
+    };
+
+    const toggleFeature = (feature: keyof AIFeatures) => {
+        setSelectedTraineeFeatures(prev => ({
+            ...prev,
+            [feature]: !prev[feature]
+        }));
+    };
+
+    const saveFeatures = async () => {
+        if (!selectedTrainee) return;
+        setUpdatingFeatures(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                alert('You must be logged in to update features.');
+                return;
+            }
+
+            const res = await fetch('/api/users/features', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    traineeId: selectedTrainee.id,
+                    features: selectedTraineeFeatures
+                })
+            });
+
+            if (res.ok) {
+                // Update local state
+                const updatedTrainees = trainees.map(t =>
+                    t.id === selectedTrainee.id
+                        ? { ...t, ai_features: selectedTraineeFeatures }
+                        : t
+                );
+                setTrainees(updatedTrainees); // Update the trainees list
+                setSelectedTrainee(prev => prev ? { ...prev, ai_features: selectedTraineeFeatures } : null); // Update selected trainee
+                alert('AI Features updated successfully!');
+                setShowAIToolkit(false);
+            } else {
+                const errorData = await res.json();
+                alert(`Failed to update features: ${errorData.error || res.statusText} `);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error updating features');
+        } finally {
+            setUpdatingFeatures(false);
+        }
+    };
+
     const sortedPlans = [...plans].sort((a, b) => {
         const dateA = new Date(a.created_at || '').getTime();
         const dateB = new Date(b.created_at || '').getTime();
@@ -157,7 +258,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
                     <h3 style={{ margin: 0 }}>Clients</h3>
                     <button
-                        onClick={() => setIsAddingClient(true)}
+                        onClick={() => setShowAddClient(true)}
                         style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '1.2rem' }}
                         title="Add Client"
                     >
@@ -165,14 +266,14 @@ export default function TrainerDashboard({ user }: { user: User }) {
                     </button>
                 </div>
 
-                {isAddingClient && (
+                {showAddClient && (
                     <div style={{ marginBottom: '1rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', position: 'relative' }}>
                         <input
                             type="text"
                             placeholder="Search trainee by username..."
-                            value={newClientUsername}
+                            value={addClientUsername}
                             onChange={e => {
-                                setNewClientUsername(e.target.value);
+                                setAddClientUsername(e.target.value);
                                 searchTrainees(e.target.value);
                             }}
                             style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
@@ -196,7 +297,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                     <div
                                         key={trainee.id}
                                         onClick={() => {
-                                            setNewClientUsername(trainee.username);
+                                            setAddClientUsername(trainee.username);
                                             handleAddClient(trainee.username);
                                         }}
                                         style={{
@@ -217,16 +318,16 @@ export default function TrainerDashboard({ user }: { user: User }) {
                         {addClientError && <p style={{ color: 'red', fontSize: '0.75rem', marginBottom: '0.5rem' }}>{addClientError}</p>}
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button
-                                onClick={() => handleAddClient(newClientUsername)}
+                                onClick={() => handleAddClient(addClientUsername)}
                                 style={{ flex: 1, padding: '0.25rem', background: 'var(--primary)', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer' }}
-                                disabled={!newClientUsername}
+                                disabled={!addClientUsername}
                             >
                                 Add
                             </button>
                             <button onClick={() => {
-                                setIsAddingClient(false);
+                                setShowAddClient(false);
                                 setAddClientError('');
-                                setNewClientUsername('');
+                                setAddClientUsername('');
                                 setSearchResults([]);
                                 setShowDropdown(false);
                             }} style={{ flex: 1, padding: '0.25rem', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: '4px', color: '#ccc', cursor: 'pointer' }}>Cancel</button>
@@ -240,7 +341,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                             key={trainee.id}
                             onClick={() => {
                                 setSelectedTrainee(trainee);
-                                setIsCreating(false);
+                                setCreatingPlan(false);
                             }}
                             style={{
                                 textAlign: 'left',
@@ -270,9 +371,9 @@ export default function TrainerDashboard({ user }: { user: User }) {
                     <PlanCreator
                         traineeId={selectedTrainee.id}
                         trainerId={user.id}
-                        onSave={() => { setIsCreating(false); setEditingPlan(undefined); }}
-                        onCancel={() => { setIsCreating(false); setEditingPlan(undefined); }}
-                        plan={editingPlan}
+                        onSave={() => { setCreatingPlan(false); setEditingPlan(null); }}
+                        onCancel={() => { setCreatingPlan(false); setEditingPlan(null); }}
+                        plan={editingPlan || undefined}
                     />
                 ) : (
                     <div className="glass-panel" style={{ padding: '2rem' }}>
@@ -287,8 +388,14 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                     <option value="newest">Newest First</option>
                                     <option value="oldest">Oldest First</option>
                                 </select>
-                                <button className="btn-primary" onClick={() => { setEditingPlan(undefined); setIsCreating(true); }}>
+                                <button className="btn-primary" onClick={() => { setEditingPlan(null); setCreatingPlan(true); }}>
                                     + Create New Plan
+                                </button>
+                                <button
+                                    className="btn-primary"
+                                    onClick={() => openAIToolkit(selectedTrainee)}
+                                >
+                                    AI Toolkit
                                 </button>
                             </div>
                         </div>
@@ -322,6 +429,84 @@ export default function TrainerDashboard({ user }: { user: User }) {
                     </div>
                 )}
             </div>
+            {/* AI Toolkit Modal */}
+            {showAIToolkit && selectedTrainee && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <div className="glass-panel" style={{ width: '500px', padding: '2rem', border: '1px solid var(--accent)' }}>
+                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent)' }}>AI Toolkit (Bro Version)</h3>
+                        <p style={{ marginBottom: '2rem', color: '#ccc' }}>
+                            Manage AI feature access for <strong>{selectedTrainee.display_name || selectedTrainee.username}</strong>.
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                                <div>
+                                    <div style={{ fontWeight: 'bold' }}>AI Workout Planner</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Generates personalized workout plans</div>
+                                </div>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedTraineeFeatures.workout_planner}
+                                        onChange={() => toggleFeature('workout_planner')}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                                <div>
+                                    <div style={{ fontWeight: 'bold' }}>AI Dietitian</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Creates meal plans and answers nutrition queries</div>
+                                </div>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedTraineeFeatures.dietitian}
+                                        onChange={() => toggleFeature('dietitian')}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                                <div>
+                                    <div style={{ fontWeight: 'bold' }}>AI Form Checker</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Analyzes exercise form from videos</div>
+                                </div>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedTraineeFeatures.form_checker}
+                                        onChange={() => toggleFeature('form_checker')}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                className="btn-primary"
+                                onClick={saveFeatures}
+                                disabled={updatingFeatures}
+                                style={{ flex: 1 }}
+                            >
+                                {updatingFeatures ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            <button
+                                onClick={() => setShowAIToolkit(false)}
+                                style={{ flex: 1, background: 'transparent', border: '1px solid #666', color: 'white', borderRadius: '8px', cursor: 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

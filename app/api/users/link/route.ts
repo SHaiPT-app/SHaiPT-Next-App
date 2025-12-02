@@ -18,10 +18,19 @@ export async function POST(request: Request) {
         }
 
         // 2. Parse Body
-        const { trainerId, traineeId, action } = await request.json();
+        let { trainerId, traineeId, traineeUsername, action } = await request.json();
 
-        if (!trainerId || !traineeId || !action) {
+        if (!trainerId || (!traineeId && !traineeUsername) || !action) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        // Lookup traineeId if only username is provided
+        if (!traineeId && traineeUsername) {
+            const trainee = await dbAdmin.profiles.getByUsername(traineeUsername);
+            if (!trainee) {
+                return NextResponse.json({ error: `User with username "${traineeUsername}" not found` }, { status: 404 });
+            }
+            traineeId = trainee.id;
         }
 
         // 3. Verify Permissions

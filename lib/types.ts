@@ -1,5 +1,11 @@
 export type Role = 'trainer' | 'trainee';
 
+export interface AIFeatures {
+    workout_planner: boolean;
+    dietitian: boolean;
+    form_checker: boolean;
+}
+
 // User Profile (matches actual Supabase profiles table)
 export interface User {
     id: string; // uuid, NOT NULL
@@ -11,6 +17,7 @@ export interface User {
     avatar_url?: string; // text, nullable
     created_at?: string; // timestamp with time zone, nullable, default now()
     updated_at?: string; // timestamp with time zone, nullable, default now()
+    ai_features?: AIFeatures; // jsonb, nullable, default null
 }
 
 // Exercise data structures for workout plans
@@ -32,16 +39,26 @@ export interface PlanExercise {
 }
 
 // Workout Plan (matches actual Supabase workout_plans table)
+// Workout Session
+export interface WorkoutSession {
+    id: string;
+    name: string; // e.g., "Session 1", "Monday"
+    exercises: PlanExercise[];
+}
+
+// Workout Plan (matches actual Supabase workout_plans table)
 export interface WorkoutPlan {
     id: string; // uuid, NOT NULL, default gen_random_uuid()
     trainee_id: string; // uuid, NOT NULL
     trainer_id: string; // uuid, NOT NULL
     name: string; // text, NOT NULL
     description?: string; // text, nullable
-    exercises: PlanExercise[]; // jsonb, NOT NULL
+    exercises: WorkoutSession[]; // jsonb, NOT NULL (contains sessions)
     is_active?: boolean; // boolean, nullable, default true
     created_at?: string; // timestamp with time zone, nullable, default now()
     updated_at?: string; // timestamp with time zone, nullable, default now()
+    assigned_at?: string; // timestamp with time zone, nullable
+    expires_at?: string; // timestamp with time zone, nullable
 }
 
 // Workout logging data structures

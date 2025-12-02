@@ -31,6 +31,11 @@ export interface Profile {
     weight?: string;
     experience?: string;
     dob?: string;
+    ai_features?: {
+        workout_planner: boolean;
+        dietitian: boolean;
+        form_checker: boolean;
+    };
 }
 
 export interface WorkoutPlan {
@@ -39,10 +44,12 @@ export interface WorkoutPlan {
     trainer_id: string;
     name: string;
     description?: string;
-    exercises: any[]; // JSON array of exercises
+    exercises: any[]; // JSON array of sessions
     is_active?: boolean;
     created_at?: string;
     updated_at?: string;
+    assigned_at?: string;
+    expires_at?: string;
 }
 
 export interface WorkoutLog {
@@ -399,6 +406,33 @@ export const dbAdmin = {
                 .delete()
                 .eq('id', id);
             if (error) throw error;
+        }
+    },
+
+    // Override profiles with admin client
+    profiles: {
+        ...db.profiles,
+
+        getById: async (id: string): Promise<Profile | null> => {
+            if (!supabaseAdmin) return db.profiles.getById(id);
+            const { data, error } = await supabaseAdmin
+                .from('profiles')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (profile: Omit<Profile, 'created_at' | 'updated_at'>): Promise<Profile> => {
+            if (!supabaseAdmin) return db.profiles.create(profile);
+            const { data, error } = await supabaseAdmin
+                .from('profiles')
+                .insert([profile])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
         }
     }
 };

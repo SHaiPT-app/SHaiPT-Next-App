@@ -6,36 +6,42 @@
     "trainerId": "7b6de7a2-45e8-4d96-b142-60f528b86ce8",
     "exercises": [
       {
-        "id": "5e9e010d-dafc-43b0-9d64-6b0e34b8f9b3",
-        "name": "standing barbel curl",
-        "link": "",
-        "sets": [
+        "id": "session-1",
+        "name": "Session 1",
+        "exercises": [
           {
-            "targetReps": "20",
-            "targetWeight": ""
+            "id": "5e9e010d-dafc-43b0-9d64-6b0e34b8f9b3",
+            "name": "standing barbel curl",
+            "link": "",
+            "sets": [
+              {
+                "targetReps": "20",
+                "targetWeight": ""
+              },
+              {
+                "targetReps": "10",
+                "targetWeight": ""
+              },
+              {
+                "targetReps": "10",
+                "targetWeight": ""
+              }
+            ]
           },
           {
-            "targetReps": "10",
-            "targetWeight": ""
-          },
-          {
-            "targetReps": "10",
-            "targetWeight": ""
-          }
-        ]
-      },
-      {
-        "id": "d378a3c2-f57f-4020-be9a-e01c41686542",
-        "name": "triceps push down",
-        "link": "",
-        "sets": [
-          {
-            "targetReps": "20",
-            "targetWeight": ""
-          },
-          {
-            "targetReps": "15",
-            "targetWeight": ""
+            "id": "d378a3c2-f57f-4020-be9a-e01c41686542",
+            "name": "triceps push down",
+            "link": "",
+            "sets": [
+              {
+                "targetReps": "20",
+                "targetWeight": ""
+              },
+              {
+                "targetReps": "15",
+                "targetWeight": ""
+              }
+            ]
           }
         ]
       }
@@ -65,11 +71,17 @@
     "trainerId": "71227386-a1ec-4366-b79d-5a3df66765be",
     "exercises": [
       {
-        "id": "ex1",
-        "name": "Pushups",
-        "sets": [
+        "id": "session-1",
+        "name": "Session 1",
+        "exercises": [
           {
-            "targetReps": "10"
+            "id": "ex1",
+            "name": "Pushups",
+            "sets": [
+              {
+                "targetReps": "10"
+              }
+            ]
           }
         ]
       }
@@ -83,17 +95,23 @@
     "trainerId": "7b6de7a2-45e8-4d96-b142-60f528b86ce8",
     "exercises": [
       {
-        "id": "68ebd4b2-20f2-43cc-b3b4-0b715df62a70",
-        "name": "barbell chest press",
-        "link": "",
-        "sets": [
+        "id": "session-1",
+        "name": "Session 1",
+        "exercises": [
           {
-            "targetReps": "10",
-            "targetWeight": ""
-          },
-          {
-            "targetReps": "8",
-            "targetWeight": ""
+            "id": "68ebd4b2-20f2-43cc-b3b4-0b715df62a70",
+            "name": "barbell chest press",
+            "link": "",
+            "sets": [
+              {
+                "targetReps": "10",
+                "targetWeight": ""
+              },
+              {
+                "targetReps": "8",
+                "targetWeight": ""
+              }
+            ]
           }
         ]
       }

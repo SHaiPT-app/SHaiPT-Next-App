@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import ChatInterface from './ChatInterface';
+import ChatInterface, { Message } from './ChatInterface';
+import FeatureGate from '@/components/FeatureGate';
+import { User } from '@/lib/types';
 
 interface Question {
     id: string;
@@ -53,95 +55,101 @@ const workoutQuestions: Question[] = [
     }
 ];
 
-export default function AIWorkoutPlanner({ user }: { user: any }) {
-    const [loading, setLoading] = useState(false);
-    const [plan, setPlan] = useState<any>(null);
+interface AIWorkoutPlannerProps {
+    user: User;
+}
 
-    const handleChatComplete = async (answers: Record<string, any>) => {
+export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
+    const [messages, setMessages] = useState<Message[]>([
+        {
+            id: '1',
+            role: 'assistant',
+            content: "Hi! I'm your AI Workout Planner. I can create a personalized workout plan for you. To get started, tell me about your fitness goals, current fitness level, and how many days a week you can train."
+        }
+    ]);
+    const [loading, setLoading] = useState(false);
+    // Assuming 'plan' state will be managed here or passed as a prop
+    // For now, let's define a placeholder for 'plan' to avoid compilation errors
+    const [plan, setPlan] = useState<any>({}); // You'll likely want a more specific type for 'plan'
+
+    const handleSendMessage = async (content: string) => {
+        const userMessage: Message = { id: Date.now().toString(), role: 'user', content };
+        setMessages(prev => [...prev, userMessage]);
         setLoading(true);
+
         try {
-            const response = await fetch('/api/ai-coach/workout', {
+            const res = await fetch('/api/ai-coach/workout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
                     userProfile: {
-                        name: user.username,
-                        age: 25,
-                        fitness_level: answers.fitness_level,
-                        goals: [answers.goals],
-                        available_equipment: answers.available_equipment.split(',').map((s: string) => s.trim()),
-                        workout_days_per_week: answers.workout_days_per_week,
-                        session_duration_minutes: answers.session_duration_minutes,
-                        injuries_or_limitations: answers.injuries_or_limitations !== 'none'
-                            ? answers.injuries_or_limitations.split(',').map((s: string) => s.trim())
-                            : [],
-                        preferred_workout_types: []
+                        // Pass relevant user profile data if available
+                        age: 30, // Placeholder
+                        gender: 'Male', // Placeholder
+                        experience: 'Intermediate' // Placeholder
                     }
-                })
+                }),
             });
-            const data = await response.json();
-            setPlan(data);
+            const data = await res.json();
+            const aiMessage: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: data.reply };
+            setMessages(prev => [...prev, aiMessage]);
+            // If the AI returns a plan, you might update the 'plan' state here
+            if (data.plan) {
+                setPlan(data.plan);
+            }
         } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to generate workout plan');
+            console.error(error);
+            // Optionally, add an error message to the chat
+            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: "Oops! Something went wrong. Please try again." }]);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>AI Workout Planner</h2>
-
-            {!plan ? (
+        <FeatureGate user={user} feature="workout_planner">
+            <div className="glass-panel" style={{ height: '600px', display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>AI Workout Planner</h3>
                 <ChatInterface
-                    questions={workoutQuestions}
-                    onComplete={handleChatComplete}
-                    title="Workout Planner"
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
                     loading={loading}
+                    placeholder="e.g., I want to build muscle, I can train 4 days a week..."
                 />
-            ) : (
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h3>Your Personalized Plan</h3>
-                        <button onClick={() => setPlan(null)} style={{ background: 'transparent', border: '1px solid #666', color: '#ccc', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer' }}>
-                            Create New
-                        </button>
-                    </div>
+            </div>
 
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                        {plan.workout_schedule?.weekly_schedule ? (
-                            Object.entries(plan.workout_schedule.weekly_schedule).map(([week, days]: [string, any]) => (
-                                <div key={week} style={{ border: '1px solid #444', padding: '1rem', borderRadius: '8px' }}>
-                                    <h4 style={{ textTransform: 'capitalize', color: 'var(--accent)', marginBottom: '0.5rem' }}>{week.replace('_', ' ')}</h4>
-                                    <div style={{ display: 'grid', gap: '1rem' }}>
-                                        {Object.entries(days).map(([day, routine]: [string, any]) => (
-                                            <div key={day} style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
-                                                <h5 style={{ textTransform: 'capitalize', marginBottom: '0.5rem', color: '#ddd' }}>{day.replace('_', ' ')}: {routine.focus}</h5>
-                                                <ul style={{ listStyle: 'none', padding: 0 }}>
-                                                    {routine.main_workout.map((exercise: any, i: number) => (
-                                                        <li key={i} style={{ marginBottom: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid #333' }}>
-                                                            <div style={{ fontWeight: 'bold' }}>{exercise.exercise}</div>
-                                                            <div style={{ fontSize: '0.9rem', color: '#aaa' }}>
-                                                                {exercise.sets} sets x {exercise.reps} | Rest: {exercise.rest_seconds}s
-                                                            </div>
-                                                            {exercise.notes && <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: '#888' }}>Note: {exercise.notes}</div>}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        ))}
+            <div style={{ display: 'grid', gap: '1rem' }}>
+                {plan.workout_schedule?.weekly_schedule ? (
+                    Object.entries(plan.workout_schedule.weekly_schedule).map(([week, days]: [string, any]) => (
+                        <div key={week} style={{ border: '1px solid #444', padding: '1rem', borderRadius: '8px' }}>
+                            <h4 style={{ textTransform: 'capitalize', color: 'var(--accent)', marginBottom: '0.5rem' }}>{week.replace('_', ' ')}</h4>
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {Object.entries(days).map(([day, routine]: [string, any]) => (
+                                    <div key={day} style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
+                                        <h5 style={{ textTransform: 'capitalize', marginBottom: '0.5rem', color: '#ddd' }}>{day.replace('_', ' ')}: {routine.focus}</h5>
+                                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                                            {routine.main_workout.map((exercise: any, i: number) => (
+                                                <li key={i} style={{ marginBottom: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid #333' }}>
+                                                    <div style={{ fontWeight: 'bold' }}>{exercise.exercise}</div>
+                                                    <div style={{ fontSize: '0.9rem', color: '#aaa' }}>
+                                                        {exercise.sets} sets x {exercise.reps} | Rest: {exercise.rest_seconds}s
+                                                    </div>
+                                                    {exercise.notes && <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: '#888' }}>Note: {exercise.notes}</div>}
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div style={{ color: '#888', textAlign: 'center', padding: '2rem' }}>
-                                No workout schedule available.
+                                ))}
                             </div>
-                        )}
+                        </div>
+                    ))
+                ) : (
+                    <div style={{ color: '#888', textAlign: 'center', padding: '2rem' }}>
+                        No workout schedule available.
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
+        </FeatureGate>
     );
 }
