@@ -49,7 +49,8 @@ export default function Features() {
                             fontWeight: '800',
                             color: '#fff',
                             marginBottom: '1rem',
-                            letterSpacing: '-0.02em'
+                            letterSpacing: '-0.02em',
+                            fontFamily: 'var(--font-orbitron)'
                         }}>
                             Power in Your Pocket
                         </h2>
@@ -90,7 +91,8 @@ export default function Features() {
                                         fontWeight: '700',
                                         color: '#fff',
                                         marginBottom: '1.5rem',
-                                        lineHeight: '1.2'
+                                        lineHeight: '1.2',
+                                        fontFamily: 'var(--font-orbitron)'
                                     }}>
                                         {feature.title}
                                     </h3>

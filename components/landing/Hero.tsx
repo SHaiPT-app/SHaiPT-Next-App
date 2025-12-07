@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import TextType from '@/components/TextType';
 
 export default function Hero() {
     return (
@@ -39,11 +40,11 @@ export default function Hero() {
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Image src="/logo_transparent.png" alt="SHaiPT" width={40} height={40} />
-                    <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#fff' }}>SHaiPT</span>
+                    <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-orbitron)' }}>SHaiPT</span>
                 </div>
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
                     <Link href="#features" style={{ color: '#ccc', textDecoration: 'none', fontWeight: '500' }}>Features</Link>
-                    <Link href="#testimonials" style={{ color: '#ccc', textDecoration: 'none', fontWeight: '500' }}>Stories</Link>
+                    <Link href="#about" style={{ color: '#ccc', textDecoration: 'none', fontWeight: '500' }}>About</Link>
                     <Link href="/login" style={{
                         background: 'rgba(255,255,255,0.1)',
                         padding: '0.6rem 1.2rem',
@@ -77,9 +78,26 @@ export default function Hero() {
                     lineHeight: '1.1',
                     marginBottom: '1.5rem',
                     maxWidth: '900px',
-                    letterSpacing: '-0.02em'
+                    letterSpacing: '-0.02em',
+                    fontFamily: 'var(--font-orbitron)'
                 }}>
-                    Unlock Your Potential with <span style={{ color: '#F25F29' }}>AI Coaching</span>
+                    Let's{' '}
+                    <TextType 
+                        text={['Get SHaiPT', 'Train Smarter', 'Push Limits', 'Crush Goals']}
+                        as="span"
+                        typingSpeed={100}
+                        pauseDuration={2500}
+                        deletingSpeed={50}
+                        loop={true}
+                        textColors={['#F25F29']}
+                        cursorCharacter="|"
+                        showCursor={true}
+                        cursorClassName=""
+                        style={{
+                            color: '#F25F29',
+                            display: 'inline'
+                        }}
+                    />
                 </h1>
 
                 <div style={{
@@ -99,7 +117,7 @@ export default function Hero() {
                         lineHeight: '1.6',
                         margin: '0'
                     }}>
-                        Form correction, diet planning, and workout scheduling—all powered by advanced AI. Experience the 1% edge.
+                        Train with AI-powered insights and real human connections: workout planning, form checks, and progress sharing.
                     </p>
                 </div>
 

@@ -5,7 +5,11 @@ module.exports = {
         "./components/**/*.{js,ts,jsx,tsx,mdx}",
     ],
     theme: {
-        extend: {},
+        extend: {
+            fontFamily: {
+                orbitron: ['var(--font-orbitron)', 'sans-serif'],
+            },
+        },
     },
     plugins: [],
 }

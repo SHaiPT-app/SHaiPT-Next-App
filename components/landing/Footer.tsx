@@ -18,7 +18,8 @@ export default function Footer() {
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
-                        marginBottom: '0.5rem'
+                        marginBottom: '0.5rem',
+                        fontFamily: 'var(--font-orbitron)'
                     }}>
                         SHaiPT
                     </h3>
