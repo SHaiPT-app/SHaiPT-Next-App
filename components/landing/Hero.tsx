@@ -9,7 +9,6 @@ export default function Hero() {
             minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            background: '#15151F',
             position: 'relative',
             overflow: 'hidden',
             fontFamily: 'sans-serif' // Ensure clean font

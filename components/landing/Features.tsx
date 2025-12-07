@@ -29,7 +29,6 @@ export default function Features() {
     return (
         <section id="features" style={{
             padding: '10rem 2rem',
-            background: '#15151F',
             position: 'relative',
             overflow: 'hidden'
         }}>
