@@ -69,18 +69,6 @@ export default function Hero() {
                 position: 'relative',
                 zIndex: 1
             }}>
-                <div style={{
-                    background: 'rgba(242, 95, 41, 0.1)',
-                    color: '#F25F29',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '50px',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    marginBottom: '2rem',
-                    border: '1px solid rgba(242, 95, 41, 0.2)'
-                }}>
-                    ✨ The Future of Personal Training is Here
-                </div>
 
                 <h1 style={{
                     fontSize: 'clamp(3rem, 7vw, 5.5rem)',
@@ -94,18 +82,29 @@ export default function Hero() {
                     Unlock Your Potential with <span style={{ color: '#F25F29' }}>AI Coaching</span>
                 </h1>
 
-                <p style={{
-                    fontSize: '1.25rem',
-                    color: '#aaa',
-                    maxWidth: '600px',
+                <div style={{
+                    background: 'rgba(21, 21, 31, 0.8)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '2rem 2.5rem',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
                     marginBottom: '2.5rem',
-                    lineHeight: '1.6'
+                    maxWidth: '700px',
+                    display: 'inline-block'
                 }}>
-                    Form correction, diet planning, and workout scheduling—all powered by advanced AI. Experience the 1% edge.
-                </p>
+                    <p style={{
+                        fontSize: '1.25rem',
+                        color: '#ccc',
+                        lineHeight: '1.6',
+                        margin: '0'
+                    }}>
+                        Form correction, diet planning, and workout scheduling—all powered by advanced AI. Experience the 1% edge.
+                    </p>
+                </div>
 
                 {/* CTAs */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                     <Link href="/login" style={{
                         background: '#F25F29',
                         color: 'white',
@@ -118,18 +117,6 @@ export default function Hero() {
                         transition: 'transform 0.2s'
                     }}>
                         Get Started Free
-                    </Link>
-                    <Link href="#demo" style={{
-                        background: 'transparent',
-                        color: 'white',
-                        padding: '1rem 2.5rem',
-                        borderRadius: '50px',
-                        fontSize: '1.1rem',
-                        fontWeight: '600',
-                        textDecoration: 'none',
-                        border: '1px solid rgba(255,255,255,0.2)'
-                    }}>
-                        View Demo
                     </Link>
                 </div>
 

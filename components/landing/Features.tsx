@@ -34,23 +34,34 @@ export default function Features() {
         }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 <div style={{ textAlign: 'center', marginBottom: '8rem' }}>
-                    <h2 style={{
-                        fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-                        fontWeight: '800',
-                        color: '#fff',
-                        marginBottom: '1rem',
-                        letterSpacing: '-0.02em'
+                    <div style={{
+                        background: 'rgba(21, 21, 31, 0.7)',
+                        backdropFilter: 'blur(10px)',
+                        padding: '3rem 2rem',
+                        borderRadius: '20px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                        display: 'inline-block',
+                        maxWidth: '800px'
                     }}>
-                        Power in Your Pocket
-                    </h2>
-                    <p style={{
-                        fontSize: '1.2rem',
-                        color: '#888',
-                        maxWidth: '600px',
-                        margin: '0 auto'
-                    }}>
-                        The only fitness app you'll ever need.
-                    </p>
+                        <h2 style={{
+                            fontSize: 'clamp(2.5rem, 6vw, 4rem)',
+                            fontWeight: '800',
+                            color: '#fff',
+                            marginBottom: '1rem',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            Power in Your Pocket
+                        </h2>
+                        <p style={{
+                            fontSize: '1.2rem',
+                            color: '#ccc',
+                            maxWidth: '600px',
+                            margin: '0 auto'
+                        }}>
+                            The only fitness app you'll ever need.
+                        </p>
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8rem' }}>
@@ -66,34 +77,43 @@ export default function Features() {
 
                             {/* Text Side */}
                             <div style={{ flex: '1', minWidth: '320px', padding: '1rem' }}>
-                                <h3 style={{
-                                    fontSize: 'clamp(2rem, 3vw, 2.5rem)',
-                                    fontWeight: '700',
-                                    color: '#fff',
-                                    marginBottom: '1.5rem',
-                                    lineHeight: '1.2'
+                                <div style={{
+                                    background: 'rgba(21, 21, 31, 0.8)',
+                                    backdropFilter: 'blur(10px)',
+                                    padding: '2.5rem',
+                                    borderRadius: '16px',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
                                 }}>
-                                    {feature.title}
-                                </h3>
-                                <p style={{
-                                    fontSize: '1.1rem',
-                                    color: '#aaa',
-                                    lineHeight: '1.8',
-                                    marginBottom: '2rem'
-                                }}>
-                                    {feature.description}
-                                </p>
-                                {/* Bullets */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {feature.bullets.map((bullet, i) => (
-                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#ddd' }}>
-                                            <span style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                width: '24px', height: '24px', borderRadius: '50%', background: '#F25F29', color: '#fff', fontSize: '0.8rem'
-                                            }}>✓</span>
-                                            {bullet}
-                                        </div>
-                                    ))}
+                                    <h3 style={{
+                                        fontSize: 'clamp(2rem, 3vw, 2.5rem)',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        marginBottom: '1.5rem',
+                                        lineHeight: '1.2'
+                                    }}>
+                                        {feature.title}
+                                    </h3>
+                                    <p style={{
+                                        fontSize: '1.1rem',
+                                        color: '#ccc',
+                                        lineHeight: '1.8',
+                                        marginBottom: '2rem'
+                                    }}>
+                                        {feature.description}
+                                    </p>
+                                    {/* Bullets */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {feature.bullets.map((bullet, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#ddd' }}>
+                                                <span style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: '24px', height: '24px', borderRadius: '50%', background: '#F25F29', color: '#fff', fontSize: '0.8rem'
+                                                }}>✓</span>
+                                                {bullet}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
