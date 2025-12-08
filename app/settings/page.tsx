@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/supabaseDb';
 import type { Profile } from '@/lib/types';
+import { Check } from 'lucide-react';
 
 export default function SettingsPage() {
     const router = useRouter();
     const [user, setUser] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     // Settings state
     const [workoutPrivacy, setWorkoutPrivacy] = useState<'public' | 'followers' | 'private'>('public');
@@ -59,7 +61,9 @@ export default function SettingsPage() {
             localStorage.setItem('user', JSON.stringify(updatedUser));
             setUser(updatedUser);
 
-            alert('Settings saved successfully!');
+            // Show success notification
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 3000);
         } catch (error) {
             console.error('Error saving settings:', error);
             alert('Failed to save settings');
@@ -221,6 +225,29 @@ export default function SettingsPage() {
             >
                 {saving ? 'Saving...' : 'Save Settings'}
             </button>
+
+            {/* Success Toast */}
+            {showSuccess && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '2rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(16, 185, 129, 0.9)', // Green success color
+                    color: 'white',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '50px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    zIndex: 2000,
+                    animation: 'fadeIn 0.3s ease-out'
+                }}>
+                    <Check size={18} />
+                    <span style={{ fontWeight: '500' }}>Settings saved successfully!</span>
+                </div>
+            )}
         </div>
     );
 }

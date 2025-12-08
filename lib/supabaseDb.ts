@@ -298,6 +298,14 @@ export const db = {
             return data || [];
         },
 
+        deleteByPlan: async (planId: string): Promise<void> => {
+            const { error } = await supabase
+                .from('training_plan_sessions')
+                .delete()
+                .eq('plan_id', planId);
+            if (error) throw error;
+        },
+
         delete: async (id: string): Promise<void> => {
             const { error } = await supabase
                 .from('training_plan_sessions')
@@ -554,6 +562,17 @@ export const db = {
             const { data, error } = await supabase
                 .from('personal_records')
                 .insert([record])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<PersonalRecord>): Promise<PersonalRecord> => {
+            const { data, error } = await supabase
+                .from('personal_records')
+                .update(updates)
+                .eq('id', id)
                 .select()
                 .single();
             if (error) throw error;

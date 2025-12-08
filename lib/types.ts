@@ -69,12 +69,17 @@ export interface CoachingRelationship {
 // WORKOUT & TRAINING TYPES
 // ============================================
 
+// Individual set configuration
+export interface SessionSet {
+    reps: string; // e.g. "10", "8-12", "AMRAP"
+    weight?: string; // e.g. "135", "BW"
+    rest_seconds?: number;
+}
+
 // Individual exercise in a workout session (JSONB structure)
 export interface SessionExercise {
     exercise_id: string; // Reference to exercises table
-    sets: number; // Target number of sets
-    reps: string; // Target reps (e.g., "8-12", "AMRAP", "20")
-    rest_seconds: number; // Prescribed rest between sets
+    sets: SessionSet[]; // List of specific sets
     notes?: string; // Optional exercise-specific notes
 }
 

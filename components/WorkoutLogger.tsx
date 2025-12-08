@@ -10,25 +10,44 @@ interface WorkoutLoggerProps {
 }
 
 export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps) {
+    const [viewMode, setViewMode] = useState<'plans' | 'workouts'>('plans');
     const [step, setStep] = useState<'selectPlan' | 'selectSession' | 'active'>('selectPlan');
     const [plans, setPlans] = useState<TrainingPlan[]>([]);
     const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
     const [planSessions, setPlanSessions] = useState<(TrainingPlanSession & { session?: WorkoutSession })[]>([]);
     const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(null);
+    const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadTrainingPlans();
-    }, [userId]);
+        if (viewMode === 'plans') {
+            loadTrainingPlans();
+        } else {
+            loadWorkoutSessions();
+        }
+    }, [userId, viewMode]);
 
     const loadTrainingPlans = async () => {
         if (!userId) return;
-
+        setLoading(true);
         try {
             const data = await db.trainingPlans.getByCreator(userId);
             setPlans(data);
         } catch (error) {
             console.error('Error loading training plans:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadWorkoutSessions = async () => {
+        if (!userId) return;
+        setLoading(true);
+        try {
+            const data = await db.workoutSessions.getByCreator(userId);
+            setWorkoutSessions(data);
+        } catch (error) {
+            console.error('Error loading workout sessions:', error);
         } finally {
             setLoading(false);
         }
@@ -51,7 +70,7 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
             );
 
             // Filter out any with null sessions
-            setPlanSessions(sessionsWithDetails.filter(ps => ps.session !== null));
+            setPlanSessions(sessionsWithDetails.filter(ps => ps.session !== null) as (TrainingPlanSession & { session: WorkoutSession })[]);
             setStep('selectSession');
         } catch (error) {
             console.error('Error loading plan sessions:', error);
@@ -67,13 +86,22 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
         }
     };
 
+    const handleSelectDirectSession = (session: WorkoutSession) => {
+        setSelectedSession(session);
+        setStep('active');
+    };
+
     const handleBack = () => {
         if (step === 'selectSession') {
-            setStep('selectPlan');
+            setStep('selectPlan'); // Go back to main selection view
             setSelectedPlan(null);
             setPlanSessions([]);
         } else if (step === 'active') {
-            setStep('selectSession');
+            if (selectedPlan) {
+                setStep('selectSession'); // If came from plan, go back to plan sessions
+            } else {
+                setStep('selectPlan'); // If came from direct workout, go back to main selection
+            }
             setSelectedSession(null);
         }
     };
@@ -81,66 +109,157 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
     if (step === 'selectPlan') {
         return (
             <div>
-                <h2 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '1.25rem',
-                    marginBottom: '1.5rem'
-                }}>
-                    Select Training Plan
-                </h2>
+                {/* Selection View Header with Tabs */}
+                <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <h2 style={{ fontFamily: 'var(--font-orbitron)', fontSize: '1.25rem', margin: 0 }}>
+                        Start Workout
+                    </h2>
+
+                    <div style={{
+                        display: 'flex',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '8px',
+                        padding: '2px'
+                    }}>
+                        <button
+                            onClick={() => setViewMode('plans')}
+                            style={{
+                                padding: '0.25rem 0.75rem',
+                                background: viewMode === 'plans' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                                border: 'none',
+                                borderRadius: '6px',
+                                color: viewMode === 'plans' ? 'white' : '#888',
+                                fontSize: '0.85rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Plans
+                        </button>
+                        <button
+                            onClick={() => setViewMode('workouts')}
+                            style={{
+                                padding: '0.25rem 0.75rem',
+                                background: viewMode === 'workouts' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                                border: 'none',
+                                borderRadius: '6px',
+                                color: viewMode === 'workouts' ? 'white' : '#888',
+                                fontSize: '0.85rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Workouts
+                        </button>
+                    </div>
+                </div>
 
                 {loading ? (
                     <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
-                        Loading plans...
-                    </div>
-                ) : plans.length === 0 ? (
-                    <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
-                        <p style={{ color: '#888', marginBottom: '1rem' }}>No training plans found</p>
-                        <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                            Create a training plan in your Library first
-                        </p>
+                        Loading...
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                        {plans.map(plan => (
-                            <button
-                                key={plan.id}
-                                onClick={() => handleSelectPlan(plan)}
-                                className="glass-panel"
-                                style={{
-                                    padding: '1.5rem',
-                                    cursor: 'pointer',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <h3 style={{ fontWeight: '600', marginBottom: '0.5rem', color: 'var(--foreground)' }}>
-                                    {plan.name}
-                                </h3>
-                                {plan.description && (
-                                    <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
-                                        {plan.description}
+                    <>
+                        {viewMode === 'plans' ? (
+                            plans.length === 0 ? (
+                                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
+                                    <p style={{ color: '#888', marginBottom: '1rem' }}>No training plans found</p>
+                                    <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                                        Create a training plan in your Library first
                                     </p>
-                                )}
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginTop: '0.75rem'
-                                }}>
-                                    <span style={{ color: '#888', fontSize: '0.85rem' }}>
-                                        {plan.duration_weeks} weeks
-                                    </span>
-                                    <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: '600' }}>
-                                        View Sessions →
-                                    </span>
                                 </div>
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
+                            ) : (
+                                <div style={{ display: 'grid', gap: '1rem' }}>
+                                    {plans.map(plan => (
+                                        <div
+                                            key={plan.id}
+                                            onClick={() => handleSelectPlan(plan)}
+                                            className="glass-panel"
+                                            style={{
+                                                padding: '1.5rem',
+                                                cursor: 'pointer',
+                                                border: 'none',
+                                                textAlign: 'left',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <h3 style={{ fontWeight: '600', marginBottom: '0.5rem', color: 'var(--foreground)' }}>
+                                                {plan.name}
+                                            </h3>
+                                            {plan.description && (
+                                                <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+                                                    {plan.description}
+                                                </p>
+                                            )}
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                marginTop: '0.75rem'
+                                            }}>
+                                                <span style={{ color: '#888', fontSize: '0.85rem' }}>
+                                                    {plan.duration_weeks} weeks
+                                                </span>
+                                                <button className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+                                                    View Sessions
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )
+                        ) : (
+                            // Workouts List View
+                            workoutSessions.length === 0 ? (
+                                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
+                                    <p style={{ color: '#888', marginBottom: '1rem' }}>No individual workouts found</p>
+                                    <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                                        Create a workout session in your Library first
+                                    </p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'grid', gap: '1rem' }}>
+                                    {workoutSessions.map(session => (
+                                        <div
+                                            key={session.id}
+                                            onClick={() => handleSelectDirectSession(session)}
+                                            className="glass-panel"
+                                            style={{
+                                                padding: '1.5rem',
+                                                cursor: 'pointer',
+                                                border: 'none',
+                                                textAlign: 'left',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <h3 style={{ fontWeight: '600', marginBottom: '0.5rem', color: 'var(--foreground)' }}>
+                                                {session.name}
+                                            </h3>
+                                            {session.description && (
+                                                <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+                                                    {session.description}
+                                                </p>
+                                            )}
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                marginTop: '0.75rem'
+                                            }}>
+                                                <span style={{ color: '#888', fontSize: '0.85rem' }}>
+                                                    {session.exercises?.length || 0} exercises
+                                                </span>
+                                                <button className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+                                                    Start Workout
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )
+                        )}
+                    </>
+                )
+                }
+            </div >
         );
     }
 
@@ -180,7 +299,7 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
                 ) : (
                     <div style={{ display: 'grid', gap: '1rem' }}>
                         {planSessions.map(ps => (
-                            <button
+                            <div
                                 key={ps.id}
                                 onClick={() => handleSelectSession(ps)}
                                 className="glass-panel"
@@ -212,15 +331,20 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
                                         {ps.session.description}
                                     </p>
                                 )}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginTop: '0.75rem'
+                                }}>
                                     <span style={{ color: '#888', fontSize: '0.85rem' }}>
                                         {ps.session?.exercises?.length || 0} exercises
                                     </span>
-                                    <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: '600' }}>
-                                        Start →
-                                    </span>
+                                    <button className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+                                        Start Workout
+                                    </button>
                                 </div>
-                            </button>
+                            </div>
                         ))}
                     </div>
                 )}
@@ -320,8 +444,12 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
     const handleAddSet = async (weight: number, reps: number) => {
         if (!workoutLogId || !sessionExercise) return;
 
+        const currentSetIndex = currentSets.length;
+        // Get target set info from the session plan
+        const targetSet = sessionExercise.sets[currentSetIndex] || sessionExercise.sets[sessionExercise.sets.length - 1];
+
         const newSet: LoggedSet = {
-            set_number: currentSets.length + 1,
+            set_number: currentSetIndex + 1,
             weight,
             reps,
             weight_unit: 'lbs',
@@ -351,9 +479,10 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
             await db.exerciseLogs.update(exerciseLog.id, { sets: updatedSets });
         }
 
-        // Start rest timer
-        if (sessionExercise.rest_seconds && currentSets.length < sessionExercise.sets) {
-            startRest(sessionExercise.rest_seconds);
+        // Start rest timer if applicable
+        const restSeconds = targetSet?.rest_seconds || 60;
+        if (currentSets.length < sessionExercise.sets.length) {
+            startRest(restSeconds);
         }
     };
 
@@ -406,7 +535,9 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
                 if (!maxWeightSet) continue;
 
                 // Get previous PRs for this exercise
-                const existingPRs = await db.personalRecords.getByUserAndExercise(userId, exerciseId);
+                const existingPRs = await db.personalRecords.getByExercise(userId, exerciseId);
+
+                // Check if this is a new PR
 
                 // Check if this is a new PR
                 const isPR = existingPRs.length === 0 ||
@@ -528,12 +659,13 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
 
                 {/* GIF Container */}
                 <div style={{
-                    width: '100%',
+                    width: '60%',
+                    maxWidth: '400px',
+                    margin: '0 auto 1rem auto',
                     aspectRatio: '16/9',
                     background: 'rgba(0, 0, 0, 0.3)',
                     borderRadius: '12px',
                     overflow: 'hidden',
-                    marginBottom: '1rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -553,7 +685,6 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
                     )}
                 </div>
 
-                {/* Target Sets/Reps */}
                 <div style={{
                     display: 'flex',
                     gap: '1rem',
@@ -561,7 +692,8 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
                     marginBottom: '0.5rem'
                 }}>
                     <span style={{ color: '#888' }}>
-                        Target: {sessionExercise.sets} sets × {sessionExercise.reps} reps
+                        Target: {sessionExercise.sets.length} sets
+                        {sessionExercise.sets.length > 0 && ` × ${sessionExercise.sets[0].reps} reps`}
                     </span>
                 </div>
             </div>
@@ -618,16 +750,25 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
             )}
 
             {/* Add Set Form */}
-            <SetEntryForm
-                onAddSet={handleAddSet}
-                disabled={isResting}
-                setNumber={currentSets.length + 1}
-                totalSets={sessionExercise.sets}
-            />
+            {(() => {
+                const currentSetIndex = currentSets.length;
+                const targetSet = sessionExercise.sets[currentSetIndex] || sessionExercise.sets[sessionExercise.sets.length - 1];
+
+                return (
+                    <SetEntryForm
+                        onAddSet={handleAddSet}
+                        disabled={isResting}
+                        setNumber={currentSets.length + 1}
+                        totalSets={sessionExercise.sets.length}
+                        targetWeight={targetSet?.weight ? Number(targetSet.weight) : undefined}
+                        targetReps={targetSet?.reps ? Number(targetSet.reps) : undefined}
+                    />
+                );
+            })()}
 
             {/* Navigation */}
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                {currentSets.length >= sessionExercise.sets && (
+                {currentSets.length >= sessionExercise.sets.length && (
                     <button
                         onClick={handleNextExercise}
                         className="btn-primary"
@@ -650,11 +791,19 @@ interface SetEntryFormProps {
     disabled?: boolean;
     setNumber: number;
     totalSets: number;
+    targetWeight?: number;
+    targetReps?: number;
 }
 
-function SetEntryForm({ onAddSet, disabled, setNumber, totalSets }: SetEntryFormProps) {
-    const [weight, setWeight] = useState('');
-    const [reps, setReps] = useState('');
+function SetEntryForm({ onAddSet, disabled, setNumber, totalSets, targetWeight, targetReps }: SetEntryFormProps) {
+    const [weight, setWeight] = useState(targetWeight?.toString() || '');
+    const [reps, setReps] = useState(targetReps?.toString() || '');
+
+    // Update form when set changes
+    useEffect(() => {
+        setWeight(targetWeight?.toString() || '');
+        setReps(targetReps?.toString() || '');
+    }, [setNumber, targetWeight, targetReps]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

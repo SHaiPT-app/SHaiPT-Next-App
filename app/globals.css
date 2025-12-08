@@ -136,7 +136,7 @@ a {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: var(--primary) !important;
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
