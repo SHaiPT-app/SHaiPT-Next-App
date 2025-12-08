@@ -7,9 +7,8 @@ import { db } from '@/lib/supabaseDb';
 
 export default function LoginForm() {
     const [isLogin, setIsLogin] = useState(true);
-    const [role, setRole] = useState<'trainer' | 'trainee'>('trainee');
-    const [identifier, setIdentifier] = useState(''); // Can be email or username
-    const [username, setUsername] = useState('');
+    const [identifier, setIdentifier] = useState(''); // Can be email or username for login
+    const [username, setUsername] = useState(''); // For signup only
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -181,18 +180,17 @@ export default function LoginForm() {
                         id: data.user.id,
                         username: data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'user',
                         email: data.user.email || '',
-                        role: data.user.user_metadata?.role || 'trainee',
-                        display_name: data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'user'
+                        full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'User'
                     });
 
                     localStorage.setItem('user', JSON.stringify(newProfile));
-                    router.push('/dashboard');
+                    router.push('/home');
                     return;
                 }
 
                 // Save complete user info and redirect
                 localStorage.setItem('user', JSON.stringify(profile));
-                router.push('/dashboard');
+                router.push('/home');
             } else {
                 // Signup flow
                 const email = identifier; // For signup, identifier is always email
@@ -300,7 +298,7 @@ export default function LoginForm() {
                     options: {
                         data: {
                             username: username,
-                            role: role
+                            full_name: username
                         }
                     }
                 });
@@ -337,15 +335,14 @@ export default function LoginForm() {
                             id: data.user.id,
                             username: username,
                             email: email,
-                            role: role,
-                            display_name: username
+                            full_name: username
                         });
 
                         console.log('Profile created:', profile);
 
                         // Save user info and redirect
                         localStorage.setItem('user', JSON.stringify(profile));
-                        router.push('/dashboard');
+                        router.push('/home');
                     } catch (profileError: any) {
                         console.error('Profile creation error:', profileError);
                         setError(`Profile creation failed: ${profileError.message}`);
@@ -381,43 +378,6 @@ export default function LoginForm() {
             <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
                 {isLogin ? 'Welcome Back' : 'Create Account'}
             </h2>
-
-            {!isLogin && (
-                <div style={{ display: 'flex', marginBottom: '1.5rem', background: 'var(--secondary)', borderRadius: '8px', padding: '4px' }}>
-                    <button
-                        type="button"
-                        onClick={() => setRole('trainee')}
-                        style={{
-                            flex: 1,
-                            padding: '0.5rem',
-                            border: 'none',
-                            background: role === 'trainee' ? 'var(--primary)' : 'transparent',
-                            color: role === 'trainee' ? 'white' : 'var(--foreground)',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        Trainee
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setRole('trainer')}
-                        style={{
-                            flex: 1,
-                            padding: '0.5rem',
-                            border: 'none',
-                            background: role === 'trainer' ? 'var(--primary)' : 'transparent',
-                            color: role === 'trainer' ? 'white' : 'var(--foreground)',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        Trainer
-                    </button>
-                </div>
-            )}
 
             <form onSubmit={handleSubmit}>
                 <input
