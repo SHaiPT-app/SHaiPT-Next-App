@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
 import PillNav from '@/components/PillNav';
+import { User, Mail, Settings } from 'lucide-react';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -86,40 +87,121 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     pillColor="rgba(255, 255, 255, 0.9)"
                     hoveredPillTextColor="#fff"
                     pillTextColor="#000"
+                    initialLoadAnimation={false}
                 />
 
-                {/* Settings button positioned absolutely to the right */}
-                <button
-                    onClick={() => router.push('/settings')}
-                    style={{
-                        position: 'absolute',
-                        right: '1rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '8px',
-                        padding: '0.75rem 1rem',
-                        color: 'var(--foreground)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.9rem',
-                        transition: 'all 0.2s',
-                        height: '42px'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                    }}
-                >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6m5.66-13L14 9m-4 6-3.66 3.66M23 12h-6m-6 0H1m16.66 5.66L14 15m-4-6L6.34 5.66"></path>
-                    </svg>
-                    Settings
-                </button>
+                {/* Left Group: Profile & DM */}
+                <div style={{
+                    position: 'absolute',
+                    left: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    height: '100%'
+                }}>
+                    {/* Profile Button */}
+                    <button
+                        onClick={() => router.push('/profile')}
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '50%',
+                            width: '42px',
+                            height: '42px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--foreground)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                    >
+                        <User size={20} />
+                    </button>
+
+                    {/* DM Button */}
+                    <button
+                        onClick={() => router.push('/dms')}
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '50%',
+                            width: '42px',
+                            height: '42px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--foreground)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                    >
+                        <Mail size={20} />
+                    </button>
+                </div>
+
+                {/* Right Group: Settings & Logout */}
+                <div style={{
+                    position: 'absolute',
+                    right: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    height: '100%'
+                }}>
+                    {/* Settings Button (Icon Only) */}
+                    <button
+                        onClick={() => router.push('/settings')}
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '50%',
+                            width: '42px',
+                            height: '42px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--foreground)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                    >
+                        <Settings size={20} />
+                    </button>
+
+                    {/* Logout Button */}
+                    <button
+                        onClick={async () => {
+                            await supabase.auth.signOut();
+                            router.push('/');
+                        }}
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '8px',
+                            padding: '0 1rem',
+                            height: '42px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--foreground)',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            fontWeight: 500,
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                    >
+                        Log Out
+                    </button>
+                </div>
             </header>
 
             {/* Main Content Area */}
