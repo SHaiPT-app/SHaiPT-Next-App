@@ -49,6 +49,12 @@ export default function LoginForm() {
     const handleResendEmail = async () => {
         if (resendCooldown > 0) return;
 
+        // Ensure identifier is an email
+        if (!identifier.includes('@')) {
+            setError('Please enter your email address to resend confirmation.');
+            return;
+        }
+
         try {
             const { error } = await supabase.auth.resend({
                 type: 'signup',
@@ -532,54 +538,59 @@ export default function LoginForm() {
                     </>
                 )}
 
-                {error && (
-                    <div style={{
-                        color: typeof error === 'string' && error.includes('check your email') ? 'var(--success)' : 'var(--error)',
-                        marginBottom: '1rem',
-                        fontSize: '0.875rem',
-                        background: typeof error === 'string' && error.includes('check your email') ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
-                        padding: '1rem',
-                        borderRadius: '8px',
-                        border: `1px solid ${typeof error === 'string' && error.includes('check your email') ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)'}`,
-                        textAlign: 'center'
-                    }}>
-                        {typeof error === 'string' && error.includes('check your email') ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                <span style={{ fontWeight: 'bold' }}>Account Created!</span>
-                                <span>Please check your email to confirm your account.</span>
-                            </div>
-                        ) : (
-                            error
-                        )}
+                {error && (() => {
+                    const errorMsg = typeof error === 'string' ? error : '';
+                    const isSuccessMessage = errorMsg.includes('check your email') || errorMsg.includes('check your inbox');
 
-                        {typeof error === 'string' && error.includes('check your email') && (
-                            <button
-                                type="button"
-                                onClick={handleResendEmail}
-                                disabled={resendCooldown > 0}
-                                style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginTop: '1rem',
-                                    background: 'var(--primary)',
-                                    border: 'none',
-                                    color: 'white',
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '6px',
-                                    cursor: resendCooldown > 0 ? 'default' : 'pointer',
-                                    opacity: resendCooldown > 0 ? 0.7 : 1,
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500',
-                                    width: '100%'
-                                }}
-                            >
-                                {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'Resend Confirmation Email'}
-                            </button>
-                        )}
-                    </div>
-                )}
+                    return (
+                        <div style={{
+                            color: isSuccessMessage ? 'var(--success)' : 'var(--error)',
+                            marginBottom: '1rem',
+                            fontSize: '0.875rem',
+                            background: isSuccessMessage ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
+                            padding: '1rem',
+                            borderRadius: '8px',
+                            border: `1px solid ${isSuccessMessage ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)'}`,
+                            textAlign: 'center'
+                        }}>
+                            {isSuccessMessage ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                    <span style={{ fontWeight: 'bold' }}>{errorMsg.includes('resent') ? 'Email Resent!' : 'Account Created!'}</span>
+                                    <span>{errorMsg}</span>
+                                </div>
+                            ) : (
+                                error
+                            )}
+
+                            {isSuccessMessage && (
+                                <button
+                                    type="button"
+                                    onClick={handleResendEmail}
+                                    disabled={resendCooldown > 0}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginTop: '1rem',
+                                        background: 'var(--primary)',
+                                        border: 'none',
+                                        color: 'white',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '6px',
+                                        cursor: resendCooldown > 0 ? 'default' : 'pointer',
+                                        opacity: resendCooldown > 0 ? 0.7 : 1,
+                                        fontSize: '0.875rem',
+                                        fontWeight: '500',
+                                        width: '100%'
+                                    }}
+                                >
+                                    {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'Resend Confirmation Email'}
+                                </button>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 <button
                     type="submit"
