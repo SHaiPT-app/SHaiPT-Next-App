@@ -372,3 +372,39 @@ export interface LibraryItem {
     created_at?: string;
     updated_at?: string;
 }
+
+// ============================================
+// ANALYTICS TYPES
+// ============================================
+
+export interface UserStats {
+    user_id: string;
+    total_workouts: number;
+    total_sets: number;
+    total_reps: number;
+    total_volume_kg: number;
+    total_workout_minutes: number;
+    current_streak_days: number;
+    longest_streak_days: number;
+    last_workout_date: string; // date string
+    muscle_group_volumes: Record<string, { volume: number; sets: number }>;
+    muscle_group_sets: Record<string, number>;
+    last_30_days_volume: number;
+    last_7_days_workouts: number;
+    last_calculated_at: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface UserStatsHistory {
+    id: string;
+    user_id: string;
+    date: string; // date string
+    total_volume_kg: number;
+    total_sets: number;
+    total_reps: number;
+    total_workouts: number;
+    workout_minutes: number;
+    muscle_group_volumes: Record<string, { volume: number; sets: number }>;
+    created_at: string;
+}

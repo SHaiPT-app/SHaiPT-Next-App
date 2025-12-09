@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import MagicBento from '@/components/MagicBento';
+import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import { db } from '@/lib/supabaseDb';
 import type { Profile, WorkoutSession, TrainingPlanAssignment, Exercise } from '@/lib/types';
 
@@ -433,13 +435,12 @@ function WorkoutLoggerTab({ userId }: { userId: string }) {
 // ANALYTICS VIEW
 // ============================================
 
+// ============================================
+
 function AnalyticsView({ userId }: { userId: string }) {
     return (
-        <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
-            <h2 style={{ fontFamily: 'var(--font-orbitron)', marginBottom: '1rem' }}>Analytics</h2>
-            <p style={{ color: '#888' }}>
-                Your workout stats and progress charts coming soon...
-            </p>
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <AnalyticsDashboard userId={userId} />
         </div>
     );
 }

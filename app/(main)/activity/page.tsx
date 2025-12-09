@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/supabaseDb';
-import type { ActivityPost, Profile, WorkoutLog, PostComment, Exercise } from '@/lib/types';
+import type { ActivityPost, Profile, WorkoutLog, PostComment } from '@/lib/types';
 
 interface ActivityPostWithDetails extends ActivityPost {
     user?: Profile;
