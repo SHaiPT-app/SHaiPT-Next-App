@@ -438,9 +438,5 @@ function WorkoutLoggerTab({ userId }: { userId: string }) {
 // ============================================
 
 function AnalyticsView({ userId }: { userId: string }) {
-    return (
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <AnalyticsDashboard userId={userId} />
-        </div>
-    );
+    return <AnalyticsDashboard userId={userId} />;
 }

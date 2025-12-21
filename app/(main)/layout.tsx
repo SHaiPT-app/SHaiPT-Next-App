@@ -84,9 +84,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     ]}
                     activeHref={pathname}
                     baseColor="#F25F29"
-                    pillColor="rgba(255, 255, 255, 0.9)"
-                    hoveredPillTextColor="#fff"
-                    pillTextColor="#000"
+                    pillColor="#F25F29"
+                    hoveredPillTextColor="#000"
+                    pillTextColor="#fff"
                     initialLoadAnimation={false}
                 />
 

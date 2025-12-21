@@ -78,8 +78,8 @@ export default function ActivityPage() {
 
                     return {
                         ...post,
-                        user: postUser,
-                        workout_log: workout,
+                        user: postUser || undefined,
+                        workout_log: workout || undefined,
                         likes_count: likes.length,
                         comments_count: comments.length,
                         is_liked: likes.some(like => like.user_id === user.id),
@@ -345,7 +345,7 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
                             </div>
                             <div>
                                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
-                                    {post.workout_log.exercise_logs?.reduce((sum, log) => sum + (log.total_sets || 0), 0) || 0}
+                                    {post.workout_log.exercise_logs?.reduce((sum, log) => sum + (log.sets?.length || log.total_sets || 0), 0) || 0}
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: '#888' }}>Sets</div>
                             </div>

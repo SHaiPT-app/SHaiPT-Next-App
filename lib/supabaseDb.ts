@@ -182,6 +182,29 @@ export const db = {
         },
 
         delete: async (id: string): Promise<void> => {
+            // 1. Unlink from workout logs (preserve history)
+            const { error: logsError } = await supabase
+                .from('workout_logs')
+                .update({ session_id: null })
+                .eq('session_id', id);
+            if (logsError) throw logsError;
+
+            // 2. Delete related training plan sessions
+            const { error: sessionError } = await supabase
+                .from('training_plan_sessions')
+                .delete()
+                .eq('session_id', id);
+            if (sessionError) throw sessionError;
+
+            // 3. Delete from user favorites
+            const { error: favError } = await supabase
+                .from('user_favorites')
+                .delete()
+                .eq('item_id', id)
+                .eq('item_type', 'session');
+            if (favError) throw favError;
+
+            // 4. Finally delete the session
             const { error } = await supabase
                 .from('workout_sessions')
                 .delete()
@@ -256,6 +279,36 @@ export const db = {
         },
 
         delete: async (id: string): Promise<void> => {
+            // 1. Unlink from profiles (pinned plans)
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .update({ pinned_plan_id: null })
+                .eq('pinned_plan_id', id);
+            if (profileError) throw profileError;
+
+            // 2. Delete related training plan sessions
+            const { error: sessionError } = await supabase
+                .from('training_plan_sessions')
+                .delete()
+                .eq('plan_id', id);
+            if (sessionError) throw sessionError;
+
+            // Delete plan assignments
+            const { error: assignError } = await supabase
+                .from('training_plan_assignments')
+                .delete()
+                .eq('plan_id', id);
+            if (assignError) throw assignError;
+
+            // Delete from user favorites
+            const { error: favError } = await supabase
+                .from('user_favorites')
+                .delete()
+                .eq('item_id', id)
+                .eq('item_type', 'plan');
+            if (favError) throw favError;
+
+            // Finally delete the plan
             const { error } = await supabase
                 .from('training_plans')
                 .delete()
@@ -404,7 +457,7 @@ export const db = {
         getById: async (id: string): Promise<WorkoutLog | null> => {
             const { data, error } = await supabase
                 .from('workout_logs')
-                .select('*')
+                .select('*, exercise_logs(*)')
                 .eq('id', id)
                 .single();
             if (error && error.code !== 'PGRST116') throw error;

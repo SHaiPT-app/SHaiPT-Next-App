@@ -10,6 +10,7 @@ export interface Profile {
     id: string; // uuid, NOT NULL
     email: string; // text, NOT NULL
     username?: string; // text, nullable (ordinal 18)
+    role?: 'trainer' | 'trainee'; // varchar, nullable
     full_name?: string; // text, nullable
     avatar_url?: string; // text, nullable
     bio?: string; // text, nullable
