@@ -75,7 +75,7 @@ export default function NewPlanPage() {
                 if (plan) {
                     setPlanName(plan.name);
                     setDescription(plan.description || '');
-                    setDurationWeeks(plan.duration_weeks);
+                    setDurationWeeks(plan.duration_weeks || 4);
 
                     // Parse tags for schedule type
                     // Tags like "schedule:weekly", "kind:weekly", etc.
@@ -214,9 +214,16 @@ export default function NewPlanPage() {
             }
 
             router.push('/home');
-        } catch (error) {
-            console.error('Error saving plan:', error);
-            alert('Failed to save plan. Please try again.');
+        } catch (error: any) {
+            console.error('Error saving plan full object:', error);
+            console.error('Error details:', {
+                message: error?.message,
+                code: error?.code,
+                details: error?.details,
+                hint: error?.hint,
+                status: error?.status
+            });
+            alert(`Failed to save plan: ${error?.message || 'Unknown error'}`);
         } finally {
             setLoading(false);
         }
