@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import TextType from '@/components/TextType';
 
 export default function Hero() {
     return (
@@ -9,157 +10,180 @@ export default function Hero() {
             minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#15151F',
-            padding: '2rem 1rem',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            fontFamily: 'sans-serif' // Ensure clean font
         }}>
-            {/* Animated gradient orbs */}
+            {/* Background Gradients */}
             <div style={{
                 position: 'absolute',
-                top: '-10%',
-                right: '-10%',
-                width: '600px',
-                height: '600px',
-                background: 'radial-gradient(circle, rgba(242,95,41,0.15), transparent)',
-                borderRadius: '50%',
-                filter: 'blur(60px)',
-                animation: 'float 20s ease-in-out infinite'
-            }}></div>
-            <div style={{
-                position: 'absolute',
-                bottom: '-10%',
-                left: '-10%',
-                width: '500px',
-                height: '500px',
-                background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent)',
-                borderRadius: '50%',
-                filter: 'blur(60px)',
-                animation: 'float 25s ease-in-out infinite reverse'
+                top: '-20%',
+                left: '20%',
+                width: '60vw',
+                height: '60vw',
+                background: 'radial-gradient(circle, rgba(242,95,41,0.1), transparent 70%)',
+                filter: 'blur(80px)',
+                zIndex: 0
             }}></div>
 
-            <div style={{ maxWidth: '1000px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-                {/* Logo */}
-                <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
-                    <Image
-                        src="/hero_logo_transparent.png"
-                        alt="SHaiPT Logo"
-                        width={300}
-                        height={300}
-                        style={{ maxWidth: '100%', height: 'auto' }}
-                        priority
-                    />
+            {/* Navbar */}
+            <nav style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.75rem 2rem',
+                maxWidth: '1200px',
+                width: '100%',
+                margin: '1rem auto 0',
+                position: 'relative',
+                zIndex: 10,
+                background: 'rgba(21, 21, 31, 0.8)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Image src="/logo_transparent.png" alt="SHaiPT" width={40} height={40} />
+                    <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-orbitron)' }}>SHaiPT</span>
                 </div>
+                <Link href="/login" style={{
+                    cursor: 'pointer',
+                    width: '120px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875em',
+                    fontWeight: '800',
+                    letterSpacing: '1px',
+                    color: '#fff',
+                    background: '#F25F29',
+                    border: '2px solid #d44a1f',
+                    borderRadius: '.75rem',
+                    boxShadow: '0 6px 0 #d44a1f',
+                    transform: 'skew(-10deg)',
+                    transition: 'all .1s ease',
+                    textDecoration: 'none'
+                }}
+                onMouseDown={(e) => {
+                    e.currentTarget.style.letterSpacing = '0px';
+                    e.currentTarget.style.transform = 'skew(-10deg) translateY(6px)';
+                    e.currentTarget.style.boxShadow = '0 0 0 #d44a1f';
+                }}
+                onMouseUp={(e) => {
+                    e.currentTarget.style.letterSpacing = '1px';
+                    e.currentTarget.style.transform = 'skew(-10deg)';
+                    e.currentTarget.style.boxShadow = '0 6px 0 #d44a1f';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.letterSpacing = '1px';
+                    e.currentTarget.style.transform = 'skew(-10deg)';
+                    e.currentTarget.style.boxShadow = '0 6px 0 #d44a1f';
+                }}>Let's Go!</Link>
+            </nav>
 
-                {/* Brand Name */}
+            {/* Hero Content */}
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                padding: '6rem 1rem 0',
+                position: 'relative',
+                zIndex: 1
+            }}>
+
                 <h1 style={{
-                    fontSize: 'clamp(3.5rem, 8vw, 5rem)',
+                    fontSize: 'clamp(3rem, 7vw, 5.5rem)',
                     fontWeight: '900',
-                    color: '#F25F29',
+                    color: '#fff',
+                    lineHeight: '1.1',
                     marginBottom: '1.5rem',
-                    textShadow: '0 0 40px rgba(242, 95, 41, 0.6), 0 0 80px rgba(242, 95, 41, 0.4)',
-                    letterSpacing: '0.05em'
+                    maxWidth: '900px',
+                    letterSpacing: '-0.02em',
+                    fontFamily: 'var(--font-orbitron)'
                 }}>
-                    SHaiPT
+                    Let's{' '}
+                    <TextType
+                        text={['Get SHaiPT', 'Train Smart', 'Push Limits', 'Crush Goals']}
+                        as="span"
+                        typingSpeed={100}
+                        pauseDuration={5000}
+                        deletingSpeed={50}
+                        loop={true}
+                        textColors={['#F25F29']}
+                        cursorCharacter="|"
+                        showCursor={true}
+                        cursorClassName=""
+                        style={{
+                            color: '#F25F29',
+                            display: 'inline'
+                        }}
+                    />
                 </h1>
 
-                {/* Tagline */}
-                <h2 style={{
-                    fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
-                    fontWeight: '700',
-                    color: '#fff',
-                    marginBottom: '1.5rem',
-                    lineHeight: '1.2'
+                <div style={{
+                    background: 'rgba(21, 21, 31, 0.8)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '2rem 2.5rem',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                    marginBottom: '2.5rem',
+                    maxWidth: '700px',
+                    display: 'inline-block'
                 }}>
-                    Your AI Personal Trainer
-                </h2>
-
-                <p style={{
-                    fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-                    color: '#aaa',
-                    marginBottom: '3rem',
-                    maxWidth: '600px',
-                    margin: '0 auto 3rem'
-                }}>
-                    Build personalized routines, track your progress, and get AI-powered coaching to achieve your fitness goals.
-                </p>
+                    <p style={{
+                        fontSize: '1.25rem',
+                        color: '#ccc',
+                        lineHeight: '1.6',
+                        margin: '0'
+                    }}>
+                        Train with AI-powered insights and real human connections: workout planning, form checks, and progress sharing.
+                    </p>
+                </div>
 
                 {/* CTAs */}
-                <div style={{
-                    display: 'flex',
-                    gap: '1rem',
-                    justifyContent: 'center',
-                    flexWrap: 'wrap'
-                }}>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '6.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                     <Link href="/login" style={{
-                        background: 'linear-gradient(135deg, #F25F29, #d94e1b)',
+                        background: '#F25F29',
                         color: 'white',
                         padding: '1rem 2.5rem',
-                        borderRadius: '12px',
+                        borderRadius: '50px',
                         fontSize: '1.1rem',
                         fontWeight: '700',
                         textDecoration: 'none',
-                        boxShadow: '0 8px 32px rgba(242, 95, 41, 0.3)',
-                        transition: 'all 0.3s ease',
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 12px 48px rgba(242, 95, 41, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 8px 32px rgba(242, 95, 41, 0.3)';
-                        }}
-                    >
+                        boxShadow: '0 8px 24px rgba(242, 95, 41, 0.3)',
+                        transition: 'transform 0.2s'
+                    }}>
                         Get Started Free
                     </Link>
-
-                    <Link href="/login" style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        backdropFilter: 'blur(10px)',
-                        color: 'white',
-                        padding: '1rem 2.5rem',
-                        borderRadius: '12px',
-                        fontSize: '1.1rem',
-                        fontWeight: '700',
-                        textDecoration: 'none',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer'
-                    }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                        }}
-                    >
-                        Sign In
-                    </Link>
                 </div>
 
-                {/* Social Proof */}
+                {/* Hero Composite Image (Floating) */}
                 <div style={{
-                    marginTop: '4rem',
-                    color: '#888',
-                    fontSize: '0.9rem'
+                    width: '100%',
+                    maxWidth: '1100px',
+                    position: 'relative',
+                    marginBottom: '-10%' // Overlap next section slightly for depth
                 }}>
-                    ✨ Trusted by thousands of athletes worldwide
+                    <Image
+                        src="/mockups/shaipt_app_showcase_v2.png"
+                        alt="App Showcase"
+                        width={1200}
+                        height={800}
+                        style={{
+                            width: '100%',
+                            height: 'auto',
+                            filter: 'drop-shadow(0 -20px 60px rgba(0,0,0,0.5))'
+                        }}
+                    />
                 </div>
             </div>
-
-            <style jsx>{`
-                @keyframes float {
-                    0%, 100% { transform: translate(0, 0); }
-                    50% { transform: translate(50px, 50px); }
-                }
-            `}</style>
         </section>
     );
 }

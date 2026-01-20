@@ -73,24 +73,23 @@ export default function AuthCallback() {
             if (profile) {
                 // User exists, redirect to dashboard
                 localStorage.setItem('user', JSON.stringify(profile));
-                router.push('/dashboard');
+                router.push('/home');
             } else {
                 // Check if we have metadata from signup (email flow)
-                const { username, role } = session.user.user_metadata || {};
+                const { username } = session.user.user_metadata || {};
 
-                if (username && role) {
+                if (username) {
                     console.log('Found metadata from signup, creating profile automatically...');
                     try {
                         const newProfile = await db.profiles.create({
                             id: session.user.id,
                             username,
                             email: session.user.email,
-                            role,
-                            display_name: username
+                            full_name: username
                         });
 
                         localStorage.setItem('user', JSON.stringify(newProfile));
-                        router.push('/dashboard');
+                        router.push('/home');
                         return;
                     } catch (err) {
                         console.error('Auto-creation of profile failed:', err);
@@ -114,17 +113,22 @@ export default function AuthCallback() {
                 alignItems: 'center',
                 height: '100vh',
                 flexDirection: 'column',
-                gap: '1rem'
+                gap: '1rem',
+                background: 'var(--background)'
             }}>
-                <div style={{ fontSize: '1.2rem' }}>Setting up your account...</div>
-                <div style={{
-                    border: '3px solid var(--secondary)',
-                    borderTop: '3px solid var(--primary)',
-                    borderRadius: '50%',
-                    width: '40px',
-                    height: '40px',
-                    animation: 'spin 1s linear infinite'
-                }}></div>
+                <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    style={{
+                        width: '200px',
+                        height: '200px'
+                    }}
+                >
+                    <source src="/loader.webm" type="video/webm" />
+                </video>
+                <div style={{ fontSize: '1.2rem', color: 'var(--foreground)' }}>Setting up your account...</div>
             </div>
         );
     }
