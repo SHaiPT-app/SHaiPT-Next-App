@@ -297,15 +297,26 @@ function ExerciseProgress({ currentIndex, total }: ExerciseProgressProps) {
 // WORKOUT SUMMARY
 // ============================================
 
+interface AIFeedback {
+    feedback: string;
+    recommendations: string[];
+}
+
 interface WorkoutSummaryProps {
     session: WorkoutSession;
     exerciseLogs: Map<number, { log: ExerciseLog; exercise: Exercise | null }>;
     startedAt: string;
     prsAchieved: Array<{ exerciseName: string; weight: number; reps: number; unit: string }>;
+    weightUnit: 'lbs' | 'kg';
+    userGoals?: string[];
     onFinish: () => void;
 }
 
-function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, onFinish }: WorkoutSummaryProps) {
+function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, weightUnit, userGoals, onFinish }: WorkoutSummaryProps) {
+    const [aiFeedback, setAiFeedback] = useState<AIFeedback | null>(null);
+    const [aiFeedbackLoading, setAiFeedbackLoading] = useState(true);
+    const [aiFeedbackError, setAiFeedbackError] = useState(false);
+
     const durationMs = Date.now() - new Date(startedAt).getTime();
     const totalMinutes = Math.floor(durationMs / 60000);
     const totalSeconds = Math.floor((durationMs % 60000) / 1000);
@@ -321,6 +332,59 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, onFinis
             totalVolume += set.weight * set.reps;
         });
     });
+
+    // Fetch AI feedback on mount
+    useEffect(() => {
+        const fetchAIFeedback = async () => {
+            try {
+                const exercises = Array.from(exerciseLogs.entries()).map(([, { log, exercise }]) => ({
+                    name: exercise?.name || 'Unknown Exercise',
+                    sets: log.sets.map((s) => ({
+                        set_number: s.set_number,
+                        weight: s.weight,
+                        reps: s.reps,
+                        weight_unit: s.weight_unit,
+                        rpe: s.rpe,
+                    })),
+                }));
+
+                const response = await fetch('/api/ai-coach/workout-summary', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionName: session.name,
+                        durationMinutes: totalMinutes,
+                        totalVolume,
+                        totalSets,
+                        totalReps,
+                        weightUnit,
+                        exercises,
+                        prsAchieved,
+                        userGoals,
+                    }),
+                });
+
+                if (!response.ok) {
+                    setAiFeedbackError(true);
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.feedback) {
+                    setAiFeedback(data);
+                } else {
+                    setAiFeedbackError(true);
+                }
+            } catch {
+                setAiFeedbackError(true);
+            } finally {
+                setAiFeedbackLoading(false);
+            }
+        };
+
+        fetchAIFeedback();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <motion.div
@@ -353,7 +417,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, onFinis
             >
                 {[
                     { label: 'Duration', value: `${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}` },
-                    { label: 'Total Volume', value: `${totalVolume.toLocaleString()} lbs` },
+                    { label: 'Total Volume', value: `${totalVolume.toLocaleString()} ${weightUnit}` },
                     { label: 'Total Sets', value: totalSets.toString() },
                     { label: 'Total Reps', value: totalReps.toString() },
                 ].map((stat) => (
@@ -400,6 +464,81 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, onFinis
                     </div>
                 </motion.div>
             )}
+
+            {/* AI Feedback */}
+            <motion.div variants={fadeInUp} style={{ marginBottom: '2rem' }}>
+                <h3 style={{ marginBottom: '1rem', fontFamily: 'var(--font-orbitron)', fontSize: '1rem', color: '#39ff14' }}>
+                    AI Coach Feedback
+                </h3>
+                <div
+                    className="glass-panel"
+                    style={{
+                        padding: '1.25rem',
+                        border: '1px solid rgba(57, 255, 20, 0.15)',
+                    }}
+                >
+                    {aiFeedbackLoading && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#888' }}>
+                            <div className="spinner" style={{ width: '16px', height: '16px' }} />
+                            <span style={{ fontSize: '0.9rem' }}>Analyzing your workout...</span>
+                        </div>
+                    )}
+                    {aiFeedbackError && !aiFeedbackLoading && (
+                        <p style={{ color: '#888', fontSize: '0.9rem' }}>
+                            Could not load AI feedback. Your workout data has been saved.
+                        </p>
+                    )}
+                    {aiFeedback && !aiFeedbackLoading && (
+                        <>
+                            <p style={{ color: '#ddd', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                                {aiFeedback.feedback}
+                            </p>
+                            {aiFeedback.recommendations.length > 0 && (
+                                <>
+                                    <div style={{
+                                        fontSize: '0.8rem',
+                                        color: '#39ff14',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.05em',
+                                        marginBottom: '0.5rem',
+                                        fontWeight: 600,
+                                    }}>
+                                        Recommendations
+                                    </div>
+                                    <ul style={{
+                                        listStyle: 'none',
+                                        padding: 0,
+                                        margin: 0,
+                                        display: 'grid',
+                                        gap: '0.5rem',
+                                    }}>
+                                        {aiFeedback.recommendations.map((rec, i) => (
+                                            <li
+                                                key={i}
+                                                style={{
+                                                    fontSize: '0.85rem',
+                                                    color: '#aaa',
+                                                    paddingLeft: '1rem',
+                                                    position: 'relative',
+                                                }}
+                                            >
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    left: 0,
+                                                    color: '#39ff14',
+                                                }}>
+                                                    &bull;
+                                                </span>
+                                                {rec}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+                        </>
+                    )}
+                </div>
+            </motion.div>
 
             {/* Exercise Breakdown */}
             <motion.div variants={fadeInUp} style={{ marginBottom: '2rem' }}>
@@ -819,6 +958,8 @@ export default function WorkoutExecutionPage() {
                     exerciseLogs={exerciseLogs}
                     startedAt={startedAt}
                     prsAchieved={prsAchieved}
+                    weightUnit={weightUnit}
+                    userGoals={profile?.fitness_goals}
                     onFinish={() => router.push('/home')}
                 />
             </div>
