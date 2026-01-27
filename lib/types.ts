@@ -557,6 +557,32 @@ export interface MacroTargets {
 }
 
 // ============================================
+// BODY COMPOSITION TYPES
+// ============================================
+
+export interface BodyMeasurement {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    user_id: string; // uuid, NOT NULL
+    date: string; // date, NOT NULL, default CURRENT_DATE
+    weight_kg?: number; // numeric, nullable
+    body_fat_percentage?: number; // numeric, nullable
+    neck_cm?: number; // numeric, nullable
+    shoulders_cm?: number; // numeric, nullable
+    chest_cm?: number; // numeric, nullable
+    left_bicep_cm?: number; // numeric, nullable
+    right_bicep_cm?: number; // numeric, nullable
+    waist_cm?: number; // numeric, nullable
+    hips_cm?: number; // numeric, nullable
+    left_thigh_cm?: number; // numeric, nullable
+    right_thigh_cm?: number; // numeric, nullable
+    left_calf_cm?: number; // numeric, nullable
+    right_calf_cm?: number; // numeric, nullable
+    notes?: string; // text, nullable
+    created_at?: string; // timestamptz, default now()
+    updated_at?: string; // timestamptz, default now()
+}
+
+// ============================================
 // ANALYTICS TYPES
 // ============================================
 

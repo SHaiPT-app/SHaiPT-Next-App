@@ -25,7 +25,8 @@ import type {
     NutritionPlan,
     FoodItem,
     FoodLog,
-    GroceryList
+    GroceryList,
+    BodyMeasurement
 } from './types';
 
 // Server-side Supabase client with service role (bypasses RLS)
@@ -1361,6 +1362,118 @@ export const db = {
         delete: async (id: string): Promise<void> => {
             const { error } = await supabase
                 .from('grocery_lists')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // BODY MEASUREMENTS
+    // ============================================
+
+    bodyMeasurements: {
+        getByUser: async (userId: string, limit = 100): Promise<BodyMeasurement[]> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .select('*')
+                .eq('user_id', userId)
+                .order('date', { ascending: false })
+                .limit(limit);
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<BodyMeasurement | null> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        getByUserAndDate: async (userId: string, date: string): Promise<BodyMeasurement | null> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('date', date)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (measurement: Omit<BodyMeasurement, 'id' | 'created_at' | 'updated_at'>): Promise<BodyMeasurement> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .insert([measurement])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<BodyMeasurement>): Promise<BodyMeasurement> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('body_measurements')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // PROGRESS MEDIA
+    // ============================================
+
+    progressMedia: {
+        getByUser: async (userId: string, limit = 50): Promise<ProgressMedia[]> => {
+            const { data, error } = await supabase
+                .from('progress_media')
+                .select('*')
+                .eq('user_id', userId)
+                .order('taken_at', { ascending: false })
+                .limit(limit);
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<ProgressMedia | null> => {
+            const { data, error } = await supabase
+                .from('progress_media')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (media: Omit<ProgressMedia, 'id' | 'created_at'>): Promise<ProgressMedia> => {
+            const { data, error } = await supabase
+                .from('progress_media')
+                .insert([media])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('progress_media')
                 .delete()
                 .eq('id', id);
             if (error) throw error;
