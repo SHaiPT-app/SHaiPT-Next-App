@@ -73,6 +73,25 @@ const mockPlan = {
     description: 'A 12 week strength program',
     duration_weeks: 12,
     tags: ['schedule:weekly'],
+    periodization_blocks: [
+        { phase_type: 'hypertrophy', phase_duration_weeks: 4, label: 'Hypertrophy' },
+        { phase_type: 'strength', phase_duration_weeks: 4, label: 'Strength' },
+        { phase_type: 'endurance', phase_duration_weeks: 3, label: 'Endurance' },
+        { phase_type: 'deload', phase_duration_weeks: 1, label: 'Deload' },
+    ],
+    is_template: true,
+    is_public: false,
+    created_at: '2025-01-01',
+    updated_at: '2025-01-01',
+}
+
+const mockPlanWithoutBlocks = {
+    id: 'plan-2',
+    creator_id: 'user-1',
+    name: 'Short Plan',
+    description: 'A quick plan',
+    duration_weeks: 4,
+    tags: ['schedule:weekly'],
     is_template: true,
     is_public: false,
     created_at: '2025-01-01',
@@ -293,5 +312,38 @@ describe('PlansViewerPage', () => {
         for (let i = 1; i <= 12; i++) {
             expect(screen.getByText(String(i))).toBeInTheDocument()
         }
+    })
+
+    it('uses periodization_blocks from plan data when available', async () => {
+        mockGetByCreator.mockResolvedValue([mockPlan])
+        mockGetActiveByUser.mockRejectedValue(new Error('No active'))
+        mockGetByPlan.mockResolvedValue([])
+
+        render(<PlansViewerPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('Periodization Blocks')).toBeInTheDocument()
+        })
+
+        // Should show blocks from the stored periodization_blocks
+        expect(screen.getByText('Hypertrophy')).toBeInTheDocument()
+        expect(screen.getByText('Strength')).toBeInTheDocument()
+        expect(screen.getByText('Endurance')).toBeInTheDocument()
+        expect(screen.getByText('Deload')).toBeInTheDocument()
+    })
+
+    it('falls back to inferred blocks for plans without periodization_blocks', async () => {
+        mockGetByCreator.mockResolvedValue([mockPlanWithoutBlocks])
+        mockGetActiveByUser.mockRejectedValue(new Error('No active'))
+        mockGetByPlan.mockResolvedValue([])
+
+        render(<PlansViewerPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('Short Plan')).toBeInTheDocument()
+        })
+
+        // 4-week plan should have single hypertrophy block (no multi-block timeline shown)
+        expect(screen.getByText('4 Weeks')).toBeInTheDocument()
     })
 })

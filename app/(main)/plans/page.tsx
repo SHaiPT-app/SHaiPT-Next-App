@@ -29,15 +29,16 @@ import type {
     SessionExercise,
     SessionSet,
     Exercise,
+    PhaseType,
 } from '@/lib/types';
 
 // ============================================
 // TYPES
 // ============================================
 
-type BlockType = 'hypertrophy' | 'strength' | 'endurance' | 'deload';
+type BlockType = PhaseType;
 
-interface PeriodizedBlock {
+interface ViewerBlock {
     type: BlockType;
     weekStart: number;
     weekEnd: number;
@@ -57,6 +58,8 @@ const BLOCK_COLORS: Record<BlockType, string> = {
     strength: '#ff007f',
     endurance: '#00d4ff',
     deload: '#f59e0b',
+    power: '#c084fc',
+    general: '#6ee7b7',
 };
 
 const BLOCK_ICONS: Record<BlockType, typeof Dumbbell> = {
@@ -64,6 +67,8 @@ const BLOCK_ICONS: Record<BlockType, typeof Dumbbell> = {
     strength: Target,
     endurance: Zap,
     deload: RotateCcw,
+    power: Zap,
+    general: Dumbbell,
 };
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -72,8 +77,35 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // HELPER FUNCTIONS
 // ============================================
 
-function inferBlocksFromPlan(plan: TrainingPlan): PeriodizedBlock[] {
+function inferBlocksFromPlan(plan: TrainingPlan): ViewerBlock[] {
     const weeks = plan.duration_weeks || 4;
+
+    // Use stored periodization_blocks if available
+    if (plan.periodization_blocks && plan.periodization_blocks.length > 0) {
+        let weekCursor = 1;
+        return plan.periodization_blocks.map(block => {
+            const start = weekCursor;
+            const end = weekCursor + block.phase_duration_weeks - 1;
+            weekCursor = end + 1;
+            return {
+                type: block.phase_type,
+                weekStart: start,
+                weekEnd: Math.min(end, weeks),
+                label: block.label,
+            };
+        });
+    }
+
+    // Fallback: single phase_type if set
+    if (plan.phase_type) {
+        return [{
+            type: plan.phase_type,
+            weekStart: 1,
+            weekEnd: weeks,
+            label: plan.phase_type.charAt(0).toUpperCase() + plan.phase_type.slice(1),
+        }];
+    }
+
     const tags = plan.tags || [];
 
     // Check if plan tags contain block definitions like "block:hypertrophy:1-4"
@@ -117,7 +149,7 @@ function inferBlocksFromPlan(plan: TrainingPlan): PeriodizedBlock[] {
     ];
 }
 
-function getBlockForWeek(blocks: PeriodizedBlock[], week: number): PeriodizedBlock | undefined {
+function getBlockForWeek(blocks: ViewerBlock[], week: number): ViewerBlock | undefined {
     return blocks.find(b => week >= b.weekStart && week <= b.weekEnd);
 }
 
@@ -140,7 +172,7 @@ export default function PlansViewerPage() {
     const [activePlan, setActivePlan] = useState<TrainingPlan | null>(null);
     const [activeAssignment, setActiveAssignment] = useState<TrainingPlanAssignment | null>(null);
     const [planSessions, setPlanSessions] = useState<ResolvedPlanSession[]>([]);
-    const [blocks, setBlocks] = useState<PeriodizedBlock[]>([]);
+    const [blocks, setBlocks] = useState<ViewerBlock[]>([]);
     const [exerciseCache, setExerciseCache] = useState<Record<string, Exercise>>({});
 
     // UI state

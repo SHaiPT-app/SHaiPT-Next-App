@@ -97,12 +97,23 @@ export interface WorkoutSession {
     updated_at?: string; // timestamptz, default now()
 }
 
+export type PhaseType = 'hypertrophy' | 'strength' | 'endurance' | 'deload' | 'power' | 'general';
+
+export interface PeriodizedBlock {
+    phase_type: PhaseType;
+    phase_duration_weeks: number;
+    label: string;
+}
+
 export interface TrainingPlan {
     id: string; // uuid, NOT NULL, default gen_random_uuid()
     creator_id: string; // uuid, NOT NULL
     name: string; // text, NOT NULL
     description?: string; // text, nullable
     duration_weeks?: number; // integer, nullable
+    phase_type?: PhaseType; // varchar, nullable — primary phase type
+    phase_duration_weeks?: number; // integer, nullable — primary phase duration
+    periodization_blocks?: PeriodizedBlock[]; // jsonb, nullable — multi-block periodization
     tags?: string[]; // text[], default '{}'
     is_template?: boolean; // boolean, default true
     is_public?: boolean; // boolean, default false
