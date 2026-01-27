@@ -458,26 +458,46 @@ export default function NutritionPage() {
                         AI-generated meal plans tailored to your goals and preferences
                     </p>
                 </div>
-                <button
-                    onClick={() => router.push('/nutrition/tracking')}
-                    style={{
-                        padding: '0.5rem 1.25rem',
-                        background: 'rgba(57, 255, 20, 0.1)',
-                        color: '#39ff14',
-                        border: '1px solid rgba(57, 255, 20, 0.2)',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        flexShrink: 0,
-                    }}
-                >
-                    <Flame size={14} />
-                    Track Macros
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                    <button
+                        onClick={() => router.push('/nutrition/grocery')}
+                        style={{
+                            padding: '0.5rem 1.25rem',
+                            background: 'rgba(0, 212, 255, 0.1)',
+                            color: '#00d4ff',
+                            border: '1px solid rgba(0, 212, 255, 0.2)',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                        }}
+                    >
+                        <ShoppingCart size={14} />
+                        Grocery List
+                    </button>
+                    <button
+                        onClick={() => router.push('/nutrition/tracking')}
+                        style={{
+                            padding: '0.5rem 1.25rem',
+                            background: 'rgba(57, 255, 20, 0.1)',
+                            color: '#39ff14',
+                            border: '1px solid rgba(57, 255, 20, 0.2)',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                        }}
+                    >
+                        <Flame size={14} />
+                        Track Macros
+                    </button>
+                </div>
             </div>
 
             {/* Loading state */}
