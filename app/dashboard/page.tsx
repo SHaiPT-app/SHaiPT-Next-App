@@ -8,11 +8,13 @@ import { supabase } from '@/lib/supabase';
 import TrainerDashboard from '@/components/TrainerDashboard';
 import TraineeDashboard from '@/components/TraineeDashboard';
 import ProfileModal from '@/components/ProfileModal';
+import AICoachChat from '@/components/ai-coach/AICoachChat';
 
 export default function Dashboard() {
     const [user, setUser] = useState<User | null>(null);
     const [authReady, setAuthReady] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -116,6 +118,12 @@ export default function Dashboard() {
                     setUser(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser));
                 }}
+            />
+
+            <AICoachChat
+                user={user}
+                isOpen={isChatOpen}
+                onToggle={() => setIsChatOpen(!isChatOpen)}
             />
         </main>
     );
