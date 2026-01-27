@@ -2,6 +2,14 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    type Landmark,
+    type FormFeedback,
+    type RepCounterState,
+    getAnalyzerForExercise,
+    createRepCounter,
+    updateRepCounter,
+} from '@/lib/formAnalysis';
 
 // Landmark indices for the full body skeleton
 const POSE_CONNECTIONS: [number, number][] = [
@@ -30,11 +38,18 @@ interface PoseDetectionOverlayProps {
     visible: boolean;
     /** Called when user closes the overlay */
     onClose: () => void;
+    /** Exercise name for exercise-specific form analysis */
+    exerciseName?: string;
+    /** Callback when rep count changes */
+    onRepCount?: (count: number) => void;
 }
 
 type OverlayState = 'idle' | 'loading' | 'active' | 'error';
 
-export default function PoseDetectionOverlay({ visible, onClose }: PoseDetectionOverlayProps) {
+// Throttle feedback updates to avoid flicker
+const FEEDBACK_UPDATE_INTERVAL_MS = 500;
+
+export default function PoseDetectionOverlay({ visible, onClose, exerciseName, onRepCount }: PoseDetectionOverlayProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const landmarkerRef = useRef<import('@mediapipe/tasks-vision').PoseLandmarker | null>(null);
@@ -44,6 +59,21 @@ export default function PoseDetectionOverlay({ visible, onClose }: PoseDetection
 
     const [overlayState, setOverlayState] = useState<OverlayState>('idle');
     const [errorMessage, setErrorMessage] = useState('');
+    const [feedbackCues, setFeedbackCues] = useState<FormFeedback[]>([]);
+    const [repCount, setRepCount] = useState(0);
+
+    // Mutable refs for high-frequency updates (avoid re-renders on every frame)
+    const repCounterRef = useRef<RepCounterState>(createRepCounter());
+    const lastFeedbackUpdateRef = useRef(0);
+    const analyzerRef = useRef(getAnalyzerForExercise(exerciseName));
+
+    // Update analyzer when exercise changes
+    useEffect(() => {
+        analyzerRef.current = getAnalyzerForExercise(exerciseName);
+        repCounterRef.current = createRepCounter();
+        setRepCount(0);
+        setFeedbackCues([]);
+    }, [exerciseName]);
 
     // Clean up function for camera and animation frame
     const cleanup = useCallback(() => {
@@ -112,6 +142,36 @@ export default function PoseDetectionOverlay({ visible, onClose }: PoseDetection
         }
     }, []);
 
+    // Process landmarks for form analysis and rep counting
+    const processLandmarks = useCallback((landmarks: Landmark[]) => {
+        const nowMs = performance.now();
+        const analysis = analyzerRef.current(landmarks);
+
+        // Update rep counter
+        const newRepState = updateRepCounter(
+            repCounterRef.current,
+            analysis.repMetric,
+            analysis.phase,
+            nowMs,
+        );
+
+        if (newRepState.count !== repCounterRef.current.count) {
+            repCounterRef.current = newRepState;
+            setRepCount(newRepState.count);
+            onRepCount?.(newRepState.count);
+        } else {
+            repCounterRef.current = newRepState;
+        }
+
+        // Throttle feedback updates
+        if (nowMs - lastFeedbackUpdateRef.current >= FEEDBACK_UPDATE_INTERVAL_MS) {
+            lastFeedbackUpdateRef.current = nowMs;
+            if (analysis.feedback.length > 0) {
+                setFeedbackCues(analysis.feedback);
+            }
+        }
+    }, [onRepCount]);
+
     // Prediction loop
     const predictWebcam = useCallback(() => {
         if (!runningRef.current) return;
@@ -153,7 +213,9 @@ export default function PoseDetectionOverlay({ visible, onClose }: PoseDetection
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (result.landmarks && result.landmarks.length > 0) {
-                drawSkeleton(ctx, result.landmarks[0], canvas.width, canvas.height);
+                const landmarks = result.landmarks[0] as Landmark[];
+                drawSkeleton(ctx, landmarks, canvas.width, canvas.height);
+                processLandmarks(landmarks);
             }
         } catch {
             // Continue the loop even if a frame fails
@@ -162,7 +224,7 @@ export default function PoseDetectionOverlay({ visible, onClose }: PoseDetection
         if (runningRef.current) {
             requestRef.current = requestAnimationFrame(predictWebcam);
         }
-    }, [drawSkeleton]);
+    }, [drawSkeleton, processLandmarks]);
 
     // Start camera and pose detection
     const startCamera = useCallback(async () => {
@@ -251,6 +313,14 @@ export default function PoseDetectionOverlay({ visible, onClose }: PoseDetection
     }, [cleanup, onClose]);
 
     if (!visible) return null;
+
+    const severityColor = (severity: FormFeedback['severity']) => {
+        switch (severity) {
+            case 'good': return '#39ff14';
+            case 'warning': return '#ffaa00';
+            case 'error': return '#ef4444';
+        }
+    };
 
     return (
         <AnimatePresence>
@@ -388,35 +458,122 @@ export default function PoseDetectionOverlay({ visible, onClose }: PoseDetection
                         </div>
                     )}
 
-                    {/* Active indicator */}
+                    {/* Active indicator + Rep counter */}
                     {overlayState === 'active' && (
-                        <div
-                            style={{
-                                position: 'absolute',
-                                top: '8px',
-                                left: '8px',
-                                zIndex: 25,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                background: 'rgba(0, 0, 0, 0.6)',
-                                padding: '4px 10px',
-                                borderRadius: '12px',
-                            }}
-                        >
+                        <>
                             <div
                                 style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    borderRadius: '50%',
-                                    background: '#39ff14',
-                                    animation: 'pulse 2s infinite',
+                                    position: 'absolute',
+                                    top: '8px',
+                                    left: '8px',
+                                    zIndex: 25,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    background: 'rgba(0, 0, 0, 0.6)',
+                                    padding: '4px 10px',
+                                    borderRadius: '12px',
                                 }}
-                            />
-                            <span style={{ color: '#39ff14', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Pose Active
-                            </span>
-                        </div>
+                            >
+                                <div
+                                    style={{
+                                        width: '8px',
+                                        height: '8px',
+                                        borderRadius: '50%',
+                                        background: '#39ff14',
+                                        animation: 'pulse 2s infinite',
+                                    }}
+                                />
+                                <span style={{ color: '#39ff14', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Form Check
+                                </span>
+                            </div>
+
+                            {/* Rep counter badge */}
+                            <div
+                                data-testid="rep-counter"
+                                style={{
+                                    position: 'absolute',
+                                    top: '8px',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    zIndex: 25,
+                                    background: 'rgba(0, 0, 0, 0.75)',
+                                    border: '1px solid rgba(57, 255, 20, 0.5)',
+                                    borderRadius: '12px',
+                                    padding: '4px 14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span style={{ color: '#888', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Reps
+                                </span>
+                                <span
+                                    data-testid="rep-count-value"
+                                    style={{
+                                        color: '#39ff14',
+                                        fontSize: '1.1rem',
+                                        fontFamily: 'var(--font-orbitron)',
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    {repCount}
+                                </span>
+                            </div>
+
+                            {/* Form feedback cues */}
+                            {feedbackCues.length > 0 && (
+                                <div
+                                    data-testid="form-feedback"
+                                    style={{
+                                        position: 'absolute',
+                                        bottom: '8px',
+                                        left: '8px',
+                                        right: '8px',
+                                        zIndex: 25,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '4px',
+                                    }}
+                                >
+                                    {feedbackCues.map((cue, i) => (
+                                        <div
+                                            key={`${cue.message}-${i}`}
+                                            style={{
+                                                background: 'rgba(0, 0, 0, 0.75)',
+                                                border: `1px solid ${severityColor(cue.severity)}40`,
+                                                borderRadius: '8px',
+                                                padding: '4px 10px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: '6px',
+                                                    height: '6px',
+                                                    borderRadius: '50%',
+                                                    background: severityColor(cue.severity),
+                                                    flexShrink: 0,
+                                                }}
+                                            />
+                                            <span
+                                                style={{
+                                                    color: severityColor(cue.severity),
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 500,
+                                                }}
+                                            >
+                                                {cue.message}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </motion.div>

@@ -966,6 +966,7 @@ export default function WorkoutExecutionPage() {
                             <PoseDetectionOverlay
                                 visible={showPoseDetection}
                                 onClose={() => setShowPoseDetection(false)}
+                                exerciseName={currentExercise?.name}
                             />
                         </Suspense>
                     )}

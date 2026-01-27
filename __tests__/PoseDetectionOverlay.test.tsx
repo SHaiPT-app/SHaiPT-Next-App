@@ -271,4 +271,24 @@ describe('PoseDetectionOverlay', () => {
         const video = screen.getByTestId('pose-video') as HTMLVideoElement
         expect(video.muted).toBe(true)
     })
+
+    it('accepts exerciseName prop without error', () => {
+        render(
+            <PoseDetectionOverlay visible={true} onClose={jest.fn()} exerciseName="Squat" />
+        )
+        expect(screen.getByTestId('pose-detection-overlay')).toBeInTheDocument()
+    })
+
+    it('accepts onRepCount callback prop', () => {
+        const mockOnRepCount = jest.fn()
+        render(
+            <PoseDetectionOverlay
+                visible={true}
+                onClose={jest.fn()}
+                exerciseName="Bench Press"
+                onRepCount={mockOnRepCount}
+            />
+        )
+        expect(screen.getByTestId('pose-detection-overlay')).toBeInTheDocument()
+    })
 })
