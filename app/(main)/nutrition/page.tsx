@@ -444,18 +444,40 @@ export default function NutritionPage() {
             padding: '2rem 1rem',
         }}>
             {/* Page Header */}
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{
-                    fontSize: '1.75rem',
-                    fontWeight: 700,
-                    color: '#39ff14',
-                    marginBottom: '0.5rem',
-                }}>
-                    Nutrition Plan
-                </h1>
-                <p style={{ color: '#888', fontSize: '0.9rem' }}>
-                    AI-generated meal plans tailored to your goals and preferences
-                </p>
+            <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div>
+                    <h1 style={{
+                        fontSize: '1.75rem',
+                        fontWeight: 700,
+                        color: '#39ff14',
+                        marginBottom: '0.5rem',
+                    }}>
+                        Nutrition Plan
+                    </h1>
+                    <p style={{ color: '#888', fontSize: '0.9rem' }}>
+                        AI-generated meal plans tailored to your goals and preferences
+                    </p>
+                </div>
+                <button
+                    onClick={() => router.push('/nutrition/tracking')}
+                    style={{
+                        padding: '0.5rem 1.25rem',
+                        background: 'rgba(57, 255, 20, 0.1)',
+                        color: '#39ff14',
+                        border: '1px solid rgba(57, 255, 20, 0.2)',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        flexShrink: 0,
+                    }}
+                >
+                    <Flame size={14} />
+                    Track Macros
+                </button>
             </div>
 
             {/* Loading state */}

@@ -22,7 +22,10 @@ import type {
     Exercise,
     ExerciseInstruction,
     LoggedSet,
-    NutritionPlan
+    NutritionPlan,
+    FoodItem,
+    FoodLog,
+    GroceryList
 } from './types';
 
 // Server-side Supabase client with service role (bypasses RLS)
@@ -1196,6 +1199,168 @@ export const db = {
         delete: async (id: string): Promise<void> => {
             const { error } = await supabase
                 .from('nutrition_plans')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // FOOD DATABASE
+    // ============================================
+
+    foodDatabase: {
+        search: async (query: string, limit = 20): Promise<FoodItem[]> => {
+            const { data, error } = await supabase
+                .from('food_database')
+                .select('*')
+                .ilike('name', `%${query}%`)
+                .order('is_verified', { ascending: false })
+                .order('name')
+                .limit(limit);
+            if (error) throw error;
+            return data || [];
+        },
+
+        getByCategory: async (category: string): Promise<FoodItem[]> => {
+            const { data, error } = await supabase
+                .from('food_database')
+                .select('*')
+                .eq('category', category)
+                .order('name');
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<FoodItem | null> => {
+            const { data, error } = await supabase
+                .from('food_database')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (food: Omit<FoodItem, 'id' | 'created_at' | 'updated_at'>): Promise<FoodItem> => {
+            const { data, error } = await supabase
+                .from('food_database')
+                .insert([food])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
+    },
+
+    // ============================================
+    // FOOD LOGS
+    // ============================================
+
+    foodLogs: {
+        getByUserAndDate: async (userId: string, date: string): Promise<FoodLog[]> => {
+            const { data, error } = await supabase
+                .from('food_logs')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('logged_date', date)
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            return data || [];
+        },
+
+        getByUserDateRange: async (userId: string, startDate: string, endDate: string): Promise<FoodLog[]> => {
+            const { data, error } = await supabase
+                .from('food_logs')
+                .select('*')
+                .eq('user_id', userId)
+                .gte('logged_date', startDate)
+                .lte('logged_date', endDate)
+                .order('logged_date', { ascending: true })
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            return data || [];
+        },
+
+        create: async (log: Omit<FoodLog, 'id' | 'created_at' | 'updated_at'>): Promise<FoodLog> => {
+            const { data, error } = await supabase
+                .from('food_logs')
+                .insert([log])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<FoodLog>): Promise<FoodLog> => {
+            const { data, error } = await supabase
+                .from('food_logs')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('food_logs')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // GROCERY LISTS
+    // ============================================
+
+    groceryLists: {
+        getByUser: async (userId: string): Promise<GroceryList[]> => {
+            const { data, error } = await supabase
+                .from('grocery_lists')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<GroceryList | null> => {
+            const { data, error } = await supabase
+                .from('grocery_lists')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (list: Omit<GroceryList, 'id' | 'created_at' | 'updated_at'>): Promise<GroceryList> => {
+            const { data, error } = await supabase
+                .from('grocery_lists')
+                .insert([list])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<GroceryList>): Promise<GroceryList> => {
+            const { data, error } = await supabase
+                .from('grocery_lists')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('grocery_lists')
                 .delete()
                 .eq('id', id);
             if (error) throw error;

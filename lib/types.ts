@@ -468,6 +468,95 @@ export interface NutritionPlan {
 }
 
 // ============================================
+// FOOD DATABASE & LOGGING TYPES
+// ============================================
+
+export interface FoodItem {
+    id: string; // uuid
+    name: string; // varchar(255), NOT NULL
+    brand?: string; // varchar(255), nullable
+    category?: string; // varchar(100), nullable
+    serving_size: number; // numeric, NOT NULL, default 100
+    serving_unit: string; // varchar(50), NOT NULL, default 'g'
+    calories: number; // numeric, NOT NULL
+    protein_g: number; // numeric, NOT NULL
+    carbs_g: number; // numeric, NOT NULL
+    fat_g: number; // numeric, NOT NULL
+    fiber_g?: number; // numeric, nullable
+    sugar_g?: number; // numeric, nullable
+    sodium_mg?: number; // numeric, nullable
+    is_verified?: boolean; // boolean, default false
+    created_by?: string; // uuid, nullable
+    created_at?: string; // timestamptz
+    updated_at?: string; // timestamptz
+}
+
+export type FoodLogMealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export interface FoodLog {
+    id: string; // uuid
+    user_id: string; // uuid, NOT NULL
+    food_id?: string; // uuid, nullable (reference to food_database)
+    food_name: string; // varchar(255), NOT NULL
+    meal_type: FoodLogMealType; // varchar(20), NOT NULL
+    serving_size: number; // numeric, NOT NULL, default 1
+    serving_unit: string; // varchar(50), NOT NULL, default 'serving'
+    calories: number; // numeric, NOT NULL
+    protein_g: number; // numeric, NOT NULL
+    carbs_g: number; // numeric, NOT NULL
+    fat_g: number; // numeric, NOT NULL
+    logged_date: string; // date, NOT NULL, default CURRENT_DATE
+    notes?: string; // text, nullable
+    created_at?: string; // timestamptz
+    updated_at?: string; // timestamptz
+}
+
+export interface GroceryList {
+    id: string; // uuid
+    user_id: string; // uuid, NOT NULL
+    nutrition_plan_id?: string; // uuid, nullable
+    name: string; // varchar(255), NOT NULL, default 'Grocery List'
+    items: GroceryListItem[]; // jsonb, NOT NULL, default '[]'
+    is_completed?: boolean; // boolean, default false
+    created_at?: string; // timestamptz
+    updated_at?: string; // timestamptz
+}
+
+export interface GroceryListItem {
+    name: string;
+    category?: string;
+    quantity?: string;
+    checked?: boolean;
+}
+
+export interface DailyMacroSummary {
+    date: string;
+    total_calories: number;
+    total_protein_g: number;
+    total_carbs_g: number;
+    total_fat_g: number;
+    target_calories?: number;
+    target_protein_g?: number;
+    target_carbs_g?: number;
+    target_fat_g?: number;
+    meals: {
+        breakfast: FoodLog[];
+        lunch: FoodLog[];
+        dinner: FoodLog[];
+        snack: FoodLog[];
+    };
+}
+
+export interface MacroTargets {
+    daily_calories: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    training_phase?: string;
+    rationale?: string;
+}
+
+// ============================================
 // ANALYTICS TYPES
 // ============================================
 
