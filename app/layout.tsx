@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Orbitron } from "next/font/google";
+import { Provider } from "@/components/ui/provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,12 +33,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable}`}>
-        {children}
+        <Provider defaultTheme="dark">{children}</Provider>
       </body>
     </html>
   );
