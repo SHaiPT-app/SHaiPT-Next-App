@@ -1,0 +1,42 @@
+# Ralphy Configuration
+# https://github.com/michaelshimeles/ralphy
+
+# Project info
+project:
+  name: "SHaiPT"
+  language: "TypeScript"
+  framework: "Next.js"
+  description: "AI-powered personal training platform with real-time form analysis, periodized workout plans, and full nutrition suite"
+
+# Commands
+commands:
+  test: "npm test"
+  lint: "npm run lint"
+  build: "npm run build"
+
+# Rules - instructions the AI MUST follow
+rules:
+  - "Use Next.js App Router (not Pages Router)"
+  - "Use TypeScript strict mode throughout"
+  - "Use Chakra UI for component library (migrating from shadcn/ui)"
+  - "Use Framer Motion for all animations and scroll-triggered effects"
+  - "Use Supabase for database, auth, storage, and realtime"
+  - "Use Google Gemini (Generative AI) for all AI features"
+  - "Use MediaPipe for client-side pose detection and form analysis"
+  - "Dark theme with neon accents is the default visual style"
+  - "All layouts must be mobile-first and responsive"
+  - "Camera/MediaPipe features must work in mobile Safari and Chrome"
+  - "All AI recommendations (plans, exercises, weights) must be user-editable"
+  - "Types are defined in lib/types.ts - always import from there"
+  - "Database operations go through lib/supabaseDb.ts"
+  - "Follow existing patterns in the codebase for new features"
+  - "Read PRD.md for full product requirements before implementing features"
+  - "Commit to alis-branch, never directly to main"
+
+# Boundaries - files/folders the AI should not modify
+boundaries:
+  never_touch:
+    - "*.lock"
+    - ".github/**"
+    - "PRD.md"
+    - ".ralphy/progress.txt"
