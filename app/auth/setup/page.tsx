@@ -3,13 +3,20 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/supabaseDb';
+import { Box, Text, Input, Button, VStack, Heading, Flex } from '@chakra-ui/react';
+import { motion } from 'framer-motion';
+import { fadeInUp, tapScale } from '@/lib/animations';
+import { User } from 'lucide-react';
+
+const MotionBox = motion.create(Box);
+const MotionButton = motion.create(Button);
 
 function UsernameSetupForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [username, setUsername] = useState('');
     const [role, setRole] = useState<'trainer' | 'trainee'>('trainee');
-    const [error, setError] = useState<React.ReactNode>('');
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const userId = searchParams.get('userId');
@@ -17,7 +24,7 @@ function UsernameSetupForm() {
 
     useEffect(() => {
         if (!userId || !email) {
-            router.push('/');
+            router.push('/login');
         }
     }, [userId, email, router]);
 
@@ -27,33 +34,13 @@ function UsernameSetupForm() {
         setLoading(true);
 
         try {
-            // Check if email already exists (edge case protection)
             const existingEmailProfile = await db.profiles.getByEmail(email!);
             if (existingEmailProfile) {
-                setError(
-                    <>
-                        This email is already associated with another account. Please use a different email or{' '}
-                        <span
-                            onClick={() => router.push('/')}
-                            style={{
-                                color: 'var(--primary)',
-                                textDecoration: 'underline',
-                                cursor: 'pointer',
-                                fontSize: 'inherit'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                        >
-                            log in
-                        </span>
-                        {' '}with your existing account.
-                    </>
-                );
+                setError('This email is already associated with another account. Please log in instead.');
                 setLoading(false);
                 return;
             }
 
-            // Check if username is already taken
             const existingUser = await db.profiles.getByUsername(username);
             if (existingUser) {
                 setError('Username already taken. Please choose another.');
@@ -61,7 +48,6 @@ function UsernameSetupForm() {
                 return;
             }
 
-            // Create profile
             const profile = await db.profiles.create({
                 id: userId!,
                 username: username,
@@ -70,35 +56,14 @@ function UsernameSetupForm() {
                 display_name: username
             });
 
-            // Save user info and redirect
             localStorage.setItem('user', JSON.stringify(profile));
             router.push('/home');
-        } catch (err: any) {
-            console.error('Profile creation error:', err);
-
-            // Handle specific constraint violation
-            if (err.message.includes('profiles_email_unique')) {
-                setError(
-                    <>
-                        This email is already associated with another account. Please{' '}
-                        <span
-                            onClick={() => router.push('/')}
-                            style={{
-                                color: 'var(--primary)',
-                                textDecoration: 'underline',
-                                cursor: 'pointer',
-                                fontSize: 'inherit'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                        >
-                            log in
-                        </span>
-                        {' '}with your existing account instead.
-                    </>
-                );
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to create profile';
+            if (message.includes('profiles_email_unique')) {
+                setError('This email is already associated with another account. Please log in instead.');
             } else {
-                setError(err.message || 'Failed to create profile');
+                setError(message);
             }
             setLoading(false);
         }
@@ -109,117 +74,175 @@ function UsernameSetupForm() {
     }
 
     return (
-        <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-            padding: '1rem'
-        }}>
-            <div className="glass-panel" style={{ padding: '2rem', width: '100%', maxWidth: '400px' }}>
-                <h2 style={{ marginBottom: '1rem', textAlign: 'center' }}>
-                    Complete Your Profile
-                </h2>
-                <p style={{ marginBottom: '2rem', textAlign: 'center', color: '#888' }}>
-                    Choose a username and your role to get started
-                </p>
+        <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minH="100vh"
+            p="1rem"
+            bg="#15151F"
+        >
+            <MotionBox
+                variants={fadeInUp}
+                initial="hidden"
+                animate="visible"
+                bg="rgba(255, 255, 255, 0.05)"
+                backdropFilter="blur(10px)"
+                border="1px solid rgba(255, 255, 255, 0.1)"
+                borderRadius="16px"
+                p={{ base: '1.5rem', md: '2rem' }}
+                w="100%"
+                maxW="420px"
+                boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
+            >
+                <VStack gap="1rem" align="stretch">
+                    <Heading as="h2" size="lg" textAlign="center" color="white">
+                        Complete Your Profile
+                    </Heading>
+                    <Text textAlign="center" color="gray.500" fontSize="sm">
+                        Choose a username and your role to get started
+                    </Text>
 
-                <div style={{ display: 'flex', marginBottom: '1.5rem', background: 'var(--secondary)', borderRadius: '8px', padding: '4px' }}>
-                    <button
-                        type="button"
-                        onClick={() => setRole('trainee')}
-                        style={{
-                            flex: 1,
-                            padding: '0.5rem',
-                            border: 'none',
-                            background: role === 'trainee' ? 'var(--primary)' : 'transparent',
-                            color: role === 'trainee' ? 'white' : 'var(--foreground)',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
+                    {/* Role toggle */}
+                    <Flex
+                        bg="var(--secondary)"
+                        borderRadius="8px"
+                        p="4px"
                     >
-                        Trainee
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setRole('trainer')}
-                        style={{
-                            flex: 1,
-                            padding: '0.5rem',
-                            border: 'none',
-                            background: role === 'trainer' ? 'var(--primary)' : 'transparent',
-                            color: role === 'trainer' ? 'white' : 'var(--foreground)',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        Trainer
-                    </button>
-                </div>
+                        <Button
+                            type="button"
+                            onClick={() => setRole('trainee')}
+                            flex={1}
+                            h="40px"
+                            bg={role === 'trainee' ? 'var(--primary)' : 'transparent'}
+                            color={role === 'trainee' ? 'white' : 'var(--foreground)'}
+                            borderRadius="6px"
+                            fontWeight="500"
+                            _hover={{ opacity: 0.9 }}
+                            transition="all 0.2s"
+                        >
+                            Trainee
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={() => setRole('trainer')}
+                            flex={1}
+                            h="40px"
+                            bg={role === 'trainer' ? 'var(--primary)' : 'transparent'}
+                            color={role === 'trainer' ? 'white' : 'var(--foreground)'}
+                            borderRadius="6px"
+                            fontWeight="500"
+                            _hover={{ opacity: 0.9 }}
+                            transition="all 0.2s"
+                        >
+                            Trainer
+                        </Button>
+                    </Flex>
 
-                <form onSubmit={handleSubmit}>
-                    <input
-                        type="email"
-                        value={email}
-                        disabled
-                        style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            marginBottom: '1rem',
-                            borderRadius: '8px',
-                            border: '1px solid var(--glass-border)',
-                            background: 'rgba(255,255,255,0.05)',
-                            color: '#888'
-                        }}
-                    />
+                    <form onSubmit={handleSubmit}>
+                        <VStack gap="0.75rem" align="stretch">
+                            {/* Email (disabled) */}
+                            <Input
+                                type="email"
+                                value={email || ''}
+                                disabled
+                                bg="rgba(255,255,255,0.05)"
+                                border="1px solid var(--glass-border)"
+                                color="gray.500"
+                                borderRadius="8px"
+                                h="48px"
+                            />
 
-                    <input
-                        type="text"
-                        placeholder="Choose a username"
-                        className="input-field"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                        minLength={3}
-                        maxLength={20}
-                        pattern="^[a-zA-Z0-9_]+$"
-                        title="Username can only contain letters, numbers, and underscores"
-                    />
+                            {/* Username */}
+                            <Box position="relative">
+                                <Box position="absolute" left="12px" top="50%" transform="translateY(-50%)" color="gray.500" zIndex={1}>
+                                    <User size={18} />
+                                </Box>
+                                <Input
+                                    type="text"
+                                    placeholder="Choose a username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required
+                                    minLength={3}
+                                    maxLength={20}
+                                    pattern="^[a-zA-Z0-9_]+$"
+                                    title="Username can only contain letters, numbers, and underscores"
+                                    bg="var(--secondary)"
+                                    border="1px solid var(--glass-border)"
+                                    color="var(--foreground)"
+                                    borderRadius="8px"
+                                    pl="40px"
+                                    h="48px"
+                                    _focus={{ outline: '2px solid var(--primary)', borderColor: 'transparent' }}
+                                    _placeholder={{ color: 'gray.500' }}
+                                />
+                            </Box>
 
-                    {error && (
-                        <div style={{ color: 'var(--error)', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                            {error}
-                        </div>
-                    )}
+                            {error && (
+                                <Box
+                                    bg="rgba(239, 68, 68, 0.1)"
+                                    border="1px solid rgba(239, 68, 68, 0.2)"
+                                    borderRadius="8px"
+                                    p="0.75rem"
+                                    textAlign="center"
+                                >
+                                    <Text color="red.400" fontSize="sm">{error}</Text>
+                                    {error.includes('log in') && (
+                                        <Button
+                                            type="button"
+                                            variant="plain"
+                                            onClick={() => router.push('/login')}
+                                            color="var(--primary)"
+                                            textDecoration="underline"
+                                            fontSize="sm"
+                                            p="0"
+                                            mt="0.25rem"
+                                            h="auto"
+                                            minH="auto"
+                                        >
+                                            Go to Login
+                                        </Button>
+                                    )}
+                                </Box>
+                            )}
 
-                    <button
-                        type="submit"
-                        className="btn-primary"
-                        style={{ width: '100%' }}
-                        disabled={loading || !username}
-                    >
-                        {loading ? 'Creating Profile...' : 'Complete Setup'}
-                    </button>
-                </form>
-            </div>
-        </div>
+                            <MotionButton
+                                type="submit"
+                                {...tapScale}
+                                w="100%"
+                                h="48px"
+                                bg="var(--primary)"
+                                color="white"
+                                borderRadius="8px"
+                                fontWeight="600"
+                                fontSize="md"
+                                disabled={loading || !username}
+                                _hover={{ opacity: 0.9 }}
+                                _disabled={{ opacity: 0.6, cursor: 'not-allowed' }}
+                            >
+                                {loading ? 'Creating Profile...' : 'Complete Setup'}
+                            </MotionButton>
+                        </VStack>
+                    </form>
+                </VStack>
+            </MotionBox>
+        </Box>
     );
 }
 
 export default function UsernameSetup() {
     return (
         <Suspense fallback={
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh',
-                color: '#888'
-            }}>
-                Loading...
-            </div>
+            <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minH="100vh"
+                bg="#15151F"
+            >
+                <Text color="gray.500">Loading...</Text>
+            </Box>
         }>
             <UsernameSetupForm />
         </Suspense>

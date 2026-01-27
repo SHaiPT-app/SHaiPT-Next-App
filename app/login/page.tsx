@@ -1,24 +1,48 @@
+'use client';
+
 import LoginForm from '@/components/LoginForm';
+import { Box, Heading, Text } from '@chakra-ui/react';
+import { motion } from 'framer-motion';
+import { fadeInUp } from '@/lib/animations';
+
+const MotionBox = motion.create(Box);
 
 export default function LoginPage() {
     return (
-        <main style={{
-            minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#15151F',
-            padding: '1rem'
-        }}>
-            <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-                <h1 style={{ fontSize: '4rem', fontWeight: '800', color: '#F25F29', textShadow: '0 0 20px rgba(242, 95, 41, 0.5)', marginBottom: '0.5rem' }}>
+        <Box
+            as="main"
+            minH="100vh"
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            bg="#15151F"
+            p="1rem"
+        >
+            <MotionBox
+                variants={fadeInUp}
+                initial="hidden"
+                animate="visible"
+                mb="2rem"
+                textAlign="center"
+            >
+                <Heading
+                    as="h1"
+                    fontSize={{ base: '3rem', md: '4rem' }}
+                    fontWeight="800"
+                    color="#F25F29"
+                    textShadow="0 0 20px rgba(242, 95, 41, 0.5)"
+                    mb="0.5rem"
+                    fontFamily="var(--font-orbitron)"
+                >
                     SHaiPT
-                </h1>
-                <p style={{ color: '#888', fontSize: '1.2rem' }}>Professional Workout Planning</p>
-            </div>
+                </Heading>
+                <Text color="gray.500" fontSize={{ base: '1rem', md: '1.2rem' }}>
+                    AI-Powered Personal Training
+                </Text>
+            </MotionBox>
 
             <LoginForm />
-        </main>
+        </Box>
     );
 }
