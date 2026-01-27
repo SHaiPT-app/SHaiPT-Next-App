@@ -11,7 +11,7 @@ function UsernameSetupForm() {
     const [role, setRole] = useState<'trainer' | 'trainee'>('trainee');
     const [error, setError] = useState<React.ReactNode>('');
     const [loading, setLoading] = useState(false);
-    
+
     const userId = searchParams.get('userId');
     const email = searchParams.get('email');
 
@@ -35,9 +35,9 @@ function UsernameSetupForm() {
                         This email is already associated with another account. Please use a different email or{' '}
                         <span
                             onClick={() => router.push('/')}
-                            style={{ 
-                                color: 'var(--primary)', 
-                                textDecoration: 'underline', 
+                            style={{
+                                color: 'var(--primary)',
+                                textDecoration: 'underline',
                                 cursor: 'pointer',
                                 fontSize: 'inherit'
                             }}
@@ -72,10 +72,10 @@ function UsernameSetupForm() {
 
             // Save user info and redirect
             localStorage.setItem('user', JSON.stringify(profile));
-            router.push('/dashboard');
+            router.push('/home');
         } catch (err: any) {
             console.error('Profile creation error:', err);
-            
+
             // Handle specific constraint violation
             if (err.message.includes('profiles_email_unique')) {
                 setError(
@@ -83,9 +83,9 @@ function UsernameSetupForm() {
                         This email is already associated with another account. Please{' '}
                         <span
                             onClick={() => router.push('/')}
-                            style={{ 
-                                color: 'var(--primary)', 
-                                textDecoration: 'underline', 
+                            style={{
+                                color: 'var(--primary)',
+                                textDecoration: 'underline',
                                 cursor: 'pointer',
                                 fontSize: 'inherit'
                             }}
@@ -109,10 +109,10 @@ function UsernameSetupForm() {
     }
 
     return (
-        <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             minHeight: '100vh',
             padding: '1rem'
         }}>
@@ -174,7 +174,7 @@ function UsernameSetupForm() {
                             color: '#888'
                         }}
                     />
-                    
+
                     <input
                         type="text"
                         placeholder="Choose a username"
@@ -194,9 +194,9 @@ function UsernameSetupForm() {
                         </div>
                     )}
 
-                    <button 
-                        type="submit" 
-                        className="btn-primary" 
+                    <button
+                        type="submit"
+                        className="btn-primary"
                         style={{ width: '100%' }}
                         disabled={loading || !username}
                     >
@@ -211,10 +211,10 @@ function UsernameSetupForm() {
 export default function UsernameSetup() {
     return (
         <Suspense fallback={
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
                 minHeight: '100vh',
                 color: '#888'
             }}>

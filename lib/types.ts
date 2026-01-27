@@ -1,102 +1,310 @@
-export type Role = 'trainer' | 'trainee';
+// ============================================
+// SHaiPT Social Fitness Platform Types
+// ============================================
 
-export interface AIFeatures {
-    workout_planner: boolean;
-    dietitian: boolean;
-    form_checker: boolean;
-}
+// ============================================
+// USER & PROFILE TYPES
+// ============================================
 
-// User Profile (matches actual Supabase profiles table)
-export interface User {
+export interface Profile {
     id: string; // uuid, NOT NULL
-    username: string; // text, NOT NULL
-    email: string; // text, NOT NULL  
-    role: Role; // text, NOT NULL
-    trainer_id?: string; // uuid, nullable - for trainees
-    display_name?: string; // text, nullable
+    email: string; // text, NOT NULL
+    username?: string; // text, nullable (ordinal 18)
+    role?: 'trainer' | 'trainee'; // varchar, nullable
+    full_name?: string; // text, nullable
     avatar_url?: string; // text, nullable
-    created_at?: string; // timestamp with time zone, nullable, default now()
-    updated_at?: string; // timestamp with time zone, nullable, default now()
-    ai_features?: AIFeatures; // jsonb, nullable, default null
-    height?: string; // text, nullable
-    weight?: string; // text, nullable
-    experience?: string; // text, nullable
-    dob?: string; // date string, nullable
+    bio?: string; // text, nullable
+
+    // Physical attributes
+    gender?: string; // varchar(20), nullable
+    date_of_birth?: string; // date, nullable
+    height_cm?: number; // numeric, nullable
+    weight_kg?: number; // numeric, nullable
+
+    // Preferences
+    preferred_weight_unit?: 'lbs' | 'kg'; // varchar(10), nullable, default 'lbs'
+    timezone?: string; // varchar(50), nullable, default 'America/New_York'
+    fitness_goals?: string[]; // ARRAY, nullable (ordinal 14)
+
+    // Privacy settings
+    workout_privacy?: 'public' | 'followers' | 'private'; // varchar(20), default 'public'
+    auto_post_workouts?: boolean; // boolean, default true
+    allow_unsolicited_messages?: boolean; // boolean, default true (ordinal 19)
+
+    // Social
+    pinned_plan_id?: string; // uuid, nullable, FK to training_plans(id) (ordinal 15)
+
+    // Timestamps
+    created_at?: string; // timestamptz, default now()
+    updated_at?: string; // timestamptz, default now()
 }
 
-// Exercise data structures for workout plans
-export interface ExerciseSet {
-    targetReps: string;
-    targetWeight?: string;
-    actualReps?: string;
-    actualWeight?: string;
-    pr?: boolean;
+// User type alias for backwards compatibility
+export type User = Profile;
+
+// ============================================
+// SOCIAL RELATIONSHIP TYPES
+// ============================================
+
+export interface UserFollow {
+    follower_id: string; // uuid, NOT NULL
+    following_id: string; // uuid, NOT NULL
+    created_at?: string; // timestamptz, default now()
 }
 
-export interface PlanExercise {
-    id: string; // Local ID for plan management
-    name: string; // Exercise name (can be manual or from database)
-    exercise_id?: string; // varchar(20) - Reference to exercises.exercise_id for database exercises
-    gif_url?: string; // Internal storage for exercise GIF (from database)
-    notes?: string; // Optional notes for the exercise
-    sets: ExerciseSet[];
-}
+export type CoachingStatus = 'pending' | 'active' | 'declined' | 'ended';
 
-// Workout Plan (matches actual Supabase workout_plans table)
-// Workout Session
-export interface WorkoutSession {
-    id: string;
-    name: string; // e.g., "Session 1", "Monday"
-    exercises: PlanExercise[];
-}
-
-// Workout Plan (matches actual Supabase workout_plans table)
-export interface WorkoutPlan {
+export interface CoachingRelationship {
     id: string; // uuid, NOT NULL, default gen_random_uuid()
-    trainee_id: string; // uuid, NOT NULL
-    trainer_id: string; // uuid, NOT NULL
+    coach_id: string; // uuid, NOT NULL
+    athlete_id: string; // uuid, NOT NULL
+    status: CoachingStatus; // varchar(20), NOT NULL
+    requested_by: string; // uuid, NOT NULL (who initiated)
+    can_assign_plans?: boolean; // boolean, default true
+    can_view_workouts?: boolean; // boolean, default true
+    created_at?: string; // timestamptz, default now()
+    updated_at?: string; // timestamptz, default now()
+}
+
+// ============================================
+// WORKOUT & TRAINING TYPES
+// ============================================
+
+// Individual set configuration
+export interface SessionSet {
+    reps: string; // e.g. "10", "8-12", "AMRAP"
+    weight?: string; // e.g. "135", "BW"
+    rest_seconds?: number;
+}
+
+// Individual exercise in a workout session (JSONB structure)
+export interface SessionExercise {
+    exercise_id: string; // Reference to exercises table
+    sets: SessionSet[]; // List of specific sets
+    notes?: string; // Optional exercise-specific notes
+}
+
+export interface WorkoutSession {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    creator_id: string; // uuid, NOT NULL
     name: string; // text, NOT NULL
     description?: string; // text, nullable
-    exercises: WorkoutSession[]; // jsonb, NOT NULL (contains sessions)
-    is_active?: boolean; // boolean, nullable, default true
-    created_at?: string; // timestamp with time zone, nullable, default now()
-    updated_at?: string; // timestamp with time zone, nullable, default now()
-    assigned_at?: string; // timestamp with time zone, nullable
-    expires_at?: string; // timestamp with time zone, nullable
+    exercises: SessionExercise[]; // jsonb, NOT NULL, default '[]'
+    tags?: string[]; // text[], default '{}'
+    is_template?: boolean; // boolean, default true
+    is_public?: boolean; // boolean, default false
+    created_at?: string; // timestamptz, default now()
+    updated_at?: string; // timestamptz, default now()
 }
 
-// Workout logging data structures
-export interface LogSet {
-    setNumber: number;
-    reps: string;
-    weight: string;
-    isPr: boolean;
-    startTime?: number;
-    endTime?: number;
-    duration?: number; // in seconds
+export interface TrainingPlan {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    creator_id: string; // uuid, NOT NULL
+    name: string; // text, NOT NULL
+    description?: string; // text, nullable
+    duration_weeks?: number; // integer, nullable
+    tags?: string[]; // text[], default '{}'
+    is_template?: boolean; // boolean, default true
+    is_public?: boolean; // boolean, default false
+    is_shareable?: boolean; // boolean, default false
+    created_at?: string; // timestamptz, default now()
+    updated_at?: string; // timestamptz, default now()
 }
 
-export interface LogExercise {
-    exerciseId: string;
-    name: string;
-    sets: LogSet[];
-    comments?: string;
-}
-
-// Workout Log (matches actual Supabase workout_logs table)
-export interface WorkoutLog {
+export interface TrainingPlanSession {
     id: string; // uuid, NOT NULL, default gen_random_uuid()
     plan_id: string; // uuid, NOT NULL
-    trainee_id: string; // uuid, NOT NULL
-    date: string; // date, NOT NULL, default CURRENT_DATE
-    exercises: LogExercise[]; // jsonb, NOT NULL
-    notes?: string; // text, nullable
-    duration_minutes?: number; // integer, nullable
-    completed_at?: string; // timestamp with time zone, nullable, default now()
-    created_at?: string; // timestamp with time zone, nullable, default now()
+    session_id: string; // uuid, NOT NULL
+    day_number: number; // integer, NOT NULL
+    week_number?: number; // integer, nullable
 }
 
-// Exercise Library (matches actual Supabase exercises table)
+export interface TrainingPlanAssignment {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    plan_id: string; // uuid, NOT NULL
+    user_id: string; // uuid, NOT NULL
+    assigned_by_id?: string; // uuid, nullable
+    is_self_assigned?: boolean; // boolean, default true
+    start_date: string; // date, NOT NULL
+    end_date: string; // date, NOT NULL
+    is_active?: boolean; // boolean, default true
+    created_at?: string; // timestamptz, default now()
+}
+
+// ============================================
+// WORKOUT LOGGING TYPES
+// ============================================
+
+// Individual set data within an exercise log (JSONB structure)
+export interface LoggedSet {
+    set_number: number;
+    reps: number;
+    weight: number;
+    weight_unit: 'lbs' | 'kg';
+    started_at?: string; // timestamptz
+    completed_at?: string; // timestamptz
+    duration_seconds?: number;
+    rest_after_seconds?: number;
+    rpe?: number; // Rate of Perceived Exertion (1-10)
+    is_warmup?: boolean;
+    notes?: string;
+}
+
+export interface ExerciseLog {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    workout_log_id: string; // uuid, NOT NULL
+    exercise_id: string; // varchar(20), NOT NULL
+    exercise_order: number; // integer, NOT NULL
+    sets: LoggedSet[]; // jsonb, NOT NULL, default '[]'
+    total_sets?: number; // integer, nullable
+    total_reps?: number; // integer, nullable
+    max_weight?: number; // numeric, nullable
+    average_rest_seconds?: number; // integer, nullable
+    created_at?: string; // timestamptz, default now()
+}
+
+export interface WorkoutLog {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    user_id: string; // uuid, NOT NULL
+    assignment_id?: string; // uuid, nullable
+    session_id?: string; // uuid, nullable
+    date: string; // date, NOT NULL, default CURRENT_DATE
+    started_at?: string; // timestamptz, nullable
+    finished_at?: string; // timestamptz, nullable
+    total_duration_seconds?: number; // integer, GENERATED (computed)
+    total_rest_seconds?: number; // integer, nullable
+    total_work_seconds?: number; // integer, GENERATED (computed)
+    notes?: string; // text, nullable
+    completed_at?: string; // timestamptz, nullable
+    created_at?: string; // timestamptz, default now()
+}
+
+export interface PersonalRecord {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    user_id: string; // uuid, NOT NULL
+    exercise_id: string; // varchar(20), NOT NULL
+    max_weight?: number; // numeric, nullable
+    max_volume?: number; // numeric, nullable (weight × reps)
+    max_reps?: number; // integer, nullable
+    max_reps_weight?: number; // numeric, nullable
+    achieved_at: string; // timestamptz, NOT NULL
+    workout_log_id?: string; // uuid, nullable
+    exercise_log_id?: string; // uuid, nullable
+    is_current?: boolean; // boolean, default true
+    created_at?: string; // timestamptz, default now()
+}
+
+export interface ProgressMedia {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    user_id: string; // uuid, NOT NULL
+    workout_log_id?: string; // uuid, nullable
+    media_type: 'image' | 'video'; // varchar(20), NOT NULL
+    storage_path: string; // text, NOT NULL
+    caption?: string; // text, nullable
+    taken_at?: string; // timestamptz, nullable
+    visibility: 'public' | 'followers' | 'private'; // varchar(20), NOT NULL
+    created_at?: string; // timestamptz, default now()
+}
+
+// ============================================
+// SOCIAL ACTIVITY TYPES
+// ============================================
+
+export type ActivityPostType = 'workout_completed' | 'pr_achieved' | 'manual';
+export type PostVisibility = 'public' | 'followers' | 'private';
+
+export interface ActivityPost {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    user_id: string; // uuid, NOT NULL
+    workout_log_id?: string; // uuid, nullable
+    post_type: ActivityPostType; // varchar(50), NOT NULL
+    content: string; // text, NOT NULL
+    visibility: PostVisibility; // varchar(20), NOT NULL
+    created_at?: string; // timestamptz, default now()
+}
+
+export interface PostLike {
+    post_id: string; // uuid, NOT NULL
+    user_id: string; // uuid, NOT NULL
+    created_at?: string; // timestamptz, default now()
+}
+
+export interface PostComment {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    post_id: string; // uuid, NOT NULL
+    user_id: string; // uuid, NOT NULL
+    content: string; // text, NOT NULL
+    created_at?: string; // timestamptz, default now()
+}
+
+export interface UserFavorite {
+    user_id: string; // uuid, NOT NULL
+    item_type: 'plan' | 'session'; // varchar(20), NOT NULL
+    item_id: string; // uuid, NOT NULL
+    created_at?: string; // timestamptz, default now()
+}
+
+// ============================================
+// MESSAGING & NOTIFICATIONS
+// ============================================
+
+export interface DirectMessage {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    sender_id: string; // uuid, NOT NULL
+    recipient_id: string; // uuid, NOT NULL
+    content: string; // text, NOT NULL
+    read_at?: string; // timestamptz, nullable
+    created_at?: string; // timestamptz, default now()
+}
+
+export type NotificationType =
+    | 'new_follower'
+    | 'post_like'
+    | 'post_comment'
+    | 'coaching_request'
+    | 'coaching_accepted'
+    | 'plan_assigned'
+    | 'new_message'
+    | 'pr_achieved'
+    | 'mention';
+
+export type NotificationReferenceType = 'post' | 'message' | 'plan' | 'user';
+
+export interface Notification {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    user_id: string; // uuid, NOT NULL (recipient)
+    type: NotificationType; // varchar(50), NOT NULL
+    actor_id?: string; // uuid, nullable (who triggered it)
+    reference_id?: string; // uuid, nullable
+    reference_type?: NotificationReferenceType; // varchar(50), nullable
+    content: string; // text, NOT NULL
+    is_read?: boolean; // boolean, default false
+    created_at?: string; // timestamptz, default now()
+}
+
+// ============================================
+// AI CHAT TYPES
+// ============================================
+
+export interface AIChatMessage {
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: string;
+}
+
+export interface AIChat {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    user_id: string; // uuid, NOT NULL
+    title: string; // text, default 'New Chat'
+    messages: AIChatMessage[]; // jsonb, NOT NULL, default '[]'
+    created_at?: string; // timestamptz, default now()
+    updated_at?: string; // timestamptz, default now()
+}
+
+// ============================================
+// EXERCISE LIBRARY TYPES (unchanged)
+// ============================================
+
 export interface Exercise {
     exercise_id: string; // varchar(20), NOT NULL
     name: string; // varchar(255), NOT NULL  
@@ -110,10 +318,94 @@ export interface Exercise {
     updated_at?: string; // timestamp, nullable, default now()
 }
 
-// Exercise Instructions (matches Supabase exercise_instructions table)
 export interface ExerciseInstruction {
     id: number;
     exercise_id: string;
     step_number: number;
-    instruction_text: string;
+    instruction: string; // Column name is 'instruction' not 'instruction_text'
+}
+
+// ============================================
+// UTILITY & EXTENDED TYPES
+// ============================================
+
+// Extended types for API responses with joined data
+export interface ActivityPostWithDetails extends ActivityPost {
+    user?: Profile;
+    like_count?: number;
+    comment_count?: number;
+    is_liked_by_user?: boolean;
+    workout_log?: WorkoutLog;
+}
+
+export interface NotificationWithDetails extends Notification {
+    actor?: Profile;
+}
+
+export interface TrainingPlanWithSessions extends TrainingPlan {
+    creator?: Profile;
+    sessions?: (TrainingPlanSession & { session?: WorkoutSession })[];
+    is_favorited?: boolean;
+}
+
+export interface WorkoutSessionWithCreator extends WorkoutSession {
+    creator?: Profile;
+    is_favorited?: boolean;
+}
+
+export interface WorkoutLogWithExercises extends WorkoutLog {
+    exercise_logs?: ExerciseLog[];
+    session?: WorkoutSession;
+}
+
+// For library views
+export type LibraryItemType = 'plan' | 'session';
+
+export interface LibraryItem {
+    id: string;
+    type: LibraryItemType;
+    name: string;
+    description?: string;
+    creator_id: string;
+    creator_username?: string;
+    is_favorited: boolean;
+    is_public?: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============================================
+// ANALYTICS TYPES
+// ============================================
+
+export interface UserStats {
+    user_id: string;
+    total_workouts: number;
+    total_sets: number;
+    total_reps: number;
+    total_volume_kg: number;
+    total_workout_minutes: number;
+    current_streak_days: number;
+    longest_streak_days: number;
+    last_workout_date: string; // date string
+    muscle_group_volumes: Record<string, { volume: number; sets: number }>;
+    muscle_group_sets: Record<string, number>;
+    last_30_days_volume: number;
+    last_7_days_workouts: number;
+    last_calculated_at: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface UserStatsHistory {
+    id: string;
+    user_id: string;
+    date: string; // date string
+    total_volume_kg: number;
+    total_sets: number;
+    total_reps: number;
+    total_workouts: number;
+    workout_minutes: number;
+    muscle_group_volumes: Record<string, { volume: number; sets: number }>;
+    created_at: string;
 }

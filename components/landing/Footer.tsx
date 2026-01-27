@@ -6,7 +6,6 @@ export default function Footer() {
     return (
         <footer style={{
             padding: '3rem 2rem',
-            background: '#15151F',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             textAlign: 'center'
         }}>
@@ -19,7 +18,8 @@ export default function Footer() {
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
-                        marginBottom: '0.5rem'
+                        marginBottom: '0.5rem',
+                        fontFamily: 'var(--font-orbitron)'
                     }}>
                         SHaiPT
                     </h3>

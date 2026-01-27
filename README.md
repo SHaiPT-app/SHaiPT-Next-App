@@ -5,31 +5,28 @@
 
 **SHaiPT** is a cutting-edge AI-powered personal training application designed to help users build personalized workout routines, track their progress, and receive intelligent coaching. Built with modern web technologies, SHaiPT leverages generative AI to provide a tailored fitness experience.
 
-## 🚀 Features
-
--   **AI Workout Planning**: Generate personalized workout plans based on your goals and fitness level.
--   **Intelligent Coaching**: Receive real-time feedback and adjustments to your routine.
--   **Progress Tracking**: Monitor your gains with detailed analytics and logs.
--   **Exercise Library**: Access a comprehensive database of exercises with visual guides.
--   **Role-Based Access**: Distinct interfaces for Trainees and Trainers.
-
-## 🛠️ Tech Stack
-
--   **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
--   **Language**: [TypeScript](https://www.typescriptlang.org/)
--   **Database & Auth**: [Supabase](https://supabase.com/)
--   **AI & ML**: Google Generative AI, MediaPipe
--   **Styling**: CSS Modules / Vanilla CSS
--   **Testing**: Jest, React Testing Library, Playwright
-
 ## 🏁 Getting Started
 
 Follow these instructions to set up the project locally.
 
 ### Prerequisites
 
--   **Node.js**: Version 20 or higher.
--   **pnpm**: Version 9 or higher (recommended package manager).
+1.  **Node.js** (v20+):
+    *   Download and install from [nodejs.org](https://nodejs.org/).
+    *   Verify installation:
+        ```bash
+        node -v
+        ```
+
+2.  **pnpm** (v9+):
+    *   Once Node.js is installed, install pnpm globally:
+        ```bash
+        npm install -g pnpm
+        ```
+    *   Verify installation:
+        ```bash
+        pnpm -v
+        ```
 
 ### Installation
 
@@ -60,6 +57,23 @@ Follow these instructions to set up the project locally.
     pnpm dev
     ```
     Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🚀 Features
+
+-   **AI Workout Planning**: Generate personalized workout plans based on your goals and fitness level.
+-   **Intelligent Coaching**: Receive real-time feedback and adjustments to your routine.
+-   **Progress Tracking**: Monitor your gains with detailed analytics and logs.
+-   **Exercise Library**: Access a comprehensive database of exercises with visual guides.
+-   **Role-Based Access**: Distinct interfaces for Trainees and Trainers.
+
+## 🛠️ Tech Stack
+
+-   **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+-   **Language**: [TypeScript](https://www.typescriptlang.org/)
+-   **Database & Auth**: [Supabase](https://supabase.com/)
+-   **AI & ML**: Google Generative AI, MediaPipe
+-   **Styling**: CSS Modules / Vanilla CSS
+-   **Testing**: Jest, React Testing Library, Playwright
 
 ## 📚 Documentation
 
@@ -103,4 +117,3 @@ Contributions are welcome! Please follow these steps:
 Copyright (c) 2025 SHaiPT. All Rights Reserved.
 
 This project is proprietary and confidential. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.
-
