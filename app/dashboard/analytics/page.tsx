@@ -6,6 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { fadeInUp, staggerContainer } from '@/lib/animations';
+import {
+    VolumeOverTimeChart,
+    StrengthProgressionChart,
+    BodyWeightTrendChart,
+    WorkoutFrequencyHeatmap,
+    MuscleGroupVolumeChart,
+} from '@/components/charts/AnalyticsCharts';
 import type {
     ExerciseLog,
     PersonalRecord,
@@ -37,6 +44,8 @@ export default function AnalyticsDashboardPage() {
     const [workoutLogs, setWorkoutLogs] = useState<WorkoutLogWithExercises[]>([]);
     const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
     const [exercises, setExercises] = useState<Record<string, Exercise>>({});
+    const [weightHistory, setWeightHistory] = useState<{ date: string; weight: number }[]>([]);
+    const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>('lbs');
     const [loading, setLoading] = useState(true);
     const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
@@ -100,9 +109,28 @@ export default function AnalyticsDashboardPage() {
                     }
                 }
 
+                // Fetch body weight history
+                const { data: weightData } = await supabase
+                    .from('body_weight_logs')
+                    .select('date, weight')
+                    .eq('user_id', userId)
+                    .order('date', { ascending: true })
+                    .limit(90);
+
+                // Fetch user preferred unit
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('preferred_weight_unit')
+                    .eq('id', userId)
+                    .single();
+
                 setWorkoutLogs((logs as WorkoutLogWithExercises[]) || []);
                 setPersonalRecords((prs as PersonalRecord[]) || []);
                 setExercises(exerciseMap);
+                setWeightHistory((weightData as { date: string; weight: number }[]) || []);
+                if (profileData?.preferred_weight_unit) {
+                    setWeightUnit(profileData.preferred_weight_unit as 'lbs' | 'kg');
+                }
             } catch (error) {
                 console.error('Error fetching analytics data:', error);
             } finally {
@@ -380,6 +408,43 @@ export default function AnalyticsDashboardPage() {
                         ))}
                     </motion.div>
                 )}
+            </section>
+
+            {/* Charts Section */}
+            <section style={{ marginBottom: '3rem' }}>
+                <h2 style={{
+                    fontFamily: 'var(--font-orbitron)',
+                    fontSize: '1.15rem',
+                    color: 'white',
+                    marginBottom: '1.25rem',
+                }}>
+                    Performance Charts
+                </h2>
+
+                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    {/* Volume Over Time & Strength Progression - side by side on desktop */}
+                    <div style={{
+                        display: 'grid',
+                        gap: '1.5rem',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    }}>
+                        <VolumeOverTimeChart logs={workoutLogs} />
+                        <StrengthProgressionChart logs={workoutLogs} exercises={exercises} />
+                    </div>
+
+                    {/* Body Weight Trend */}
+                    <BodyWeightTrendChart weightHistory={weightHistory} unit={weightUnit} />
+
+                    {/* Heatmap & Muscle Distribution - side by side on desktop */}
+                    <div style={{
+                        display: 'grid',
+                        gap: '1.5rem',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    }}>
+                        <WorkoutFrequencyHeatmap logs={workoutLogs} />
+                        <MuscleGroupVolumeChart logs={workoutLogs} exercises={exercises} />
+                    </div>
+                </div>
             </section>
 
             {/* Workout History Section */}
