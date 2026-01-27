@@ -283,6 +283,19 @@ export interface Notification {
 }
 
 // ============================================
+// ONBOARDING TYPES
+// ============================================
+
+export interface OnboardingData {
+    fitness_goals: string[];
+    experience_level: string;
+    available_equipment: string[];
+    training_frequency: number;
+    injuries_limitations: string[];
+    dietary_preferences: string[];
+}
+
+// ============================================
 // AI CHAT TYPES
 // ============================================
 
