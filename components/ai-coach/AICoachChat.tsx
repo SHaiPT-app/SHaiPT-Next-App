@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, Text, Heading, VStack, Flex } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
-import { Send, X, MessageSquare, Trash2 } from 'lucide-react';
+import { Send, X, MessageSquare, Trash2, User, Bot } from 'lucide-react';
 import type { Profile, AIChat } from '@/lib/types';
 
 const MotionBox = motion.create(Box);
@@ -140,6 +140,12 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                 throw new Error(errorData.error || 'Failed to get response');
             }
 
+            // Capture chatId from response header for new chats
+            const returnedChatId = response.headers.get('X-Chat-Id');
+            if (returnedChatId && !chatId) {
+                setChatId(returnedChatId);
+            }
+
             // Read the stream
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response body');
@@ -202,23 +208,23 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                             width: '56px',
                             height: '56px',
                             borderRadius: '50%',
-                            background: 'linear-gradient(135deg, var(--primary), #ff6b35)',
+                            background: 'linear-gradient(135deg, #39FF14, #2ecf10)',
                             border: 'none',
                             color: 'white',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 4px 20px rgba(242, 95, 41, 0.4)',
+                            boxShadow: '0 4px 20px rgba(57, 255, 20, 0.4)',
                             transition: 'transform 0.2s, box-shadow 0.2s',
                         }}
                         onMouseEnter={e => {
                             e.currentTarget.style.transform = 'scale(1.1)';
-                            e.currentTarget.style.boxShadow = '0 6px 25px rgba(242, 95, 41, 0.6)';
+                            e.currentTarget.style.boxShadow = '0 6px 25px rgba(57, 255, 20, 0.6)';
                         }}
                         onMouseLeave={e => {
                             e.currentTarget.style.transform = 'scale(1)';
-                            e.currentTarget.style.boxShadow = '0 4px 20px rgba(242, 95, 41, 0.4)';
+                            e.currentTarget.style.boxShadow = '0 4px 20px rgba(57, 255, 20, 0.4)';
                         }}
                     >
                         <MessageSquare size={24} />
@@ -265,13 +271,13 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                     w="32px"
                                     h="32px"
                                     borderRadius="50%"
-                                    bg="linear-gradient(135deg, #6366f1, #8b5cf6)"
+                                    bg="linear-gradient(135deg, #39FF14, #2ecf10)"
                                     display="flex"
                                     alignItems="center"
                                     justifyContent="center"
                                     fontSize="0.9rem"
                                 >
-                                    {'\u{1F916}'}
+                                    <MessageSquare size={16} color="#0B0B15" />
                                 </Box>
                                 <Box>
                                     <Heading
@@ -293,7 +299,7 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                     onClick={() => setShowHistory(!showHistory)}
                                     title="Chat history"
                                     style={{
-                                        background: showHistory ? 'rgba(242, 95, 41, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                        background: showHistory ? 'rgba(57, 255, 20, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                         border: '1px solid rgba(255, 255, 255, 0.1)',
                                         borderRadius: '8px',
                                         width: '32px',
@@ -369,8 +375,8 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                                 key={chat.id}
                                                 onClick={() => loadChat(chat)}
                                                 style={{
-                                                    background: chatId === chat.id ? 'rgba(242, 95, 41, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                                                    border: chatId === chat.id ? '1px solid rgba(242, 95, 41, 0.3)' : '1px solid transparent',
+                                                    background: chatId === chat.id ? 'rgba(57, 255, 20, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                                                    border: chatId === chat.id ? '1px solid rgba(57, 255, 20, 0.3)' : '1px solid transparent',
                                                     borderRadius: '8px',
                                                     padding: '0.5rem 0.75rem',
                                                     textAlign: 'left',
@@ -402,7 +408,19 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                             <VStack gap="0.75rem" align="stretch">
                                 {messages.length === 0 ? (
                                     <Box py="2rem" textAlign="center">
-                                        <Text fontSize="1.5rem" mb="0.75rem">{'\u{1F4AA}'}</Text>
+                                        <Box mb="0.75rem" display="flex" justifyContent="center">
+                                            <Box
+                                                w="40px"
+                                                h="40px"
+                                                borderRadius="50%"
+                                                bg="linear-gradient(135deg, #39FF14, #2ecf10)"
+                                                display="flex"
+                                                alignItems="center"
+                                                justifyContent="center"
+                                            >
+                                                <MessageSquare size={20} color="#0B0B15" />
+                                            </Box>
+                                        </Box>
                                         <Text
                                             fontFamily="var(--font-orbitron)"
                                             fontSize="0.95rem"
@@ -431,8 +449,8 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                                         transition: 'all 0.15s',
                                                     }}
                                                     onMouseEnter={e => {
-                                                        e.currentTarget.style.background = 'rgba(242, 95, 41, 0.1)';
-                                                        e.currentTarget.style.borderColor = 'rgba(242, 95, 41, 0.3)';
+                                                        e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                                                        e.currentTarget.style.borderColor = 'rgba(57, 255, 20, 0.3)';
                                                     }}
                                                     onMouseLeave={e => {
                                                         e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
@@ -461,8 +479,8 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                                     borderRadius="50%"
                                                     bg={
                                                         message.role === 'user'
-                                                            ? 'linear-gradient(135deg, var(--primary), #ff6b35)'
-                                                            : 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                                                            ? 'linear-gradient(135deg, #39FF14, #2ecf10)'
+                                                            : 'linear-gradient(135deg, rgba(57, 255, 20, 0.6), rgba(46, 207, 16, 0.4))'
                                                     }
                                                     display="flex"
                                                     alignItems="center"
@@ -471,7 +489,7 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                                     fontSize="0.75rem"
                                                     mt="0.15rem"
                                                 >
-                                                    {message.role === 'user' ? '\u{1F464}' : '\u{1F916}'}
+                                                    {message.role === 'user' ? <User size={14} color="#0B0B15" /> : <Bot size={14} color="#0B0B15" />}
                                                 </Box>
                                                 <Box
                                                     flex={1}
@@ -479,13 +497,13 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                                     borderRadius="10px"
                                                     bg={
                                                         message.role === 'user'
-                                                            ? 'rgba(0, 212, 255, 0.08)'
+                                                            ? 'rgba(57, 255, 20, 0.08)'
                                                             : 'rgba(255, 255, 255, 0.04)'
                                                     }
                                                     border="1px solid"
                                                     borderColor={
                                                         message.role === 'user'
-                                                            ? 'rgba(0, 212, 255, 0.15)'
+                                                            ? 'rgba(57, 255, 20, 0.15)'
                                                             : 'rgba(255, 255, 255, 0.06)'
                                                     }
                                                 >
@@ -568,9 +586,9 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                         padding: '0.7rem',
                                         background:
                                             isLoading || !input.trim()
-                                                ? 'rgba(242, 95, 41, 0.3)'
-                                                : 'var(--primary)',
-                                        color: 'white',
+                                                ? 'rgba(57, 255, 20, 0.3)'
+                                                : '#39FF14',
+                                        color: '#0B0B15',
                                         border: 'none',
                                         borderRadius: '10px',
                                         cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',

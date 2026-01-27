@@ -14,6 +14,73 @@ function getMockResponse(): string {
     return MOCK_RESPONSES[Math.floor(Math.random() * MOCK_RESPONSES.length)];
 }
 
+/** Build a rich context string from the user's profile, plans, and workout history */
+async function buildUserContext(userId: string): Promise<string> {
+    const contextParts: string[] = [];
+
+    try {
+        const [profile, activeAssignment, recentLogs] = await Promise.all([
+            db.profiles.getById(userId).catch(() => null),
+            db.trainingPlanAssignments.getActiveByUser(userId).catch(() => null),
+            db.workoutLogs.getByUser(userId, 10).catch(() => []),
+        ]);
+
+        // Profile context
+        if (profile) {
+            contextParts.push(`User: ${profile.full_name || profile.username || 'Unknown'}`);
+            if (profile.fitness_goals?.length) {
+                contextParts.push(`Fitness goals: ${profile.fitness_goals.join(', ')}`);
+            }
+            if (profile.height_cm) contextParts.push(`Height: ${profile.height_cm}cm`);
+            if (profile.weight_kg) contextParts.push(`Weight: ${profile.weight_kg}kg`);
+            if (profile.gender) contextParts.push(`Gender: ${profile.gender}`);
+            if (profile.preferred_weight_unit) contextParts.push(`Preferred weight unit: ${profile.preferred_weight_unit}`);
+            if (profile.bio) contextParts.push(`Bio: ${profile.bio}`);
+        }
+
+        // Active training plan context
+        if (activeAssignment) {
+            try {
+                const plan = await db.trainingPlans.getById(activeAssignment.plan_id);
+                if (plan) {
+                    contextParts.push(`\nActive training plan: "${plan.name}"`);
+                    if (plan.description) contextParts.push(`Plan description: ${plan.description}`);
+                    if (plan.duration_weeks) contextParts.push(`Plan duration: ${plan.duration_weeks} weeks`);
+                    contextParts.push(`Plan dates: ${activeAssignment.start_date} to ${activeAssignment.end_date}`);
+
+                    // Fetch plan sessions for workout details
+                    const sessions = await db.trainingPlanSessions.getByPlan(plan.id).catch(() => []);
+                    if (sessions.length > 0) {
+                        contextParts.push(`Plan has ${sessions.length} scheduled sessions`);
+                    }
+                }
+            } catch {
+                // Non-critical, continue without plan details
+            }
+        }
+
+        // Recent workout logs with details
+        const recentLogsSlice = (recentLogs || []).slice(0, 5);
+        if (recentLogsSlice.length > 0) {
+            contextParts.push(`\nRecent workouts (${recentLogsSlice.length} sessions):`);
+            for (const log of recentLogsSlice) {
+                const parts = [`- ${log.date}`];
+                if (log.total_duration_seconds) {
+                    const mins = Math.round(log.total_duration_seconds / 60);
+                    parts.push(`${mins} min`);
+                }
+                if (log.notes) parts.push(`notes: "${log.notes}"`);
+                contextParts.push(parts.join(' '));
+            }
+        }
+    } catch (err) {
+        console.error('Failed to fetch user context:', err);
+    }
+
+    if (contextParts.length === 0) return '';
+    return `\n\nCurrent user context:\n${contextParts.join('\n')}`;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { messages, userId, chatId } = await req.json();
@@ -26,47 +93,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Build user context for the system prompt
-        let userContext = '';
-        if (userId) {
-            try {
-                const [profile, activePlans, recentLogs] = await Promise.all([
-                    db.profiles.getById(userId).catch(() => null),
-                    db.trainingPlanAssignments.getActiveByUser(userId).catch(() => []),
-                    db.workoutLogs.getByUser(userId).catch(() => []),
-                ]);
-
-                const contextParts: string[] = [];
-
-                if (profile) {
-                    contextParts.push(`User: ${profile.full_name || profile.username || 'Unknown'}`);
-                    if (profile.fitness_goals?.length) {
-                        contextParts.push(`Fitness goals: ${profile.fitness_goals.join(', ')}`);
-                    }
-                    if (profile.height_cm) contextParts.push(`Height: ${profile.height_cm}cm`);
-                    if (profile.weight_kg) contextParts.push(`Weight: ${profile.weight_kg}kg`);
-                    if (profile.gender) contextParts.push(`Gender: ${profile.gender}`);
-                }
-
-                if (activePlans && activePlans.length > 0) {
-                    contextParts.push(`Active training plans: ${activePlans.length}`);
-                }
-
-                const recentLogsSlice = (recentLogs || []).slice(0, 5);
-                if (recentLogsSlice.length > 0) {
-                    contextParts.push(`Recent workouts: ${recentLogsSlice.length} in last sessions`);
-                    const lastWorkout = recentLogsSlice[0];
-                    if (lastWorkout?.date) {
-                        contextParts.push(`Last workout: ${lastWorkout.date}`);
-                    }
-                }
-
-                if (contextParts.length > 0) {
-                    userContext = `\n\nCurrent user context:\n${contextParts.join('\n')}`;
-                }
-            } catch (err) {
-                console.error('Failed to fetch user context:', err);
-            }
-        }
+        const userContext = userId ? await buildUserContext(userId) : '';
 
         const systemPrompt = `You are SHaiPT AI Coach, an expert fitness coach and personal trainer. You have deep knowledge of exercise science, nutrition, and training programming.${userContext}
 
@@ -83,7 +110,7 @@ You help with:
 - Progress analysis and goal setting
 - Motivation and accountability
 
-Keep responses concise (2-4 paragraphs max). Use markdown formatting when listing exercises or plans.`;
+Keep responses concise (2-4 paragraphs max). Use markdown formatting when listing exercises or plans. Never use emojis.`;
 
         // Check for API key
         const apiKey = process.env.GEMINI_API_KEY;
@@ -91,18 +118,9 @@ Keep responses concise (2-4 paragraphs max). Use markdown formatting when listin
             // Return mock streaming response when no API key
             const mockResponse = getMockResponse();
             const encoder = new TextEncoder();
-            const stream = new ReadableStream({
-                async start(controller) {
-                    const words = mockResponse.split(' ');
-                    for (const word of words) {
-                        controller.enqueue(encoder.encode(word + ' '));
-                        await new Promise(r => setTimeout(r, 50));
-                    }
-                    controller.close();
-                },
-            });
 
-            // Save to chat history
+            // Save to chat history and get chatId
+            let savedChatId = chatId;
             if (userId) {
                 const allMessages: AIChatMessage[] = [
                     ...messages.map((m: { role: string; content: string }) => ({
@@ -116,19 +134,31 @@ Keep responses concise (2-4 paragraphs max). Use markdown formatting when listin
                         timestamp: new Date().toISOString(),
                     },
                 ];
-                saveChatHistory(userId, chatId, allMessages, messages[0]?.content);
+                savedChatId = await saveChatHistory(userId, chatId, allMessages, messages[0]?.content);
             }
+
+            const stream = new ReadableStream({
+                async start(controller) {
+                    const words = mockResponse.split(' ');
+                    for (const word of words) {
+                        controller.enqueue(encoder.encode(word + ' '));
+                        await new Promise(r => setTimeout(r, 50));
+                    }
+                    controller.close();
+                },
+            });
 
             return new Response(stream, {
                 headers: {
                     'Content-Type': 'text/plain; charset=utf-8',
                     'Transfer-Encoding': 'chunked',
+                    ...(savedChatId ? { 'X-Chat-Id': savedChatId } : {}),
                 },
             });
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         // Format message history for Gemini
         const history = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
@@ -143,7 +173,7 @@ Keep responses concise (2-4 paragraphs max). Use markdown formatting when listin
                 { role: 'user', parts: [{ text: systemPrompt }] },
                 {
                     role: 'model',
-                    parts: [{ text: "Understood! I'm SHaiPT AI Coach, ready to help with training, nutrition, and all your fitness goals. What can I help you with?" }],
+                    parts: [{ text: "Understood. I'm SHaiPT AI Coach, ready to help with training, nutrition, and all your fitness goals. What can I help you with?" }],
                 },
                 ...history,
             ],
@@ -151,6 +181,7 @@ Keep responses concise (2-4 paragraphs max). Use markdown formatting when listin
 
         // Stream the response
         let fullResponse = '';
+        const savedChatId = chatId;
         try {
             const result = await chat.sendMessageStream(lastMessage.content);
             const encoder = new TextEncoder();
@@ -181,7 +212,7 @@ Keep responses concise (2-4 paragraphs max). Use markdown formatting when listin
                                     timestamp: new Date().toISOString(),
                                 },
                             ];
-                            saveChatHistory(userId, chatId, allMessages, messages[0]?.content);
+                            await saveChatHistory(userId, savedChatId, allMessages, messages[0]?.content);
                         }
                     } catch (streamError: unknown) {
                         // Handle rate limiting
@@ -201,6 +232,7 @@ Keep responses concise (2-4 paragraphs max). Use markdown formatting when listin
                 headers: {
                     'Content-Type': 'text/plain; charset=utf-8',
                     'Transfer-Encoding': 'chunked',
+                    ...(savedChatId ? { 'X-Chat-Id': savedChatId } : {}),
                 },
             });
         } catch (error: unknown) {
@@ -224,24 +256,27 @@ Keep responses concise (2-4 paragraphs max). Use markdown formatting when listin
     }
 }
 
-/** Save or update chat history in the ai_chats table */
+/** Save or update chat history in the ai_chats table. Returns the chatId. */
 async function saveChatHistory(
     userId: string,
     chatId: string | undefined,
     messages: AIChatMessage[],
     firstMessageContent?: string
-) {
+): Promise<string | undefined> {
     try {
         if (chatId) {
             await db.aiChats.update(chatId, { messages });
+            return chatId;
         } else {
-            await db.aiChats.create({
+            const created = await db.aiChats.create({
                 user_id: userId,
                 title: firstMessageContent?.substring(0, 100) || 'AI Coach Chat',
                 messages,
             });
+            return created.id;
         }
     } catch (err) {
         console.error('Failed to save chat history:', err);
+        return undefined;
     }
 }
