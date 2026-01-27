@@ -399,6 +399,29 @@ export interface LibraryItem {
 }
 
 // ============================================
+// PLAN ADAPTATION TYPES
+// ============================================
+
+export type AdaptationType = 'weight_progression' | 'exercise_substitution' | 'volume_adjustment' | 'deload_recommendation';
+
+export interface PlanAdaptationRecommendation {
+    type: AdaptationType;
+    exercise_id?: string;
+    exercise_name: string;
+    current_value: string;
+    recommended_value: string;
+    rationale: string;
+    substitute_exercise_name?: string;
+    substitute_exercise_id?: string;
+}
+
+export interface PlanAdaptationResponse {
+    summary: string;
+    recommendations: PlanAdaptationRecommendation[];
+    overall_assessment: string;
+}
+
+// ============================================
 // ANALYTICS TYPES
 // ============================================
 

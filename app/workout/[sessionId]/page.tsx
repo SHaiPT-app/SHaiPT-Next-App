@@ -11,7 +11,10 @@ import type {
     ExerciseLog,
     LoggedSet,
     Profile,
+    PlanAdaptationResponse,
+    PlanAdaptationRecommendation,
 } from '@/lib/types';
+import PlanAdaptationReview from '@/components/PlanAdaptationReview';
 
 const PoseDetectionOverlay = lazy(() => import('@/components/PoseDetectionOverlay'));
 
@@ -309,13 +312,19 @@ interface WorkoutSummaryProps {
     prsAchieved: Array<{ exerciseName: string; weight: number; reps: number; unit: string }>;
     weightUnit: 'lbs' | 'kg';
     userGoals?: string[];
+    workoutLogId?: string;
+    userId?: string;
     onFinish: () => void;
 }
 
-function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, weightUnit, userGoals, onFinish }: WorkoutSummaryProps) {
+function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, weightUnit, userGoals, workoutLogId, userId, onFinish }: WorkoutSummaryProps) {
     const [aiFeedback, setAiFeedback] = useState<AIFeedback | null>(null);
     const [aiFeedbackLoading, setAiFeedbackLoading] = useState(true);
     const [aiFeedbackError, setAiFeedbackError] = useState(false);
+    const [adaptation, setAdaptation] = useState<PlanAdaptationResponse | null>(null);
+    const [adaptationLoading, setAdaptationLoading] = useState(true);
+    const [adaptationApplying, setAdaptationApplying] = useState(false);
+    const [adaptationApplied, setAdaptationApplied] = useState(false);
 
     const durationMs = Date.now() - new Date(startedAt).getTime();
     const totalMinutes = Math.floor(durationMs / 60000);
@@ -383,8 +392,76 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, weightU
         };
 
         fetchAIFeedback();
+
+        // Fetch plan adaptation recommendations
+        const fetchAdaptation = async () => {
+            try {
+                const exerciseData = Array.from(exerciseLogs.entries()).map(([idx, { log, exercise }]) => {
+                    const sessionExercise = session.exercises[idx];
+                    return {
+                        exercise_name: exercise?.name || 'Unknown Exercise',
+                        exercise_id: sessionExercise?.exercise_id,
+                        target_sets: sessionExercise?.sets.length || 0,
+                        target_reps: sessionExercise?.sets[0]?.reps || '0',
+                        target_weight: sessionExercise?.sets[0]?.weight || 'N/A',
+                        actual_sets: log.sets.map((s) => ({
+                            weight: s.weight,
+                            reps: s.reps,
+                            rpe: s.rpe,
+                            weight_unit: s.weight_unit,
+                        })),
+                    };
+                });
+
+                const response = await fetch('/api/ai-coach/plan-adaptation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: userId || '',
+                        workoutLogId: workoutLogId || '',
+                        sessionName: session.name,
+                        exercises: exerciseData,
+                        userGoals,
+                    }),
+                });
+
+                if (response.ok) {
+                    const data: PlanAdaptationResponse = await response.json();
+                    if (data.recommendations) {
+                        setAdaptation(data);
+                    }
+                }
+            } catch {
+                // Adaptation is non-critical; fail silently
+            } finally {
+                setAdaptationLoading(false);
+            }
+        };
+
+        fetchAdaptation();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const handleAcceptAdaptations = async (accepted: PlanAdaptationRecommendation[]) => {
+        setAdaptationApplying(true);
+        try {
+            // Store accepted recommendations as notes on the workout log
+            // so the plan viewer and future AI context can reference them
+            if (workoutLogId) {
+                const adaptationNotes = accepted
+                    .map((rec) => `[${rec.type}] ${rec.exercise_name}: ${rec.current_value} -> ${rec.recommended_value}`)
+                    .join('; ');
+                await db.workoutLogs.update(workoutLogId, {
+                    notes: adaptationNotes,
+                });
+            }
+            setAdaptationApplied(true);
+        } catch {
+            // Non-critical failure
+        } finally {
+            setAdaptationApplying(false);
+        }
+    };
 
     return (
         <motion.div
@@ -538,6 +615,52 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, weightU
                         </>
                     )}
                 </div>
+            </motion.div>
+
+            {/* Plan Adaptation */}
+            <motion.div variants={fadeInUp} style={{ marginBottom: '2rem' }}>
+                <h3 style={{ marginBottom: '1rem', fontFamily: 'var(--font-orbitron)', fontSize: '1rem', color: '#39ff14' }}>
+                    Plan Adaptation
+                </h3>
+                {adaptationLoading && (
+                    <div
+                        className="glass-panel"
+                        style={{ padding: '1.25rem', border: '1px solid rgba(57, 255, 20, 0.15)' }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#888' }}>
+                            <div className="spinner" style={{ width: '16px', height: '16px' }} />
+                            <span style={{ fontSize: '0.9rem' }}>Analyzing performance for plan adjustments...</span>
+                        </div>
+                    </div>
+                )}
+                {adaptationApplied && (
+                    <div
+                        className="glass-panel"
+                        style={{ padding: '1.25rem', border: '1px solid rgba(57, 255, 20, 0.3)' }}
+                    >
+                        <p style={{ color: '#39ff14', fontSize: '0.9rem', margin: 0 }}>
+                            Adaptations recorded. Your upcoming sessions will reflect these changes.
+                        </p>
+                    </div>
+                )}
+                {!adaptationLoading && !adaptationApplied && adaptation && (
+                    <PlanAdaptationReview
+                        adaptation={adaptation}
+                        onAccept={handleAcceptAdaptations}
+                        onDismiss={() => setAdaptation(null)}
+                        loading={adaptationApplying}
+                    />
+                )}
+                {!adaptationLoading && !adaptationApplied && !adaptation && (
+                    <div
+                        className="glass-panel"
+                        style={{ padding: '1.25rem', border: '1px solid rgba(255,255,255,0.05)' }}
+                    >
+                        <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>
+                            No plan adaptations available for this session.
+                        </p>
+                    </div>
+                )}
             </motion.div>
 
             {/* Exercise Breakdown */}
@@ -960,6 +1083,8 @@ export default function WorkoutExecutionPage() {
                     prsAchieved={prsAchieved}
                     weightUnit={weightUnit}
                     userGoals={profile?.fitness_goals}
+                    workoutLogId={workoutLogId || undefined}
+                    userId={profile?.id}
                     onFinish={() => router.push('/home')}
                 />
             </div>
