@@ -25,6 +25,8 @@ export default function OnboardingPage() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isComplete, setIsComplete] = useState(false);
+    const [isGeneratingPlans, setIsGeneratingPlans] = useState(false);
+    const [generationError, setGenerationError] = useState<string | null>(null);
     const [initialized, setInitialized] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -159,13 +161,157 @@ export default function OnboardingPage() {
                     timestamp: new Date().toISOString(),
                 })),
             });
+
+            // Generate personalized plans from the conversation
+            await generatePlans(chatMessages);
         } catch (error) {
             console.error('Failed to save onboarding data:', error);
         }
     };
 
+    const generatePlans = async (chatMessages: Message[]) => {
+        if (!user) return;
+        setIsGeneratingPlans(true);
+        setGenerationError(null);
+
+        try {
+            const response = await fetch('/api/onboarding/generate-plans', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: chatMessages.map((m) => ({
+                        role: m.role,
+                        content: m.content,
+                    })),
+                    userId: user.id,
+                }),
+            });
+
+            const result = await response.json();
+            if (result.error) throw new Error(result.error);
+
+            const { data } = result;
+
+            // Save training plan to Supabase
+            const trainingPlan = await db.trainingPlans.create({
+                creator_id: user.id,
+                name: data.training_plan.name,
+                description: data.training_plan.description,
+                duration_weeks: data.training_plan.duration_weeks,
+                tags: data.extracted_profile.fitness_goals,
+                is_template: false,
+                is_public: false,
+            });
+
+            // Create workout sessions and link them to the plan
+            const planSessions: {
+                plan_id: string;
+                session_id: string;
+                day_number: number;
+                week_number: number;
+            }[] = [];
+
+            for (const session of data.training_plan.sessions) {
+                const workoutSession = await db.workoutSessions.create({
+                    creator_id: user.id,
+                    name: session.name,
+                    description: session.description || '',
+                    exercises: session.exercises.map(
+                        (ex: {
+                            exercise_name: string;
+                            sets: {
+                                reps: string;
+                                weight?: string;
+                                rest_seconds?: number;
+                            }[];
+                            notes?: string;
+                        }) => ({
+                            exercise_id: ex.exercise_name
+                                .toLowerCase()
+                                .replace(/\s+/g, '_')
+                                .substring(0, 20),
+                            sets: ex.sets.map((s) => ({
+                                reps: s.reps,
+                                weight: s.weight || '',
+                                rest_seconds: s.rest_seconds || 90,
+                            })),
+                            notes: ex.notes || '',
+                        })
+                    ),
+                    tags: [],
+                    is_template: false,
+                    is_public: false,
+                });
+
+                planSessions.push({
+                    plan_id: trainingPlan.id,
+                    session_id: workoutSession.id,
+                    day_number: session.day_number,
+                    week_number: session.week_number || 1,
+                });
+            }
+
+            // Bulk create plan-session links
+            if (planSessions.length > 0) {
+                await db.trainingPlanSessions.createBulk(planSessions);
+            }
+
+            // Assign the plan to the user
+            const today = new Date();
+            const endDate = new Date(today);
+            endDate.setDate(
+                endDate.getDate() +
+                    (data.training_plan.duration_weeks || 4) * 7
+            );
+
+            await db.trainingPlanAssignments.create({
+                plan_id: trainingPlan.id,
+                user_id: user.id,
+                is_self_assigned: true,
+                start_date: today.toISOString().split('T')[0],
+                end_date: endDate.toISOString().split('T')[0],
+                is_active: true,
+            });
+
+            // Save nutrition plan as an AI chat for reference
+            await db.aiChats.create({
+                user_id: user.id,
+                title: 'My Nutrition Plan',
+                messages: [
+                    {
+                        role: 'assistant',
+                        content: JSON.stringify(data.nutrition_plan),
+                        timestamp: new Date().toISOString(),
+                    },
+                ],
+            });
+
+            // Update user profile with fitness goals from onboarding
+            if (data.extracted_profile.fitness_goals) {
+                await db.profiles.update(user.id, {
+                    fitness_goals: data.extracted_profile.fitness_goals,
+                });
+                // Update localStorage with new goals
+                const updatedUser = {
+                    ...user,
+                    fitness_goals: data.extracted_profile.fitness_goals,
+                };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+        } catch (error) {
+            console.error('Failed to generate plans:', error);
+            setGenerationError(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to generate plans'
+            );
+        } finally {
+            setIsGeneratingPlans(false);
+        }
+    };
+
     const handleContinue = () => {
-        router.push('/home');
+        router.push('/dashboard');
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -382,31 +528,142 @@ export default function OnboardingPage() {
                             initial="hidden"
                             animate="visible"
                         >
-                            <button
-                                onClick={handleContinue}
-                                data-testid="continue-button"
-                                style={{
-                                    width: '100%',
-                                    padding: '1rem',
-                                    background: 'var(--primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    fontSize: '1rem',
-                                    fontWeight: '600',
-                                    fontFamily: 'var(--font-orbitron)',
-                                    cursor: 'pointer',
-                                    transition: 'opacity 0.2s',
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.opacity = '0.9';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.opacity = '1';
-                                }}
-                            >
-                                Continue to Dashboard
-                            </button>
+                            {isGeneratingPlans ? (
+                                <Box
+                                    data-testid="generating-plans"
+                                    p="1.5rem"
+                                    borderRadius="12px"
+                                    bg="rgba(0, 212, 255, 0.05)"
+                                    border="1px solid rgba(0, 212, 255, 0.2)"
+                                    textAlign="center"
+                                >
+                                    <Box
+                                        display="flex"
+                                        gap="0.3rem"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        mb="0.75rem"
+                                    >
+                                        <Box
+                                            as="span"
+                                            w="8px"
+                                            h="8px"
+                                            borderRadius="50%"
+                                            bg="var(--primary)"
+                                            display="inline-block"
+                                            animation="pulse 1.4s ease-in-out infinite"
+                                        />
+                                        <Box
+                                            as="span"
+                                            w="8px"
+                                            h="8px"
+                                            borderRadius="50%"
+                                            bg="var(--primary)"
+                                            display="inline-block"
+                                            animation="pulse 1.4s ease-in-out 0.2s infinite"
+                                        />
+                                        <Box
+                                            as="span"
+                                            w="8px"
+                                            h="8px"
+                                            borderRadius="50%"
+                                            bg="var(--primary)"
+                                            display="inline-block"
+                                            animation="pulse 1.4s ease-in-out 0.4s infinite"
+                                        />
+                                    </Box>
+                                    <Text
+                                        color="var(--primary)"
+                                        fontFamily="var(--font-orbitron)"
+                                        fontSize="0.9rem"
+                                        fontWeight="600"
+                                    >
+                                        Generating your personalized plans...
+                                    </Text>
+                                    <Text color="gray.500" fontSize="0.8rem" mt="0.25rem">
+                                        Creating your training and nutrition plans
+                                    </Text>
+                                </Box>
+                            ) : generationError ? (
+                                <Box data-testid="generation-error">
+                                    <Text
+                                        color="red.400"
+                                        fontSize="0.85rem"
+                                        mb="0.75rem"
+                                        textAlign="center"
+                                    >
+                                        {generationError}
+                                    </Text>
+                                    <Box display="flex" gap="0.75rem">
+                                        <button
+                                            onClick={() =>
+                                                generatePlans(
+                                                    messages.filter(
+                                                        (m) => m.id !== 'error'
+                                                    )
+                                                )
+                                            }
+                                            data-testid="retry-button"
+                                            style={{
+                                                flex: 1,
+                                                padding: '1rem',
+                                                background: 'var(--primary)',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            Retry
+                                        </button>
+                                        <button
+                                            onClick={handleContinue}
+                                            data-testid="skip-button"
+                                            style={{
+                                                flex: 1,
+                                                padding: '1rem',
+                                                background: 'transparent',
+                                                color: 'var(--foreground)',
+                                                border: '1px solid var(--glass-border)',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            Skip for now
+                                        </button>
+                                    </Box>
+                                </Box>
+                            ) : (
+                                <button
+                                    onClick={handleContinue}
+                                    data-testid="continue-button"
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'var(--primary)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        fontFamily: 'var(--font-orbitron)',
+                                        cursor: 'pointer',
+                                        transition: 'opacity 0.2s',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.opacity = '0.9';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.opacity = '1';
+                                    }}
+                                >
+                                    Continue to Dashboard
+                                </button>
+                            )}
                         </MotionBox>
                     ) : (
                         <form

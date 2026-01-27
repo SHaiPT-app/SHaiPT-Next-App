@@ -82,14 +82,17 @@ jest.mock('next/navigation', () => ({
 // Mock supabaseDb
 jest.mock('@/lib/supabaseDb', () => ({
     db: {
-        aiChats: {
-            create: jest.fn().mockResolvedValue({}),
-        },
-        profiles: {
-            update: jest.fn().mockResolvedValue({}),
-        },
+        aiChats: { create: jest.fn().mockResolvedValue({}) },
+        profiles: { update: jest.fn().mockResolvedValue({}) },
+        trainingPlans: { create: jest.fn().mockResolvedValue({ id: 'plan-123' }) },
+        workoutSessions: { create: jest.fn().mockResolvedValue({ id: 'session-123' }) },
+        trainingPlanSessions: { createBulk: jest.fn().mockResolvedValue([]) },
+        trainingPlanAssignments: { create: jest.fn().mockResolvedValue({}) },
     },
 }))
+
+// Import the mocked db for assertions
+import { db as mockDb } from '@/lib/supabaseDb'
 
 jest.mock('@/lib/animations', () => ({
     fadeInUp: { hidden: {}, visible: {} },
@@ -212,7 +215,7 @@ describe('OnboardingPage', () => {
         })
     })
 
-    it('shows continue button when onboarding is complete', async () => {
+    it('shows continue button when onboarding is complete and plans are generated', async () => {
         mockFetch
             .mockResolvedValueOnce({
                 json: () => Promise.resolve({
@@ -224,6 +227,16 @@ describe('OnboardingPage', () => {
                 json: () => Promise.resolve({
                     message: "Great! You're all set. Here's your summary.",
                     isComplete: true,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    success: true,
+                    data: {
+                        extracted_profile: { fitness_goals: ['general_health'] },
+                        training_plan: { name: 'Plan', description: '', duration_weeks: 4, sessions: [] },
+                        nutrition_plan: { daily_calories: 2000, macros: {}, meal_plan: [], shopping_list: [], notes: '' },
+                    },
                 }),
             })
 
@@ -243,7 +256,8 @@ describe('OnboardingPage', () => {
         })
     })
 
-    it('navigates to /home when continue button is clicked', async () => {
+    it('navigates to /dashboard when continue button is clicked', async () => {
+        // Mock: interview start, user response (complete), plan generation
         mockFetch
             .mockResolvedValueOnce({
                 json: () => Promise.resolve({
@@ -257,6 +271,27 @@ describe('OnboardingPage', () => {
                     isComplete: true,
                 }),
             })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    success: true,
+                    data: {
+                        extracted_profile: { fitness_goals: ['build_muscle'] },
+                        training_plan: {
+                            name: 'Test Plan',
+                            description: 'A test plan',
+                            duration_weeks: 4,
+                            sessions: [],
+                        },
+                        nutrition_plan: {
+                            daily_calories: 2000,
+                            macros: { protein_g: 150, carbs_g: 200, fat_g: 67 },
+                            meal_plan: [],
+                            shopping_list: [],
+                            notes: 'Test',
+                        },
+                    },
+                }),
+            })
 
         render(<OnboardingPage />)
 
@@ -268,12 +303,13 @@ describe('OnboardingPage', () => {
         fireEvent.change(input, { target: { value: 'Done' } })
         fireEvent.submit(input.closest('form')!)
 
+        // Wait for plan generation to complete and continue button to appear
         await waitFor(() => {
             expect(screen.getByTestId('continue-button')).toBeInTheDocument()
         })
 
         fireEvent.click(screen.getByTestId('continue-button'))
-        expect(mockPush).toHaveBeenCalledWith('/home')
+        expect(mockPush).toHaveBeenCalledWith('/dashboard')
     })
 
     it('does not send empty messages', async () => {
@@ -326,5 +362,280 @@ describe('OnboardingPage', () => {
         await waitFor(() => {
             expect(screen.getByText('AI Coach')).toBeInTheDocument()
         })
+    })
+
+    it('shows generating plans indicator when onboarding completes', async () => {
+        // Mock: interview start, user response (complete), plan generation (slow)
+        let resolvePlanGeneration: (value: unknown) => void
+        const planGenerationPromise = new Promise((resolve) => {
+            resolvePlanGeneration = resolve
+        })
+
+        mockFetch
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "What are your goals?",
+                    isComplete: false,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "All done!",
+                    isComplete: true,
+                }),
+            })
+            .mockImplementationOnce(() => planGenerationPromise)
+
+        render(<OnboardingPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('What are your goals?')).toBeInTheDocument()
+        })
+
+        const input = screen.getByTestId('chat-input')
+        fireEvent.change(input, { target: { value: 'Done' } })
+        fireEvent.submit(input.closest('form')!)
+
+        await waitFor(() => {
+            expect(screen.getByTestId('generating-plans')).toBeInTheDocument()
+            expect(screen.getByText('Generating your personalized plans...')).toBeInTheDocument()
+        })
+
+        // Resolve plan generation
+        resolvePlanGeneration!({
+            json: () => Promise.resolve({
+                success: true,
+                data: {
+                    extracted_profile: { fitness_goals: ['build_muscle'] },
+                    training_plan: { name: 'Plan', description: '', duration_weeks: 4, sessions: [] },
+                    nutrition_plan: { daily_calories: 2000, macros: {}, meal_plan: [], shopping_list: [], notes: '' },
+                },
+            }),
+        })
+
+        await waitFor(() => {
+            expect(screen.getByTestId('continue-button')).toBeInTheDocument()
+        })
+    })
+
+    it('shows error state with retry and skip when plan generation fails', async () => {
+        mockFetch
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "What are your goals?",
+                    isComplete: false,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "All done!",
+                    isComplete: true,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    error: 'AI generation failed',
+                }),
+            })
+
+        render(<OnboardingPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('What are your goals?')).toBeInTheDocument()
+        })
+
+        const input = screen.getByTestId('chat-input')
+        fireEvent.change(input, { target: { value: 'Done' } })
+        fireEvent.submit(input.closest('form')!)
+
+        await waitFor(() => {
+            expect(screen.getByTestId('generation-error')).toBeInTheDocument()
+            expect(screen.getByTestId('retry-button')).toBeInTheDocument()
+            expect(screen.getByTestId('skip-button')).toBeInTheDocument()
+        })
+    })
+
+    it('allows skipping to dashboard when plan generation fails', async () => {
+        mockFetch
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "What are your goals?",
+                    isComplete: false,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "All done!",
+                    isComplete: true,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    error: 'AI generation failed',
+                }),
+            })
+
+        render(<OnboardingPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('What are your goals?')).toBeInTheDocument()
+        })
+
+        const input = screen.getByTestId('chat-input')
+        fireEvent.change(input, { target: { value: 'Done' } })
+        fireEvent.submit(input.closest('form')!)
+
+        await waitFor(() => {
+            expect(screen.getByTestId('skip-button')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByTestId('skip-button'))
+        expect(mockPush).toHaveBeenCalledWith('/dashboard')
+    })
+
+    it('calls generate-plans API when onboarding completes', async () => {
+        mockFetch
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "What are your goals?",
+                    isComplete: false,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "All done!",
+                    isComplete: true,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    success: true,
+                    data: {
+                        extracted_profile: { fitness_goals: ['build_muscle'] },
+                        training_plan: { name: 'Plan', description: '', duration_weeks: 4, sessions: [] },
+                        nutrition_plan: { daily_calories: 2000, macros: {}, meal_plan: [], shopping_list: [], notes: '' },
+                    },
+                }),
+            })
+
+        render(<OnboardingPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('What are your goals?')).toBeInTheDocument()
+        })
+
+        const input = screen.getByTestId('chat-input')
+        fireEvent.change(input, { target: { value: 'Done' } })
+        fireEvent.submit(input.closest('form')!)
+
+        await waitFor(() => {
+            // Should have called: 1) interview start, 2) user response, 3) generate-plans
+            expect(mockFetch).toHaveBeenCalledWith(
+                '/api/onboarding/generate-plans',
+                expect.objectContaining({ method: 'POST' })
+            )
+        })
+    })
+
+    it('saves training plan and nutrition plan to Supabase', async () => {
+        mockFetch
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "What are your goals?",
+                    isComplete: false,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    message: "All done!",
+                    isComplete: true,
+                }),
+            })
+            .mockResolvedValueOnce({
+                json: () => Promise.resolve({
+                    success: true,
+                    data: {
+                        extracted_profile: { fitness_goals: ['build_muscle'] },
+                        training_plan: {
+                            name: 'Test Plan',
+                            description: 'Test description',
+                            duration_weeks: 4,
+                            sessions: [
+                                {
+                                    name: 'Day 1',
+                                    description: 'Push',
+                                    day_number: 1,
+                                    week_number: 1,
+                                    exercises: [{
+                                        exercise_name: 'Bench Press',
+                                        sets: [{ reps: '10', weight: 'moderate', rest_seconds: 90 }],
+                                        notes: 'Go slow',
+                                    }],
+                                },
+                            ],
+                        },
+                        nutrition_plan: {
+                            daily_calories: 2500,
+                            macros: { protein_g: 180, carbs_g: 280, fat_g: 78 },
+                            meal_plan: [],
+                            shopping_list: [],
+                            notes: 'Eat well',
+                        },
+                    },
+                }),
+            })
+
+        render(<OnboardingPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('What are your goals?')).toBeInTheDocument()
+        })
+
+        const input = screen.getByTestId('chat-input')
+        fireEvent.change(input, { target: { value: 'Done' } })
+        fireEvent.submit(input.closest('form')!)
+
+        await waitFor(() => {
+            expect(screen.getByTestId('continue-button')).toBeInTheDocument()
+        })
+
+        // Verify training plan was created
+        expect((mockDb as any).trainingPlans.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                creator_id: 'user-123',
+                name: 'Test Plan',
+                description: 'Test description',
+                duration_weeks: 4,
+            })
+        )
+
+        // Verify workout session was created
+        expect((mockDb as any).workoutSessions.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                creator_id: 'user-123',
+                name: 'Day 1',
+            })
+        )
+
+        // Verify plan-session links were created
+        expect((mockDb as any).trainingPlanSessions.createBulk).toHaveBeenCalled()
+
+        // Verify plan assignment was created
+        expect((mockDb as any).trainingPlanAssignments.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                plan_id: 'plan-123',
+                user_id: 'user-123',
+                is_self_assigned: true,
+                is_active: true,
+            })
+        )
+
+        // Verify nutrition plan was saved as AI chat
+        expect((mockDb as any).aiChats.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                user_id: 'user-123',
+                title: 'My Nutrition Plan',
+            })
+        )
     })
 })
