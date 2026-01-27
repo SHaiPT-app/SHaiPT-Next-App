@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/lib/supabaseDb';
@@ -12,6 +12,8 @@ import type {
     LoggedSet,
     Profile,
 } from '@/lib/types';
+
+const PoseDetectionOverlay = lazy(() => import('@/components/PoseDetectionOverlay'));
 
 // ============================================
 // REST TIMER COMPONENT
@@ -479,6 +481,9 @@ export default function WorkoutExecutionPage() {
     const [startedAt, setStartedAt] = useState('');
     const [prsAchieved, setPrsAchieved] = useState<Array<{ exerciseName: string; weight: number; reps: number; unit: string }>>([]);
 
+    // Pose detection
+    const [showPoseDetection, setShowPoseDetection] = useState(false);
+
     const weightUnit = profile?.preferred_weight_unit || 'lbs';
 
     // Declare functions before useEffects to satisfy react-hooks/immutability
@@ -749,6 +754,7 @@ export default function WorkoutExecutionPage() {
             setCurrentSets([]);
             setIsResting(false);
             setRestTimer(0);
+            setShowPoseDetection(false);
         } else {
             handleFinishWorkout();
         }
@@ -911,6 +917,58 @@ export default function WorkoutExecutionPage() {
                             <span style={{ color: '#555', fontSize: '0.85rem' }}>No demo available</span>
                         )}
                     </div>
+
+                    {/* Pose Detection Toggle */}
+                    <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
+                        <button
+                            data-testid="pose-toggle-btn"
+                            onClick={() => setShowPoseDetection(prev => !prev)}
+                            style={{
+                                background: showPoseDetection
+                                    ? 'rgba(57, 255, 20, 0.15)'
+                                    : 'rgba(255, 255, 255, 0.05)',
+                                border: `1px solid ${showPoseDetection ? 'rgba(57, 255, 20, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
+                                color: showPoseDetection ? '#39ff14' : '#aaa',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                transition: 'all 0.2s',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                <circle cx="12" cy="13" r="4" />
+                            </svg>
+                            {showPoseDetection ? 'Hide Form Check' : 'Form Check'}
+                        </button>
+                    </div>
+
+                    {/* Pose Detection Overlay */}
+                    {showPoseDetection && (
+                        <Suspense fallback={
+                            <div style={{
+                                width: '100%',
+                                aspectRatio: '4/3',
+                                background: '#000',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '0.75rem',
+                            }}>
+                                <div className="spinner" />
+                            </div>
+                        }>
+                            <PoseDetectionOverlay
+                                visible={showPoseDetection}
+                                onClose={() => setShowPoseDetection(false)}
+                            />
+                        </Suspense>
+                    )}
 
                     {/* Target info */}
                     <div style={{
