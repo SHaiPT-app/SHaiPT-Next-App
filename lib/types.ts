@@ -422,6 +422,52 @@ export interface PlanAdaptationResponse {
 }
 
 // ============================================
+// NUTRITION PLAN TYPES
+// ============================================
+
+export interface MealNutrition {
+    calories: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+}
+
+export interface Meal {
+    name: string;
+    ingredients: string[];
+    instructions?: string;
+    prep_time_minutes?: number;
+    nutrition: MealNutrition;
+}
+
+export interface DayMeals {
+    breakfast: Meal;
+    lunch: Meal;
+    dinner: Meal;
+    snacks?: Meal[];
+}
+
+export interface NutritionPlanOverview {
+    duration_days: number;
+    daily_calories: number;
+    macros: MealNutrition;
+    key_principles?: string[];
+}
+
+export interface NutritionPlan {
+    id: string;
+    user_id: string;
+    name?: string;
+    dietary_preferences: string[];
+    plan_overview: NutritionPlanOverview;
+    daily_schedule: Record<string, DayMeals>;
+    shopping_list?: Record<string, string[]>;
+    nutrition_tips?: string[];
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============================================
 // ANALYTICS TYPES
 // ============================================
 

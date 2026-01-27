@@ -21,7 +21,8 @@ import type {
     AIChat,
     Exercise,
     ExerciseInstruction,
-    LoggedSet
+    LoggedSet,
+    NutritionPlan
 } from './types';
 
 // Server-side Supabase client with service role (bypasses RLS)
@@ -1142,6 +1143,62 @@ export const db = {
                 .order('step_number');
             if (error) throw error;
             return data || [];
+        }
+    },
+
+    // ============================================
+    // NUTRITION PLANS
+    // ============================================
+
+    nutritionPlans: {
+        getByUser: async (userId: string): Promise<NutritionPlan[]> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<NutritionPlan | null> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        getLatestByUser: async (userId: string): Promise<NutritionPlan | null> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (plan: Omit<NutritionPlan, 'id' | 'created_at' | 'updated_at'>): Promise<NutritionPlan> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .insert(plan)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('nutrition_plans')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
         }
     }
 };
