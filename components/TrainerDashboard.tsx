@@ -373,8 +373,8 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                     <div
                                         key={trainee.id}
                                         onClick={() => {
-                                            setAddClientUsername(trainee.username);
-                                            handleAddClient(trainee.username);
+                                            setAddClientUsername(trainee.username || '');
+                                            handleAddClient(trainee.username || '');
                                         }}
                                         style={{
                                             padding: '0.75rem',
@@ -499,7 +499,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                         </button>
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                        {plan.exercises.map((ex, i) => (
+                                        {(plan.exercises || []).map((ex: any, i: number) => (
                                             <span key={i} style={{ background: 'var(--secondary)', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.875rem', border: '1px solid var(--glass-border)' }}>
                                                 {ex.name}
                                             </span>

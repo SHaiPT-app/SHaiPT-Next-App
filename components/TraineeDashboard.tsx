@@ -4,6 +4,23 @@
 import { useState, useEffect } from 'react';
 import { User, WorkoutPlan, WorkoutLog, TrainingPlan, TrainingPlanAssignment } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+
+/** Denormalized workout log with inline exercises, as returned by the API */
+interface DenormalizedWorkoutLog extends WorkoutLog {
+    exercises: Array<{
+        name?: string;
+        exercise_id?: string;
+        sets: Array<{
+            weight?: number;
+            reps?: number;
+            targetReps?: number;
+            targetWeight?: string;
+            weight_unit?: string;
+            rpe?: number;
+            isPr?: boolean;
+        }>;
+    }>;
+}
 import PlanViewer from './PlanViewer';
 import AIWorkoutPlanner from './ai-coach/AIWorkoutPlanner';
 import AIDietitian from './ai-coach/AIDietitian';
@@ -12,7 +29,7 @@ import WeeklyInsightsCard from './WeeklyInsightsCard';
 
 export default function TraineeDashboard({ user }: { user: User }) {
     const [plans, setPlans] = useState<WorkoutPlan[]>([]);
-    const [logs, setLogs] = useState<WorkoutLog[]>([]);
+    const [logs, setLogs] = useState<DenormalizedWorkoutLog[]>([]);
     const [selectedPlan, setSelectedPlan] = useState<WorkoutPlan | null>(null);
     const [viewingPlan, setViewingPlan] = useState<WorkoutPlan | null>(null);
     const [activeTab, setActiveTab] = useState<'plans' | 'coach'>('plans');
@@ -159,11 +176,11 @@ export default function TraineeDashboard({ user }: { user: User }) {
                                 </button>
                                 <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)' }}>{viewingPlan.name}</h2>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                    {viewingPlan.exercises.map((ex, i) => (
+                                    {(viewingPlan.exercises || []).map((ex: any, i: number) => (
                                         <div key={i} style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
                                             <h4 style={{ marginBottom: '0.5rem' }}>{ex.name}</h4>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem' }}>
-                                                {ex.sets.map((set, j) => (
+                                                {ex.sets.map((set: any, j: number) => (
                                                     <div key={j} style={{ background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}>
                                                         <div style={{ color: '#888', fontSize: '0.75rem' }}>Set {j + 1}</div>
                                                         <div>{set.targetReps} reps</div>
@@ -195,7 +212,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
                             {plans.map(plan => (
                                 <div key={plan.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                                     <h4 style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>{plan.name}</h4>
-                                    <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '1rem' }}>{plan.exercises.length} Exercises</p>
+                                    <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '1rem' }}>{(plan.exercises || []).length} Exercises</p>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                         <button
                                             onClick={() => setViewingPlan(plan)}

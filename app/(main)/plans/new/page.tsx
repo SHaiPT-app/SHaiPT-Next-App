@@ -199,7 +199,7 @@ export default function NewPlanPage() {
                             exercise_id: ex.exercise_id,
                             name: ex.exercise_id,
                             sets: ex.sets.map(s => ({
-                                reps: s.reps,
+                                reps: s.reps || '',
                                 weight: s.weight || '',
                                 rest_seconds: s.rest_seconds || 90,
                             })),

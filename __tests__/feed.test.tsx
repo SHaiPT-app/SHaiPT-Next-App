@@ -51,7 +51,7 @@ import FeedPage from '@/app/feed/page'
 import { db } from '@/lib/supabaseDb'
 
 // Cast db methods to jest.Mock for type safety
-const mockDb = db as {
+type MockedDb = {
     profiles: { getAll: jest.Mock; getById: jest.Mock };
     userFollows: { getFollowing: jest.Mock; getFollowers: jest.Mock; follow: jest.Mock; unfollow: jest.Mock; isFollowing: jest.Mock };
     activityPosts: { getGlobalFeed: jest.Mock; getFollowedFeed: jest.Mock; create: jest.Mock; delete: jest.Mock };
@@ -59,6 +59,7 @@ const mockDb = db as {
     postComments: { getByPost: jest.Mock; create: jest.Mock; delete: jest.Mock };
     workoutLogs: { getById: jest.Mock };
 }
+const mockDb = db as unknown as MockedDb
 
 // Test data
 const mockUser = {

@@ -23,7 +23,7 @@ function createChain(resolvedData: unknown = null, resolvedError: unknown = null
     chain.limit = jest.fn().mockReturnValue(chain);
     chain.single = jest.fn().mockResolvedValue({ data: resolvedData, error: resolvedError });
     // For non-single queries, resolve with data
-    chain.then = undefined;
+    chain.then = undefined as unknown as jest.Mock;
     // Make the chain itself a thenable when awaited (for non-.single() queries)
     return chain;
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Profile, db } from '@/lib/supabaseDb';
+import { Profile } from '@/lib/types';
+import { db } from '@/lib/supabaseDb';
 import { supabase } from '@/lib/supabase';
 
 interface ProfileModalProps {
@@ -153,8 +154,8 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate }: Profil
             const updates: Partial<Profile> = {
                 username: formData.username,
                 display_name: formData.display_name,
-                height: formData.height,
-                weight: formData.weight,
+                height: formData.height ? Number(formData.height) : undefined,
+                weight: formData.weight ? Number(formData.weight) : undefined,
                 experience: formData.experience,
                 dob: formData.dob,
                 trainer_id: user.role === 'trainee' ? formData.trainer_id : undefined

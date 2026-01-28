@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { WorkoutPlan, WorkoutLog, LogExercise, LogSet } from '@/lib/types';
+import { WorkoutPlan, WorkoutLog } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 
 interface PlanViewerProps {
@@ -13,7 +13,7 @@ interface PlanViewerProps {
 export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps) {
     const [activeSessionIndex, setActiveSessionIndex] = useState(0);
     // plan.exercises now contains the sessions
-    const activeSession = plan.exercises[activeSessionIndex];
+    const activeSession = (plan.exercises || [])[activeSessionIndex];
 
     // Initialize logs state based on plan structure
     // We need to track logs for ALL sessions, but maybe just initialize for the current one?
@@ -22,13 +22,13 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
     // But wait, if we switch sessions, we lose state if we don't store it.
     // Let's store logs as a map of sessionId -> LogExercise[]
 
-    const [sessionLogs, setSessionLogs] = useState<Record<string, LogExercise[]>>(() => {
-        const initialLogs: Record<string, LogExercise[]> = {};
-        plan.exercises.forEach(session => {
-            initialLogs[session.id] = session.exercises.map(ex => ({
+    const [sessionLogs, setSessionLogs] = useState<Record<string, any[]>>(() => {
+        const initialLogs: Record<string, any[]> = {};
+        (plan.exercises || []).forEach((session: any) => {
+            initialLogs[session.id] = session.exercises.map((ex: any) => ({
                 exerciseId: ex.id,
                 name: ex.name,
-                sets: ex.sets.map((_, i) => ({
+                sets: ex.sets.map((_: any, i: number) => ({
                     setNumber: i + 1,
                     reps: '',
                     weight: '',
@@ -88,7 +88,7 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
         setSessionLogs(newSessionLogs);
     };
 
-    const updateLog = (exerciseIndex: number, setIndex: number, field: keyof LogSet, value: any) => {
+    const updateLog = (exerciseIndex: number, setIndex: number, field: string, value: any) => {
         if (!activeSession) return;
 
         const newSessionLogs = { ...sessionLogs };
@@ -235,7 +235,7 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
 
             {/* Session Selector */}
             <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem', marginBottom: '1rem' }}>
-                {plan.exercises.map((session, index) => (
+                {(plan.exercises || []).map((session: any, index: number) => (
                     <button
                         key={session.id}
                         onClick={() => setActiveSessionIndex(index)}
@@ -255,7 +255,7 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                {activeSession && activeSession.exercises.map((exercise, i) => (
+                {activeSession && activeSession.exercises.map((exercise: any, i: number) => (
                     <div key={exercise.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{ color: 'var(--primary)' }}>{exercise.name}</h3>
@@ -270,7 +270,7 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
                             <span>Timer</span>
                         </div>
 
-                        {exercise.sets.map((set, j) => (
+                        {exercise.sets.map((set: any, j: number) => (
                             <div key={j} className="set-row" style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr 50px 80px', gap: '1rem', marginBottom: '0.5rem', alignItems: 'center' }}>
                                 <span style={{ textAlign: 'center', color: '#666' }}>{j + 1}</span>
                                 <span className="hide-mobile" style={{ textAlign: 'center', fontSize: '0.875rem' }}>
