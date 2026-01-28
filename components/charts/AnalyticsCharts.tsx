@@ -238,10 +238,10 @@ export function StrengthProgressionChart({ logs, exercises }: StrengthProgressio
                             <YAxis stroke="#555" fontSize={10} tickLine={false} axisLine={false} />
                             <RechartsTooltip
                                 contentStyle={tooltipStyle}
-                                formatter={(value: number, _name: string, props: { payload: { bestSet: string } }) => [
+                                formatter={((value: number, _name: string, props: { payload: { bestSet: string } }) => [
                                     `${value} lbs (${props.payload.bestSet})`,
                                     'Max Weight',
-                                ]}
+                                ]) as any}
                             />
                             <Line
                                 type="monotone"
@@ -585,7 +585,7 @@ export function MuscleGroupVolumeChart({ logs, exercises }: MuscleGroupVolumePro
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
-                                data={chartData}
+                                data={chartData as any}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={50}

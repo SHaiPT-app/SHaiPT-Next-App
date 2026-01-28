@@ -18,7 +18,7 @@ interface PlanCreatorProps {
 export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, plan }: PlanCreatorProps) {
     const [planName, setPlanName] = useState(plan?.name || '');
     // Initialize sessions: use plan.exercises (which maps to sessions) or create a default one
-    const [sessions, setSessions] = useState<WorkoutSession[]>(() => {
+    const [sessions, setSessions] = useState<any[]>(() => {
         if (plan?.exercises && plan.exercises.length > 0) {
             // Check if the data is actually sessions (has 'exercises' array) or old flat exercises
             // The type definition says exercises: WorkoutSession[], so we assume it's correct if migrated.
@@ -26,7 +26,7 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
             // For now, assume it's correct as per the migration.
             return plan.exercises;
         }
-        return [{ id: uuidv4(), name: 'Session 1', exercises: [] }];
+        return [{ id: uuidv4(), name: 'Session 1', creator_id: '', exercises: [] }];
     });
 
     const [activeSessionIndex, setActiveSessionIndex] = useState(0);
@@ -40,9 +40,10 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
     const activeSession = sessions[activeSessionIndex];
 
     const addSession = () => {
-        const newSession: WorkoutSession = {
+        const newSession = {
             id: uuidv4(),
             name: `Session ${sessions.length + 1}`,
+            creator_id: '',
             exercises: []
         };
         setSessions([...sessions, newSession]);
@@ -99,7 +100,7 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
 
     const removeExercise = (exerciseIndex: number) => {
         const newSessions = [...sessions];
-        newSessions[activeSessionIndex].exercises = newSessions[activeSessionIndex].exercises.filter((_, i) => i !== exerciseIndex);
+        newSessions[activeSessionIndex].exercises = newSessions[activeSessionIndex].exercises.filter((_: any, i: number) => i !== exerciseIndex);
         setSessions(newSessions);
     };
 
@@ -303,7 +304,7 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                            {activeSession.exercises.map((exercise, i) => (
+                            {activeSession.exercises.map((exercise: any, i: number) => (
                                 <div key={exercise.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                         <h4 style={{ color: 'var(--primary)' }}>
@@ -409,7 +410,7 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
 
                                     <div style={{ paddingLeft: '1rem', borderLeft: '2px solid var(--glass-border)' }}>
                                         <h5 style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888' }}>Sets</h5>
-                                        {exercise.sets.map((set, j) => (
+                                        {exercise.sets.map((set: any, j: number) => (
                                             <div key={j} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                                                 <span style={{ alignSelf: 'center', width: '20px', color: '#666' }}>{j + 1}</span>
                                                 <div style={{ flex: 1 }}>

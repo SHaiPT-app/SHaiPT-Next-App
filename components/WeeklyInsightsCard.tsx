@@ -24,7 +24,7 @@ interface WeeklyInsightsCardProps {
     }>;
 }
 
-const cardReveal = {
+const cardReveal: any = {
     hidden: { opacity: 0, y: 40, scale: 0.97 },
     visible: {
         opacity: 1,
@@ -34,7 +34,7 @@ const cardReveal = {
     },
 };
 
-const sectionReveal = {
+const sectionReveal: any = {
     hidden: { opacity: 0, x: -20 },
     visible: (i: number) => ({
         opacity: 1,

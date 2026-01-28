@@ -42,6 +42,13 @@ export interface Profile {
     // AI features
     ai_features?: AIFeatures; // jsonb, nullable
 
+    // Aliases for backward compatibility with generated code
+    display_name?: string;
+    dob?: string;
+    height?: number;
+    weight?: number;
+    experience?: string;
+
     // Timestamps
     created_at?: string; // timestamptz, default now()
     updated_at?: string; // timestamptz, default now()
@@ -80,7 +87,7 @@ export interface CoachingRelationship {
 
 // Individual set configuration
 export interface SessionSet {
-    reps: string; // e.g. "10", "8-12", "AMRAP"
+    reps?: string; // e.g. "10", "8-12", "AMRAP"
     weight?: string; // e.g. "135", "BW"
     rest_seconds?: number;
 }
@@ -769,4 +776,58 @@ export interface DietIntakeFormData {
     // Meal preferences
     meals_per_day: string;
     cooking_preferences: string;
+}
+
+// ============================================
+// TYPE ALIASES & EXTENDED TYPES FOR COMPONENTS
+// ============================================
+
+// WorkoutPlan extends TrainingPlan with assignment/exercise fields used by components
+export interface WorkoutPlan extends TrainingPlan {
+    exercises?: any[]; // JSONB sessions/exercises data
+    trainee_id?: string;
+    trainer_id?: string;
+    assigned_at?: string;
+    expires_at?: string;
+    is_active?: boolean;
+}
+
+// ExerciseSet extends SessionSet with target fields
+export interface ExerciseSet extends SessionSet {
+    targetReps?: string;
+    targetWeight?: string;
+    actualReps?: string;
+    actualWeight?: string;
+    pr?: boolean;
+}
+
+// PlanExercise is a denormalized exercise used in plan creation UI
+export interface PlanExercise {
+    exercise_id?: string;
+    id?: string;
+    name?: string;
+    gif_url?: string;
+    notes?: string;
+    sets: ExerciseSet[];
+}
+
+// LogExercise is a simplified exercise reference
+export interface LogExercise {
+    exercise_id: string;
+    name?: string;
+    sets: LogSet[];
+    comments?: string;
+}
+
+// LogSet represents a single logged set
+export interface LogSet {
+    set_number: number;
+    reps: number;
+    weight: number;
+    weight_unit?: string;
+    rpe?: number;
+    isPr?: boolean;
+    startTime?: string;
+    endTime?: string;
+    duration?: number;
 }

@@ -11,7 +11,7 @@ jest.mock('@google/generative-ai', () => {
     return {
         GoogleGenerativeAI: jest.fn(() => ({
             getGenerativeModel: jest.fn(() => ({
-                startChat: (...args: unknown[]) => mockStartChat(...args),
+                startChat: mockStartChat,
             })),
         })),
     }
