@@ -2,6 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import CoachSelectionPage from '@/app/coach/page'
 import { coaches } from '@/data/coaches'
 
+const mockPush = jest.fn()
+jest.mock('next/navigation', () => ({
+    useRouter: () => ({ push: mockPush }),
+}))
+
 describe('CoachSelectionPage', () => {
     it('renders the page heading', () => {
         render(<CoachSelectionPage />)

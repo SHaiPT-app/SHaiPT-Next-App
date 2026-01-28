@@ -691,3 +691,50 @@ export interface Subscription {
     created_at?: string;
     updated_at?: string;
 }
+
+// ============================================
+// COACH INTERVIEW / INTAKE TYPES
+// ============================================
+
+export interface IntakeFormData {
+    // Basic info
+    name: string;
+    age: string;
+    height: string;
+    weight: string;
+
+    // Athletic history
+    sport_history: string;
+    training_duration: string;
+    training_style: string;
+
+    // Goals
+    fitness_goals: string;
+
+    // Schedule
+    training_days_per_week: string;
+    session_duration: string;
+    preferred_time: string;
+
+    // Equipment & location
+    available_equipment: string;
+    training_location: string;
+
+    // Medical
+    injuries: string;
+    medical_considerations: string;
+
+    // Self-assessment
+    fitness_level: string;
+}
+
+export interface CoachInterview {
+    id: string;
+    user_id: string;
+    coach_id: string;
+    intake_data: IntakeFormData;
+    chat_messages: AIChatMessage[];
+    is_complete: boolean;
+    created_at?: string;
+    updated_at?: string;
+}

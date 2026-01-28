@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { coaches } from '@/data/coaches';
 import type { CoachPersona } from '@/data/coaches';
 
@@ -20,18 +21,18 @@ function CoachCard({ coach, isSelected, onSelect }: {
                 textAlign: 'center',
                 padding: '1.5rem',
                 background: isSelected
-                    ? 'rgba(0, 212, 255, 0.1)'
+                    ? 'rgba(255, 102, 0, 0.1)'
                     : 'rgba(255, 255, 255, 0.05)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 border: isSelected
-                    ? '1px solid var(--neon-blue)'
+                    ? '1px solid var(--neon-orange)'
                     : '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '16px',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 boxShadow: isSelected
-                    ? '0 0 20px rgba(0, 212, 255, 0.2)'
+                    ? '0 0 20px rgba(255, 102, 0, 0.2)'
                     : '0 4px 30px rgba(0, 0, 0, 0.1)',
                 width: '100%',
             }}
@@ -43,7 +44,7 @@ function CoachCard({ coach, isSelected, onSelect }: {
                     height: '80px',
                     borderRadius: '50%',
                     background: isSelected
-                        ? 'linear-gradient(135deg, var(--neon-blue), var(--neon-pink))'
+                        ? 'linear-gradient(135deg, var(--neon-orange), var(--neon-pink))'
                         : 'linear-gradient(135deg, #2A2A35, #3A3A45)',
                     display: 'flex',
                     alignItems: 'center',
@@ -51,21 +52,27 @@ function CoachCard({ coach, isSelected, onSelect }: {
                     marginBottom: '1rem',
                     overflow: 'hidden',
                     border: isSelected
-                        ? '2px solid var(--neon-blue)'
+                        ? '2px solid var(--neon-orange)'
                         : '2px solid rgba(255, 255, 255, 0.15)',
                     flexShrink: 0,
                 }}
             >
-                <span
+                <img
+                    src={coach.avatarUrl}
+                    alt={coach.fullName}
                     style={{
-                        fontSize: '1.8rem',
-                        fontWeight: '700',
-                        color: isSelected ? '#fff' : '#888',
-                        fontFamily: 'var(--font-orbitron)',
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
                     }}
-                >
-                    {coach.fullName.charAt(0)}
-                </span>
+                    onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.parentElement) {
+                            target.parentElement.innerHTML = `<span style="font-size:1.8rem;font-weight:700;color:${isSelected ? '#fff' : '#888'};font-family:var(--font-orbitron)">${coach.fullName.charAt(0)}</span>`;
+                        }
+                    }}
+                />
             </div>
 
             {/* Name */}
@@ -74,7 +81,7 @@ function CoachCard({ coach, isSelected, onSelect }: {
                     fontFamily: 'var(--font-orbitron)',
                     fontSize: '0.95rem',
                     fontWeight: '600',
-                    color: isSelected ? 'var(--neon-blue)' : 'var(--foreground)',
+                    color: isSelected ? 'var(--neon-orange)' : 'var(--foreground)',
                     marginBottom: '0.75rem',
                     lineHeight: 1.3,
                 }}
@@ -110,14 +117,14 @@ function CoachCard({ coach, isSelected, onSelect }: {
                         style={{
                             padding: '0.2rem 0.6rem',
                             background: isSelected
-                                ? 'rgba(0, 212, 255, 0.15)'
+                                ? 'rgba(255, 102, 0, 0.15)'
                                 : 'rgba(255, 255, 255, 0.08)',
-                            color: isSelected ? 'var(--neon-blue)' : '#aaa',
+                            color: isSelected ? 'var(--neon-orange)' : '#aaa',
                             borderRadius: '20px',
                             fontSize: '0.7rem',
                             fontWeight: '500',
                             border: isSelected
-                                ? '1px solid rgba(0, 212, 255, 0.3)'
+                                ? '1px solid rgba(255, 102, 0, 0.3)'
                                 : '1px solid rgba(255, 255, 255, 0.08)',
                         }}
                     >
@@ -131,9 +138,16 @@ function CoachCard({ coach, isSelected, onSelect }: {
 
 export default function CoachSelectionPage() {
     const [selectedCoach, setSelectedCoach] = useState<CoachPersona | null>(null);
+    const router = useRouter();
 
     const handleSelect = (coach: CoachPersona) => {
         setSelectedCoach(coach);
+    };
+
+    const handleStartTraining = () => {
+        if (selectedCoach) {
+            router.push(`/coach/${selectedCoach.id}`);
+        }
     };
 
     return (
@@ -152,7 +166,7 @@ export default function CoachSelectionPage() {
                         style={{
                             fontFamily: 'var(--font-orbitron)',
                             fontSize: '2rem',
-                            color: 'var(--neon-blue)',
+                            color: 'var(--neon-orange)',
                             marginBottom: '0.5rem',
                         }}
                     >
@@ -196,7 +210,7 @@ export default function CoachSelectionPage() {
                             background: 'rgba(21, 21, 31, 0.95)',
                             backdropFilter: 'blur(16px)',
                             WebkitBackdropFilter: 'blur(16px)',
-                            borderTop: '1px solid rgba(0, 212, 255, 0.2)',
+                            borderTop: '1px solid rgba(255, 102, 0, 0.2)',
                             display: 'flex',
                             justifyContent: 'center',
                             alignItems: 'center',
@@ -205,11 +219,12 @@ export default function CoachSelectionPage() {
                         }}
                     >
                         <span style={{ color: '#ccc', fontSize: '0.95rem' }}>
-                            Selected: <strong style={{ color: 'var(--neon-blue)' }}>{selectedCoach.displayName}</strong>
+                            Selected: <strong style={{ color: 'var(--neon-orange)' }}>{selectedCoach.displayName}</strong>
                         </span>
                         <button
                             data-testid="start-training-btn"
                             className="btn-primary"
+                            onClick={handleStartTraining}
                             style={{
                                 padding: '0.75rem 2rem',
                                 fontSize: '0.95rem',
