@@ -131,7 +131,7 @@ export default function Pricing() {
           width: '60vw',
           height: '40vw',
           background:
-            'radial-gradient(ellipse, rgba(0, 212, 255, 0.06), transparent 70%)',
+            'radial-gradient(ellipse, rgba(255, 102, 0, 0.06), transparent 70%)',
           filter: 'blur(80px)',
           zIndex: 0,
         }}
@@ -144,7 +144,7 @@ export default function Pricing() {
               style={{
                 fontSize: '0.85rem',
                 fontWeight: '600',
-                color: '#00d4ff',
+                color: '#FF6600',
                 textTransform: 'uppercase',
                 letterSpacing: '3px',
                 marginBottom: '1rem',
@@ -196,19 +196,19 @@ export default function Pricing() {
                 style={{
                   position: 'relative',
                   background: tier.highlighted
-                    ? 'rgba(0, 212, 255, 0.06)'
+                    ? 'rgba(255, 102, 0, 0.06)'
                     : 'rgba(21, 21, 31, 0.6)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
                   borderRadius: '20px',
                   border: tier.highlighted
-                    ? '1px solid rgba(0, 212, 255, 0.3)'
+                    ? '1px solid rgba(255, 102, 0, 0.3)'
                     : '1px solid rgba(255, 255, 255, 0.08)',
                   padding: '2.5rem',
                   display: 'flex',
                   flexDirection: 'column',
                   boxShadow: tier.highlighted
-                    ? '0 0 40px rgba(0, 212, 255, 0.1)'
+                    ? '0 0 40px rgba(255, 102, 0, 0.1)'
                     : '0 8px 32px rgba(0, 0, 0, 0.2)',
                 }}
               >
@@ -221,14 +221,14 @@ export default function Pricing() {
                       left: '50%',
                       transform: 'translateX(-50%)',
                       padding: '0.3rem 1rem',
-                      background: 'linear-gradient(135deg, #00d4ff, #0099cc)',
+                      background: 'linear-gradient(135deg, #FF6600, #CC5200)',
                       borderRadius: '50px',
                       fontSize: '0.75rem',
                       fontWeight: '700',
                       color: '#fff',
                       textTransform: 'uppercase',
                       letterSpacing: '1px',
-                      boxShadow: '0 0 20px rgba(0, 212, 255, 0.3)',
+                      boxShadow: '0 0 20px rgba(255, 102, 0, 0.3)',
                     }}
                   >
                     Most Popular
@@ -308,9 +308,9 @@ export default function Pricing() {
                     >
                       <span
                         style={{
-                          color: '#39ff14',
+                          color: '#FF6600',
                           fontSize: '0.85rem',
-                          textShadow: '0 0 6px rgba(57, 255, 20, 0.3)',
+                          textShadow: '0 0 6px rgba(255, 102, 0, 0.3)',
                         }}
                       >
                         ✓
@@ -337,9 +337,9 @@ export default function Pricing() {
                     ...(tier.highlighted
                       ? {
                           background:
-                            'linear-gradient(135deg, #00d4ff, #0088cc)',
+                            'linear-gradient(135deg, #FF6600, #CC5200)',
                           color: '#fff',
-                          boxShadow: '0 0 25px rgba(0, 212, 255, 0.3)',
+                          boxShadow: '0 0 25px rgba(255, 102, 0, 0.3)',
                           border: 'none',
                         }
                       : {

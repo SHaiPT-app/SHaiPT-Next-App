@@ -17,14 +17,12 @@ import type {
 // ============================================
 
 const CHART_COLORS = {
-    neonGreen: '#39ff14',
-    neonGreenDim: 'rgba(57, 255, 20, 0.3)',
+    neonOrange: '#FF6600',
+    neonOrangeDim: 'rgba(255, 102, 0, 0.3)',
     neonPink: '#ff007f',
-    neonBlue: '#00d4ff',
     purple: '#8884d8',
     orange: '#ff8042',
     yellow: '#ffc658',
-    cyan: '#00e5ff',
     white: '#ffffff',
     gray: '#888',
     darkBg: '#1F1F29',
@@ -33,8 +31,8 @@ const CHART_COLORS = {
 };
 
 const MUSCLE_COLORS = [
-    '#39ff14', '#00d4ff', '#ff007f', '#ffc658',
-    '#8884d8', '#ff8042', '#00e5ff', '#e879f9',
+    '#FF6600', '#E55C00', '#ff007f', '#ffc658',
+    '#8884d8', '#ff8042', '#FF8533', '#e879f9',
 ];
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -94,8 +92,8 @@ export function VolumeOverTimeChart({ logs }: VolumeOverTimeProps) {
                     <AreaChart data={chartData}>
                         <defs>
                             <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor={CHART_COLORS.neonGreen} stopOpacity={0.3} />
-                                <stop offset="95%" stopColor={CHART_COLORS.neonGreen} stopOpacity={0} />
+                                <stop offset="5%" stopColor={CHART_COLORS.neonOrange} stopOpacity={0.3} />
+                                <stop offset="95%" stopColor={CHART_COLORS.neonOrange} stopOpacity={0} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.gridLine} vertical={false} />
@@ -114,18 +112,18 @@ export function VolumeOverTimeChart({ logs }: VolumeOverTimeProps) {
                             tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`}
                         />
                         <RechartsTooltip
-                            cursor={{ stroke: CHART_COLORS.neonGreen, strokeWidth: 1, strokeDasharray: '3 3' }}
+                            cursor={{ stroke: CHART_COLORS.neonOrange, strokeWidth: 1, strokeDasharray: '3 3' }}
                             contentStyle={tooltipStyle}
                             formatter={(value: number) => [`${value.toLocaleString()} lbs`, 'Volume']}
                         />
                         <Area
                             type="monotone"
                             dataKey="volume"
-                            stroke={CHART_COLORS.neonGreen}
+                            stroke={CHART_COLORS.neonOrange}
                             fill="url(#volumeGradient)"
                             strokeWidth={2}
-                            dot={{ fill: CHART_COLORS.neonGreen, r: 3 }}
-                            activeDot={{ r: 5, fill: CHART_COLORS.neonGreen }}
+                            dot={{ fill: CHART_COLORS.neonOrange, r: 3 }}
+                            activeDot={{ r: 5, fill: CHART_COLORS.neonOrange }}
                         />
                     </AreaChart>
                 </ResponsiveContainer>
@@ -248,10 +246,10 @@ export function StrengthProgressionChart({ logs, exercises }: StrengthProgressio
                             <Line
                                 type="monotone"
                                 dataKey="maxWeight"
-                                stroke={CHART_COLORS.neonGreen}
+                                stroke={CHART_COLORS.neonOrange}
                                 strokeWidth={2}
-                                dot={{ fill: CHART_COLORS.neonGreen, r: 4 }}
-                                activeDot={{ r: 6, fill: CHART_COLORS.neonGreen, stroke: CHART_COLORS.darkBg, strokeWidth: 2 }}
+                                dot={{ fill: CHART_COLORS.neonOrange, r: 4 }}
+                                activeDot={{ r: 6, fill: CHART_COLORS.neonOrange, stroke: CHART_COLORS.darkBg, strokeWidth: 2 }}
                             />
                         </LineChart>
                     </ResponsiveContainer>
@@ -405,9 +403,9 @@ export function WorkoutFrequencyHeatmap({ logs }: WorkoutFrequencyHeatmapProps) 
     const getCellColor = (count: number) => {
         if (count === 0) return 'rgba(255,255,255,0.04)';
         const intensity = Math.min(count / Math.max(maxCount, 1), 1);
-        if (intensity <= 0.33) return 'rgba(57, 255, 20, 0.2)';
-        if (intensity <= 0.66) return 'rgba(57, 255, 20, 0.45)';
-        return 'rgba(57, 255, 20, 0.8)';
+        if (intensity <= 0.33) return 'rgba(255, 102, 0, 0.2)';
+        if (intensity <= 0.66) return 'rgba(255, 102, 0, 0.45)';
+        return 'rgba(255, 102, 0, 0.8)';
     };
 
     const CELL_SIZE = 14;

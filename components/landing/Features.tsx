@@ -21,7 +21,7 @@ const features = [
       'Auto-progressive overload',
       'Equipment-aware programming',
     ],
-    icon: '🧠',
+    icon: 'AI',
   },
   {
     title: 'Real-Time Form Analysis',
@@ -33,7 +33,7 @@ const features = [
       'Instant audio cues',
       'Injury prevention alerts',
     ],
-    icon: '📸',
+    icon: 'CV',
   },
   {
     title: 'AI Nutrition Coach',
@@ -45,7 +45,7 @@ const features = [
       'Macro & calorie tracking',
       'Supplement guidance',
     ],
-    icon: '🥗',
+    icon: 'NUT',
   },
 ];
 
@@ -68,7 +68,7 @@ export default function Features() {
           width: '40vw',
           height: '40vw',
           background:
-            'radial-gradient(circle, rgba(57, 255, 20, 0.05), transparent 70%)',
+            'radial-gradient(circle, rgba(255, 102, 0, 0.05), transparent 70%)',
           filter: 'blur(80px)',
           zIndex: 0,
         }}
@@ -82,7 +82,7 @@ export default function Features() {
               style={{
                 fontSize: '0.85rem',
                 fontWeight: '600',
-                color: '#00d4ff',
+                color: '#FF6600',
                 textTransform: 'uppercase',
                 letterSpacing: '3px',
                 marginBottom: '1rem',
@@ -208,7 +208,7 @@ export default function Features() {
                               height: '22px',
                               borderRadius: '50%',
                               background:
-                                'linear-gradient(135deg, #00d4ff, #0099cc)',
+                                'linear-gradient(135deg, #FF6600, #CC5200)',
                               color: '#fff',
                               fontSize: '0.7rem',
                               flexShrink: 0,
@@ -246,7 +246,7 @@ export default function Features() {
                         position: 'absolute',
                         inset: '-30px',
                         background:
-                          'radial-gradient(circle, rgba(0, 212, 255, 0.08), transparent 70%)',
+                          'radial-gradient(circle, rgba(255, 102, 0, 0.08), transparent 70%)',
                         filter: 'blur(40px)',
                         zIndex: 0,
                         borderRadius: '50%',
@@ -303,7 +303,7 @@ export default function Features() {
                     fontSize: '2.5rem',
                     fontWeight: '800',
                     fontFamily: 'var(--font-orbitron)',
-                    background: 'linear-gradient(135deg, #00d4ff, #39ff14)',
+                    background: 'linear-gradient(135deg, #FF6600, #FF8533)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',

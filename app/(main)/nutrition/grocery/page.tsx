@@ -21,8 +21,8 @@ import type { Profile, GroceryList, GroceryListItem } from '@/lib/types';
 // ============================================
 
 const CATEGORY_COLORS: Record<string, string> = {
-    proteins: '#39ff14',
-    dairy: '#00d4ff',
+    proteins: '#FF6600',
+    dairy: '#FF6600',
     vegetables: '#10b981',
     fruits: '#f59e0b',
     grains: '#c084fc',
@@ -76,8 +76,8 @@ function GroceryItemRow({
                     width: '20px',
                     height: '20px',
                     borderRadius: '4px',
-                    border: `2px solid ${item.checked ? '#39ff14' : 'rgba(255,255,255,0.2)'}`,
-                    background: item.checked ? 'rgba(57, 255, 20, 0.15)' : 'transparent',
+                    border: `2px solid ${item.checked ? '#FF6600' : 'rgba(255,255,255,0.2)'}`,
+                    background: item.checked ? 'rgba(255, 102, 0, 0.15)' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -85,7 +85,7 @@ function GroceryItemRow({
                     transition: 'all 0.15s',
                 }}
             >
-                {item.checked && <Check size={12} color="#39ff14" />}
+                {item.checked && <Check size={12} color="#FF6600" />}
             </div>
             <div style={{ flex: 1 }}>
                 <span
@@ -382,7 +382,7 @@ export default function GroceryListPage() {
                         <h1 style={{
                             fontSize: '1.75rem',
                             fontWeight: 700,
-                            color: '#39ff14',
+                            color: '#FF6600',
                             marginBottom: '0.5rem',
                         }}>
                             Grocery List
@@ -396,9 +396,9 @@ export default function GroceryListPage() {
                         disabled={generating}
                         style={{
                             padding: '0.5rem 1.25rem',
-                            background: generating ? 'rgba(57, 255, 20, 0.05)' : 'rgba(57, 255, 20, 0.1)',
-                            color: '#39ff14',
-                            border: '1px solid rgba(57, 255, 20, 0.2)',
+                            background: generating ? 'rgba(255, 102, 0, 0.05)' : 'rgba(255, 102, 0, 0.1)',
+                            color: '#FF6600',
+                            border: '1px solid rgba(255, 102, 0, 0.2)',
                             borderRadius: '8px',
                             fontSize: '0.85rem',
                             fontWeight: 500,
@@ -456,7 +456,7 @@ export default function GroceryListPage() {
                     borderRadius: '16px',
                     border: '1px solid rgba(255,255,255,0.06)',
                 }}>
-                    <ShoppingCart size={48} style={{ color: '#39ff14', marginBottom: '1.5rem', opacity: 0.7 }} />
+                    <ShoppingCart size={48} style={{ color: '#FF6600', marginBottom: '1.5rem', opacity: 0.7 }} />
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.75rem' }}>
                         No grocery list yet
                     </h2>
@@ -468,7 +468,7 @@ export default function GroceryListPage() {
                         disabled={generating}
                         style={{
                             padding: '0.75rem 2rem',
-                            background: '#39ff14',
+                            background: '#FF6600',
                             color: '#000',
                             border: 'none',
                             borderRadius: '8px',
@@ -505,7 +505,7 @@ export default function GroceryListPage() {
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Package size={16} color="#39ff14" />
+                                <Package size={16} color="#FF6600" />
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
                                     {groceryList.name}
                                 </span>
@@ -514,7 +514,7 @@ export default function GroceryListPage() {
                                 )}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <span style={{ fontSize: '0.8rem', color: '#39ff14', fontWeight: 600 }}>
+                                <span style={{ fontSize: '0.8rem', color: '#FF6600', fontWeight: 600 }}>
                                     {checkedItems}/{totalItems} items
                                 </span>
                                 <button
@@ -548,7 +548,7 @@ export default function GroceryListPage() {
                                 transition={{ duration: 0.3 }}
                                 style={{
                                     height: '100%',
-                                    background: progressPct === 100 ? '#39ff14' : 'rgba(57, 255, 20, 0.6)',
+                                    background: progressPct === 100 ? '#FF6600' : 'rgba(255, 102, 0, 0.6)',
                                     borderRadius: '3px',
                                 }}
                             />
@@ -570,9 +570,9 @@ export default function GroceryListPage() {
                                     style={{
                                         padding: '0.35rem 0.75rem',
                                         borderRadius: '20px',
-                                        border: `1px solid ${groceryList.id === list.id ? '#39ff14' : 'rgba(255,255,255,0.1)'}`,
-                                        background: groceryList.id === list.id ? 'rgba(57, 255, 20, 0.15)' : 'transparent',
-                                        color: groceryList.id === list.id ? '#39ff14' : '#888',
+                                        border: `1px solid ${groceryList.id === list.id ? '#FF6600' : 'rgba(255,255,255,0.1)'}`,
+                                        background: groceryList.id === list.id ? 'rgba(255, 102, 0, 0.15)' : 'transparent',
+                                        color: groceryList.id === list.id ? '#FF6600' : '#888',
                                         fontSize: '0.75rem',
                                         fontWeight: 500,
                                         cursor: 'pointer',

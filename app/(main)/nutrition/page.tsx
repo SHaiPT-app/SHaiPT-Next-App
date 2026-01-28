@@ -25,11 +25,11 @@ import type { Profile, NutritionPlan, Meal, DayMeals, MealNutrition } from '@/li
 // ============================================
 
 const DIETARY_TAG_COLORS: Record<string, string> = {
-    vegan: '#39ff14',
+    vegan: '#FF6600',
     vegetarian: '#6ee7b7',
     keto: '#ff007f',
     paleo: '#f59e0b',
-    'gluten_free': '#00d4ff',
+    'gluten_free': '#FF6600',
     'dairy_free': '#c084fc',
     halal: '#10b981',
     kosher: '#818cf8',
@@ -127,8 +127,8 @@ function MacroSummaryRow({ nutrition, compact }: { nutrition: MealNutrition; com
             fontSize: size,
         }}>
             <MacroBar label="Calories" value={nutrition.calories} unit=" kcal" color="#f59e0b" icon={Flame} />
-            <MacroBar label="Protein" value={nutrition.protein_g} unit="g" color="#39ff14" icon={Beef} />
-            <MacroBar label="Carbs" value={nutrition.carbs_g} unit="g" color="#00d4ff" icon={Wheat} />
+            <MacroBar label="Protein" value={nutrition.protein_g} unit="g" color="#FF6600" icon={Beef} />
+            <MacroBar label="Carbs" value={nutrition.carbs_g} unit="g" color="#FF6600" icon={Wheat} />
             <MacroBar label="Fats" value={nutrition.fat_g} unit="g" color="#ff007f" icon={Droplets} />
         </div>
     );
@@ -162,7 +162,7 @@ function MealCard({ meal, mealType }: { meal: Meal; mealType: string }) {
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Utensils size={14} style={{ color: '#39ff14' }} />
+                    <Utensils size={14} style={{ color: '#FF6600' }} />
                     <div>
                         <div style={{ fontSize: '0.7rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             {MEAL_TYPE_LABELS[mealType] || mealType}
@@ -254,7 +254,7 @@ function DayCard({ dayKey, dayMeals }: { dayKey: string; dayMeals: DayMeals }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    background: expanded ? 'rgba(57, 255, 20, 0.03)' : 'transparent',
+                    background: expanded ? 'rgba(255, 102, 0, 0.03)' : 'transparent',
                     border: 'none',
                     color: 'inherit',
                     cursor: 'pointer',
@@ -267,11 +267,11 @@ function DayCard({ dayKey, dayMeals }: { dayKey: string; dayMeals: DayMeals }) {
                         width: '32px',
                         height: '32px',
                         borderRadius: '8px',
-                        background: 'rgba(57, 255, 20, 0.1)',
+                        background: 'rgba(255, 102, 0, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#39ff14',
+                        color: '#FF6600',
                         fontWeight: 700,
                         fontSize: '0.85rem',
                     }}>
@@ -283,8 +283,8 @@ function DayCard({ dayKey, dayMeals }: { dayKey: string; dayMeals: DayMeals }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem' }}>
                         <span style={{ color: '#f59e0b' }}>{Math.round(totals.calories)} kcal</span>
-                        <span style={{ color: '#39ff14' }}>P: {Math.round(totals.protein_g)}g</span>
-                        <span style={{ color: '#00d4ff' }}>C: {Math.round(totals.carbs_g)}g</span>
+                        <span style={{ color: '#FF6600' }}>P: {Math.round(totals.protein_g)}g</span>
+                        <span style={{ color: '#FF6600' }}>C: {Math.round(totals.carbs_g)}g</span>
                         <span style={{ color: '#ff007f' }}>F: {Math.round(totals.fat_g)}g</span>
                     </div>
                     {expanded ? <ChevronDown size={18} color="#888" /> : <ChevronRight size={18} color="#888" />}
@@ -305,12 +305,12 @@ function DayCard({ dayKey, dayMeals }: { dayKey: string; dayMeals: DayMeals }) {
                             {/* Daily totals bar */}
                             <div style={{
                                 padding: '0.75rem',
-                                background: 'rgba(57, 255, 20, 0.04)',
+                                background: 'rgba(255, 102, 0, 0.04)',
                                 borderRadius: '8px',
-                                border: '1px solid rgba(57, 255, 20, 0.1)',
+                                border: '1px solid rgba(255, 102, 0, 0.1)',
                                 marginBottom: '0.25rem',
                             }}>
-                                <div style={{ fontSize: '0.7rem', color: '#39ff14', textTransform: 'uppercase', marginBottom: '0.5rem', fontWeight: 600 }}>
+                                <div style={{ fontSize: '0.7rem', color: '#FF6600', textTransform: 'uppercase', marginBottom: '0.5rem', fontWeight: 600 }}>
                                     Daily Totals
                                 </div>
                                 <MacroSummaryRow nutrition={totals} />
@@ -450,7 +450,7 @@ export default function NutritionPage() {
                     <h1 style={{
                         fontSize: '1.75rem',
                         fontWeight: 700,
-                        color: '#39ff14',
+                        color: '#FF6600',
                         marginBottom: '0.5rem',
                     }}>
                         Nutrition Plan
@@ -464,9 +464,9 @@ export default function NutritionPage() {
                         onClick={() => router.push('/nutrition/grocery')}
                         style={{
                             padding: '0.5rem 1.25rem',
-                            background: 'rgba(0, 212, 255, 0.1)',
-                            color: '#00d4ff',
-                            border: '1px solid rgba(0, 212, 255, 0.2)',
+                            background: 'rgba(255, 102, 0, 0.1)',
+                            color: '#FF6600',
+                            border: '1px solid rgba(255, 102, 0, 0.2)',
                             borderRadius: '8px',
                             fontSize: '0.85rem',
                             fontWeight: 500,
@@ -483,9 +483,9 @@ export default function NutritionPage() {
                         onClick={() => router.push('/nutrition/tracking')}
                         style={{
                             padding: '0.5rem 1.25rem',
-                            background: 'rgba(57, 255, 20, 0.1)',
-                            color: '#39ff14',
-                            border: '1px solid rgba(57, 255, 20, 0.2)',
+                            background: 'rgba(255, 102, 0, 0.1)',
+                            color: '#FF6600',
+                            border: '1px solid rgba(255, 102, 0, 0.2)',
                             borderRadius: '8px',
                             fontSize: '0.85rem',
                             fontWeight: 500,
@@ -529,7 +529,7 @@ export default function NutritionPage() {
                     borderRadius: '16px',
                     border: '1px solid rgba(255,255,255,0.06)',
                 }}>
-                    <Utensils size={48} style={{ color: '#39ff14', marginBottom: '1.5rem', opacity: 0.7 }} />
+                    <Utensils size={48} style={{ color: '#FF6600', marginBottom: '1.5rem', opacity: 0.7 }} />
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.75rem' }}>
                         No nutrition plan yet
                     </h2>
@@ -541,7 +541,7 @@ export default function NutritionPage() {
                         disabled={generating}
                         style={{
                             padding: '0.75rem 2rem',
-                            background: '#39ff14',
+                            background: '#FF6600',
                             color: '#000',
                             border: 'none',
                             borderRadius: '8px',
@@ -597,9 +597,9 @@ export default function NutritionPage() {
                                 disabled={generating}
                                 style={{
                                     padding: '0.5rem 1rem',
-                                    background: 'rgba(57, 255, 20, 0.1)',
-                                    color: '#39ff14',
-                                    border: '1px solid rgba(57, 255, 20, 0.2)',
+                                    background: 'rgba(255, 102, 0, 0.1)',
+                                    color: '#FF6600',
+                                    border: '1px solid rgba(255, 102, 0, 0.2)',
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
@@ -659,9 +659,9 @@ export default function NutritionPage() {
                                 onClick={() => setShowShoppingList(!showShoppingList)}
                                 style={{
                                     padding: '0.5rem 1rem',
-                                    background: showShoppingList ? 'rgba(0, 212, 255, 0.1)' : 'rgba(255,255,255,0.03)',
-                                    color: showShoppingList ? '#00d4ff' : '#888',
-                                    border: `1px solid ${showShoppingList ? 'rgba(0, 212, 255, 0.3)' : 'rgba(255,255,255,0.08)'}`,
+                                    background: showShoppingList ? 'rgba(255, 102, 0, 0.1)' : 'rgba(255,255,255,0.03)',
+                                    color: showShoppingList ? '#FF6600' : '#888',
+                                    border: `1px solid ${showShoppingList ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255,255,255,0.08)'}`,
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     cursor: 'pointer',
@@ -707,12 +707,12 @@ export default function NutritionPage() {
                                 style={{ overflow: 'hidden' }}
                             >
                                 <div style={{
-                                    background: 'rgba(0, 212, 255, 0.03)',
-                                    border: '1px solid rgba(0, 212, 255, 0.1)',
+                                    background: 'rgba(255, 102, 0, 0.03)',
+                                    border: '1px solid rgba(255, 102, 0, 0.1)',
                                     borderRadius: '12px',
                                     padding: '1.25rem',
                                 }}>
-                                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#00d4ff', marginBottom: '1rem' }}>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#FF6600', marginBottom: '1rem' }}>
                                         Shopping List
                                     </h3>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
@@ -782,9 +782,9 @@ export default function NutritionPage() {
                                 style={{
                                     padding: '0.4rem 1rem',
                                     borderRadius: '20px',
-                                    border: `1px solid ${!selectedDay ? '#39ff14' : 'rgba(255,255,255,0.1)'}`,
-                                    background: !selectedDay ? 'rgba(57, 255, 20, 0.15)' : 'transparent',
-                                    color: !selectedDay ? '#39ff14' : '#888',
+                                    border: `1px solid ${!selectedDay ? '#FF6600' : 'rgba(255,255,255,0.1)'}`,
+                                    background: !selectedDay ? 'rgba(255, 102, 0, 0.15)' : 'transparent',
+                                    color: !selectedDay ? '#FF6600' : '#888',
                                     fontSize: '0.8rem',
                                     fontWeight: 500,
                                     cursor: 'pointer',
@@ -801,9 +801,9 @@ export default function NutritionPage() {
                                     style={{
                                         padding: '0.4rem 1rem',
                                         borderRadius: '20px',
-                                        border: `1px solid ${selectedDay === dk ? '#39ff14' : 'rgba(255,255,255,0.1)'}`,
-                                        background: selectedDay === dk ? 'rgba(57, 255, 20, 0.15)' : 'transparent',
-                                        color: selectedDay === dk ? '#39ff14' : '#888',
+                                        border: `1px solid ${selectedDay === dk ? '#FF6600' : 'rgba(255,255,255,0.1)'}`,
+                                        background: selectedDay === dk ? 'rgba(255, 102, 0, 0.15)' : 'transparent',
+                                        color: selectedDay === dk ? '#FF6600' : '#888',
                                         fontSize: '0.8rem',
                                         fontWeight: 500,
                                         cursor: 'pointer',

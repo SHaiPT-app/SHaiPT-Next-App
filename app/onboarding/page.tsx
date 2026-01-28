@@ -417,13 +417,13 @@ export default function OnboardingPage() {
                                     borderRadius="12px"
                                     bg={
                                         message.role === 'user'
-                                            ? 'rgba(0, 212, 255, 0.1)'
+                                            ? 'rgba(255, 102, 0, 0.1)'
                                             : 'rgba(255, 255, 255, 0.05)'
                                     }
                                     border="1px solid"
                                     borderColor={
                                         message.role === 'user'
-                                            ? 'rgba(0, 212, 255, 0.2)'
+                                            ? 'rgba(255, 102, 0, 0.2)'
                                             : 'var(--glass-border)'
                                     }
                                 >
@@ -533,8 +533,8 @@ export default function OnboardingPage() {
                                     data-testid="generating-plans"
                                     p="1.5rem"
                                     borderRadius="12px"
-                                    bg="rgba(0, 212, 255, 0.05)"
-                                    border="1px solid rgba(0, 212, 255, 0.2)"
+                                    bg="rgba(255, 102, 0, 0.05)"
+                                    border="1px solid rgba(255, 102, 0, 0.2)"
                                     textAlign="center"
                                 >
                                     <Box
@@ -702,7 +702,7 @@ export default function OnboardingPage() {
                                 style={{
                                     padding: '0.875rem 1.25rem',
                                     background: isLoading || !input.trim()
-                                        ? 'rgba(0, 212, 255, 0.3)'
+                                        ? 'rgba(255, 102, 0, 0.3)'
                                         : 'var(--primary)',
                                     color: 'white',
                                     border: 'none',

@@ -4,33 +4,19 @@ const config = defineConfig({
   theme: {
     tokens: {
       colors: {
-        // Neon Electric Blue
-        neonBlue: {
-          50: { value: "#e6f4ff" },
-          100: { value: "#b3dfff" },
-          200: { value: "#80caff" },
-          300: { value: "#4db5ff" },
-          400: { value: "#1aa0ff" },
-          500: { value: "#00d4ff" },
-          600: { value: "#00b8e6" },
-          700: { value: "#008fcc" },
-          800: { value: "#0066b3" },
-          900: { value: "#003d99" },
-          950: { value: "#002266" },
-        },
-        // Neon Vivid Green
-        neonGreen: {
-          50: { value: "#e6fff0" },
-          100: { value: "#b3ffd6" },
-          200: { value: "#80ffbb" },
-          300: { value: "#4dffa1" },
-          400: { value: "#1aff86" },
-          500: { value: "#39ff14" },
-          600: { value: "#2ee611" },
-          700: { value: "#23cc0e" },
-          800: { value: "#18b30b" },
-          900: { value: "#0d9908" },
-          950: { value: "#066605" },
+        // Neon Orange (primary brand color)
+        neonOrange: {
+          50: { value: "#FFF0E6" },
+          100: { value: "#FFD1B3" },
+          200: { value: "#FFB380" },
+          300: { value: "#FF944D" },
+          400: { value: "#FF761A" },
+          500: { value: "#FF6600" },
+          600: { value: "#E55C00" },
+          700: { value: "#CC5200" },
+          800: { value: "#B34700" },
+          900: { value: "#993D00" },
+          950: { value: "#663300" },
         },
         // Neon Hot Pink
         neonPink: {
@@ -64,46 +50,46 @@ const config = defineConfig({
     },
     semanticTokens: {
       colors: {
-        // Primary uses neon blue
+        // Primary uses neon orange
         primary: {
           solid: {
-            value: { _light: "{colors.neonBlue.500}", _dark: "{colors.neonBlue.500}" },
+            value: { _light: "{colors.neonOrange.500}", _dark: "{colors.neonOrange.500}" },
           },
           contrast: {
             value: { _light: "{colors.white}", _dark: "{colors.white}" },
           },
           fg: {
-            value: { _light: "{colors.neonBlue.600}", _dark: "{colors.neonBlue.400}" },
+            value: { _light: "{colors.neonOrange.600}", _dark: "{colors.neonOrange.400}" },
           },
           muted: {
-            value: { _light: "{colors.neonBlue.100}", _dark: "{colors.neonBlue.950}" },
+            value: { _light: "{colors.neonOrange.100}", _dark: "{colors.neonOrange.950}" },
           },
           subtle: {
-            value: { _light: "{colors.neonBlue.50}", _dark: "{colors.neonBlue.950}" },
+            value: { _light: "{colors.neonOrange.50}", _dark: "{colors.neonOrange.950}" },
           },
           emphasized: {
-            value: { _light: "{colors.neonBlue.200}", _dark: "{colors.neonBlue.800}" },
+            value: { _light: "{colors.neonOrange.200}", _dark: "{colors.neonOrange.800}" },
           },
           focusRing: {
-            value: { _light: "{colors.neonBlue.500}", _dark: "{colors.neonBlue.500}" },
+            value: { _light: "{colors.neonOrange.500}", _dark: "{colors.neonOrange.500}" },
           },
         },
-        // Accent uses neon green
+        // Accent also uses neon orange
         accent: {
           solid: {
-            value: { _light: "{colors.neonGreen.500}", _dark: "{colors.neonGreen.500}" },
+            value: { _light: "{colors.neonOrange.500}", _dark: "{colors.neonOrange.500}" },
           },
           contrast: {
-            value: { _light: "{colors.black}", _dark: "{colors.black}" },
+            value: { _light: "{colors.white}", _dark: "{colors.white}" },
           },
           fg: {
-            value: { _light: "{colors.neonGreen.600}", _dark: "{colors.neonGreen.400}" },
+            value: { _light: "{colors.neonOrange.600}", _dark: "{colors.neonOrange.400}" },
           },
           muted: {
-            value: { _light: "{colors.neonGreen.100}", _dark: "{colors.neonGreen.950}" },
+            value: { _light: "{colors.neonOrange.100}", _dark: "{colors.neonOrange.950}" },
           },
           subtle: {
-            value: { _light: "{colors.neonGreen.50}", _dark: "{colors.neonGreen.950}" },
+            value: { _light: "{colors.neonOrange.50}", _dark: "{colors.neonOrange.950}" },
           },
         },
         // Secondary uses neon pink

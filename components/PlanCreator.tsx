@@ -389,7 +389,7 @@ export default function PlanCreator({ traineeId, trainerId, onSave, onCancel, pl
                                                 width: '100%'
                                             }}
                                         >
-                                            {exercise.notes ? '📝 Edit Notes' : '+ Add Notes'}
+                                            {exercise.notes ? 'Edit Notes' : '+ Add Notes'}
                                         </button>
                                         {showingNotes === i && (
                                             <textarea

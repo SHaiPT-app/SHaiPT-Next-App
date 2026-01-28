@@ -138,7 +138,7 @@ export const hoverScale = {
 
 export const hoverGlow = {
   whileHover: {
-    boxShadow: "0 0 20px rgba(0, 212, 255, 0.4)",
+    boxShadow: "0 0 20px rgba(255, 102, 0, 0.4)",
   },
 } as const
 

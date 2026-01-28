@@ -21,7 +21,7 @@ export default function DemoAnalyticsPage() {
           style={{
             fontFamily: 'var(--font-orbitron)',
             fontSize: '1.75rem',
-            color: '#39ff14',
+            color: '#FF6600',
             margin: 0,
           }}
         >
@@ -50,7 +50,7 @@ export default function DemoAnalyticsPage() {
             style={{
               fontSize: '2rem',
               fontWeight: 800,
-              color: '#39ff14',
+              color: '#FF6600',
               fontFamily: 'var(--font-orbitron)',
             }}
           >
@@ -126,7 +126,7 @@ export default function DemoAnalyticsPage() {
                 padding: '1.25rem',
                 position: 'relative',
                 border: pr.isNew
-                  ? '1px solid rgba(57, 255, 20, 0.3)'
+                  ? '1px solid rgba(255, 102, 0, 0.3)'
                   : '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
@@ -136,8 +136,8 @@ export default function DemoAnalyticsPage() {
                     position: 'absolute',
                     top: '0.75rem',
                     right: '0.75rem',
-                    background: 'rgba(57, 255, 20, 0.15)',
-                    color: '#39ff14',
+                    background: 'rgba(255, 102, 0, 0.15)',
+                    color: '#FF6600',
                     padding: '0.15rem 0.5rem',
                     borderRadius: '10px',
                     fontSize: '0.65rem',
@@ -161,7 +161,7 @@ export default function DemoAnalyticsPage() {
                 style={{
                   fontSize: '1.5rem',
                   fontWeight: 800,
-                  color: '#39ff14',
+                  color: '#FF6600',
                 }}
               >
                 {pr.weight} lbs
@@ -220,7 +220,7 @@ export default function DemoAnalyticsPage() {
                       background:
                         i === DEMO_ANALYTICS.weeklyVolume.length - 1
                           ? 'linear-gradient(180deg, var(--primary), rgba(242, 95, 41, 0.3))'
-                          : 'linear-gradient(180deg, rgba(0, 212, 255, 0.6), rgba(0, 212, 255, 0.2))',
+                          : 'linear-gradient(180deg, rgba(255, 102, 0, 0.6), rgba(255, 102, 0, 0.2))',
                       borderRadius: '4px 4px 0 0',
                       transition: 'height 0.5s ease',
                     }}
@@ -250,7 +250,7 @@ export default function DemoAnalyticsPage() {
             <span>
               Start: {DEMO_ANALYTICS.weeklyVolume[0].volume.toLocaleString()} lbs
             </span>
-            <span style={{ color: '#39ff14' }}>
+            <span style={{ color: '#FF6600' }}>
               Current:{' '}
               {DEMO_ANALYTICS.weeklyVolume[
                 DEMO_ANALYTICS.weeklyVolume.length - 1

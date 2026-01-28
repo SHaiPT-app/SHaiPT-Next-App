@@ -7,7 +7,7 @@ export default function DemoTrainerPage() {
   const router = useRouter();
 
   const getStreakColor = (streak: number): string => {
-    if (streak >= 7) return '#39ff14';
+    if (streak >= 7) return '#FF6600';
     if (streak >= 3) return '#f59e0b';
     if (streak >= 1) return 'var(--primary)';
     return '#888';
@@ -140,8 +140,8 @@ export default function DemoTrainerPage() {
                   padding: '0.25rem 0.75rem',
                   borderRadius: '20px',
                   fontSize: '0.8125rem',
-                  background: 'rgba(0, 212, 255, 0.1)',
-                  border: '1px solid rgba(0, 212, 255, 0.2)',
+                  background: 'rgba(255, 102, 0, 0.1)',
+                  border: '1px solid rgba(255, 102, 0, 0.2)',
                   color: 'var(--primary)',
                   maxWidth: '100%',
                   overflow: 'hidden',

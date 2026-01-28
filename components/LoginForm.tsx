@@ -309,7 +309,7 @@ export default function LoginForm() {
         }
     };
 
-    const strengthColor = passwordStrength < 3 ? 'red.500' : passwordStrength < 5 ? 'yellow.500' : 'green.500';
+    const strengthColor = passwordStrength < 3 ? 'red.500' : passwordStrength < 5 ? 'yellow.500' : 'orange.500';
 
     return (
         <MotionBox
@@ -466,17 +466,17 @@ export default function LoginForm() {
                                 </HStack>
                                 <Flex gap="4px" wrap="wrap" fontSize="0.75rem">
                                     <HStack gap="4px" minW="45%">
-                                        <Text color={passwordRules.length ? 'green.400' : 'gray.500'} fontSize="xs">
+                                        <Text color={passwordRules.length ? 'orange.400' : 'gray.500'} fontSize="xs">
                                             {passwordRules.length ? '✓' : '○'} 8+ characters
                                         </Text>
                                     </HStack>
                                     <HStack gap="4px" minW="45%">
-                                        <Text color={passwordRules.uppercase ? 'green.400' : 'gray.500'} fontSize="xs">
+                                        <Text color={passwordRules.uppercase ? 'orange.400' : 'gray.500'} fontSize="xs">
                                             {passwordRules.uppercase ? '✓' : '○'} Uppercase
                                         </Text>
                                     </HStack>
                                     <HStack gap="4px" minW="45%">
-                                        <Text color={passwordRules.numberOrSpecial ? 'green.400' : 'gray.500'} fontSize="xs">
+                                        <Text color={passwordRules.numberOrSpecial ? 'orange.400' : 'gray.500'} fontSize="xs">
                                             {passwordRules.numberOrSpecial ? '✓' : '○'} Number/Special
                                         </Text>
                                     </HStack>
@@ -496,10 +496,10 @@ export default function LoginForm() {
                         >
                             <VStack gap="0.5rem">
                                 <CheckCircle size={24} color="#10b981" />
-                                <Text color="green.400" fontWeight="bold" fontSize="sm">
+                                <Text color="orange.400" fontWeight="bold" fontSize="sm">
                                     {successMessage.includes('resent') ? 'Email Resent!' : 'Account Created!'}
                                 </Text>
-                                <Text color="green.400" fontSize="sm">{successMessage}</Text>
+                                <Text color="orange.400" fontSize="sm">{successMessage}</Text>
                             </VStack>
                             <Button
                                 type="button"

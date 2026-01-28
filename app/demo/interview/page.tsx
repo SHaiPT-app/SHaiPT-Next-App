@@ -143,11 +143,11 @@ export default function DemoInterviewPage() {
                   borderRadius: '12px',
                   background:
                     msg.role === 'user'
-                      ? 'rgba(0, 212, 255, 0.1)'
+                      ? 'rgba(255, 102, 0, 0.1)'
                       : 'rgba(255, 255, 255, 0.05)',
                   border: `1px solid ${
                     msg.role === 'user'
-                      ? 'rgba(0, 212, 255, 0.2)'
+                      ? 'rgba(255, 102, 0, 0.2)'
                       : 'rgba(255, 255, 255, 0.08)'
                   }`,
                 }}

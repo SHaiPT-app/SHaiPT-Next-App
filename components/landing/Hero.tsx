@@ -26,7 +26,7 @@ export default function Hero() {
           width: '50vw',
           height: '50vw',
           background:
-            'radial-gradient(circle, rgba(0, 212, 255, 0.08), transparent 70%)',
+            'radial-gradient(circle, rgba(255, 102, 0, 0.08), transparent 70%)',
           filter: 'blur(100px)',
           zIndex: 0,
         }}
@@ -120,10 +120,10 @@ export default function Hero() {
               fontSize: '0.875rem',
               fontWeight: '700',
               color: '#fff',
-              background: 'linear-gradient(135deg, #00d4ff, #0099cc)',
+              background: 'linear-gradient(135deg, #FF6600, #CC5200)',
               borderRadius: '10px',
               textDecoration: 'none',
-              boxShadow: '0 0 20px rgba(0, 212, 255, 0.3)',
+              boxShadow: '0 0 20px rgba(255, 102, 0, 0.3)',
               transition: 'box-shadow 0.2s, transform 0.2s',
             }}
           >
@@ -157,12 +157,12 @@ export default function Hero() {
             alignItems: 'center',
             gap: '0.5rem',
             padding: '0.4rem 1rem',
-            background: 'rgba(0, 212, 255, 0.1)',
-            border: '1px solid rgba(0, 212, 255, 0.25)',
+            background: 'rgba(255, 102, 0, 0.1)',
+            border: '1px solid rgba(255, 102, 0, 0.25)',
             borderRadius: '50px',
             marginBottom: '1.5rem',
             fontSize: '0.85rem',
-            color: '#00d4ff',
+            color: '#FF6600',
             fontWeight: '600',
           }}
         >
@@ -171,8 +171,8 @@ export default function Hero() {
               width: 8,
               height: 8,
               borderRadius: '50%',
-              background: '#39ff14',
-              boxShadow: '0 0 8px #39ff14',
+              background: '#FF6600',
+              boxShadow: '0 0 8px #FF6600',
             }}
           />
           AI-Powered Personal Training
@@ -199,14 +199,14 @@ export default function Hero() {
             pauseDuration={5000}
             deletingSpeed={50}
             loop={true}
-            textColors={['#00d4ff']}
+            textColors={['#FF6600']}
             cursorCharacter="|"
             showCursor={true}
             cursorClassName=""
             style={{
-              color: '#00d4ff',
+              color: '#FF6600',
               display: 'inline',
-              textShadow: '0 0 30px rgba(0, 212, 255, 0.4)',
+              textShadow: '0 0 30px rgba(255, 102, 0, 0.4)',
             }}
           />
         </motion.h1>
@@ -252,14 +252,14 @@ export default function Hero() {
           <Link
             href="/login"
             style={{
-              background: 'linear-gradient(135deg, #00d4ff, #0088cc)',
+              background: 'linear-gradient(135deg, #FF6600, #CC5200)',
               color: 'white',
               padding: '1rem 2.5rem',
               borderRadius: '50px',
               fontSize: '1.1rem',
               fontWeight: '700',
               textDecoration: 'none',
-              boxShadow: '0 0 30px rgba(0, 212, 255, 0.3)',
+              boxShadow: '0 0 30px rgba(255, 102, 0, 0.3)',
               transition: 'transform 0.2s, box-shadow 0.2s',
             }}
           >
@@ -320,7 +320,7 @@ export default function Hero() {
               width: '80%',
               height: '80%',
               background:
-                'radial-gradient(ellipse, rgba(0, 212, 255, 0.1), transparent 70%)',
+                'radial-gradient(ellipse, rgba(255, 102, 0, 0.1), transparent 70%)',
               filter: 'blur(60px)',
               zIndex: 0,
             }}

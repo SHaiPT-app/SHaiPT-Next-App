@@ -205,7 +205,7 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                 }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#39ff14', margin: 0 }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#FF6600', margin: 0 }}>
                         Add to {MEAL_TYPES.find(m => m.key === mealType)?.label}
                     </h3>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0.25rem' }}>
@@ -219,8 +219,8 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                         onClick={() => setCustomMode(false)}
                         style={{
                             flex: 1, padding: '0.5rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                            background: !customMode ? 'rgba(57,255,20,0.15)' : 'rgba(255,255,255,0.05)',
-                            color: !customMode ? '#39ff14' : '#888', fontWeight: 500, fontSize: '0.85rem',
+                            background: !customMode ? 'rgba(255,102,0,0.15)' : 'rgba(255,255,255,0.05)',
+                            color: !customMode ? '#FF6600' : '#888', fontWeight: 500, fontSize: '0.85rem',
                         }}
                     >
                         Search Food
@@ -229,8 +229,8 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                         onClick={() => setCustomMode(true)}
                         style={{
                             flex: 1, padding: '0.5rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                            background: customMode ? 'rgba(57,255,20,0.15)' : 'rgba(255,255,255,0.05)',
-                            color: customMode ? '#39ff14' : '#888', fontWeight: 500, fontSize: '0.85rem',
+                            background: customMode ? 'rgba(255,102,0,0.15)' : 'rgba(255,255,255,0.05)',
+                            color: customMode ? '#FF6600' : '#888', fontWeight: 500, fontSize: '0.85rem',
                         }}
                     >
                         Custom Entry
@@ -283,8 +283,8 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                                     style={{
                                         width: '100%',
                                         padding: '0.75rem',
-                                        background: selectedFood?.id === food.id ? 'rgba(57,255,20,0.08)' : 'transparent',
-                                        border: `1px solid ${selectedFood?.id === food.id ? 'rgba(57,255,20,0.3)' : 'rgba(255,255,255,0.04)'}`,
+                                        background: selectedFood?.id === food.id ? 'rgba(255,102,0,0.08)' : 'transparent',
+                                        border: `1px solid ${selectedFood?.id === food.id ? 'rgba(255,102,0,0.3)' : 'rgba(255,255,255,0.04)'}`,
                                         borderRadius: '8px',
                                         color: '#e5e5e7',
                                         cursor: 'pointer',
@@ -297,8 +297,8 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                                     <div style={{ fontSize: '0.75rem', color: '#888', display: 'flex', gap: '0.75rem' }}>
                                         <span>{food.serving_size}{food.serving_unit}</span>
                                         <span style={{ color: '#f59e0b' }}>{food.calories} kcal</span>
-                                        <span style={{ color: '#39ff14' }}>P: {food.protein_g}g</span>
-                                        <span style={{ color: '#00d4ff' }}>C: {food.carbs_g}g</span>
+                                        <span style={{ color: '#FF6600' }}>P: {food.protein_g}g</span>
+                                        <span style={{ color: '#FF6600' }}>C: {food.carbs_g}g</span>
                                         <span style={{ color: '#ff007f' }}>F: {food.fat_g}g</span>
                                     </div>
                                 </button>
@@ -341,7 +341,7 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                                     onClick={handleConfirm}
                                     style={{
                                         padding: '0.5rem 1.5rem',
-                                        background: '#39ff14',
+                                        background: '#FF6600',
                                         color: '#000',
                                         border: 'none',
                                         borderRadius: '8px',
@@ -403,7 +403,7 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#39ff14', display: 'block', marginBottom: '0.25rem' }}>Protein (g)</label>
+                                    <label style={{ fontSize: '0.75rem', color: '#FF6600', display: 'block', marginBottom: '0.25rem' }}>Protein (g)</label>
                                     <input
                                         type="number" value={customFood.protein_g}
                                         onChange={(e) => setCustomFood(p => ({ ...p, protein_g: e.target.value }))}
@@ -412,7 +412,7 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#00d4ff', display: 'block', marginBottom: '0.25rem' }}>Carbs (g)</label>
+                                    <label style={{ fontSize: '0.75rem', color: '#FF6600', display: 'block', marginBottom: '0.25rem' }}>Carbs (g)</label>
                                     <input
                                         type="number" value={customFood.carbs_g}
                                         onChange={(e) => setCustomFood(p => ({ ...p, carbs_g: e.target.value }))}
@@ -435,7 +435,7 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
                                 disabled={!customFood.name}
                                 style={{
                                     padding: '0.75rem',
-                                    background: customFood.name ? '#39ff14' : 'rgba(57,255,20,0.3)',
+                                    background: customFood.name ? '#FF6600' : 'rgba(255,102,0,0.3)',
                                     color: '#000',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -497,9 +497,9 @@ function MealSection({ mealType, label, logs, onAdd, onDelete }: {
                         alignItems: 'center',
                         gap: '0.35rem',
                         padding: '0.35rem 0.75rem',
-                        background: 'rgba(57,255,20,0.1)',
-                        color: '#39ff14',
-                        border: '1px solid rgba(57,255,20,0.2)',
+                        background: 'rgba(255,102,0,0.1)',
+                        color: '#FF6600',
+                        border: '1px solid rgba(255,102,0,0.2)',
                         borderRadius: '6px',
                         fontSize: '0.8rem',
                         fontWeight: 500,
@@ -525,8 +525,8 @@ function MealSection({ mealType, label, logs, onAdd, onDelete }: {
                         <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#e5e5e7' }}>{log.food_name}</div>
                         <div style={{ fontSize: '0.7rem', color: '#666', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <span>{log.serving_size} {log.serving_unit}</span>
-                            <span style={{ color: '#39ff14' }}>P: {Math.round(log.protein_g)}g</span>
-                            <span style={{ color: '#00d4ff' }}>C: {Math.round(log.carbs_g)}g</span>
+                            <span style={{ color: '#FF6600' }}>P: {Math.round(log.protein_g)}g</span>
+                            <span style={{ color: '#FF6600' }}>C: {Math.round(log.carbs_g)}g</span>
                             <span style={{ color: '#ff007f' }}>F: {Math.round(log.fat_g)}g</span>
                         </div>
                     </div>
@@ -717,7 +717,7 @@ export default function MacroTrackingPage() {
         <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem 1rem' }}>
             {/* Page Header */}
             <div style={{ marginBottom: '1.5rem' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#39ff14', marginBottom: '0.25rem' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#FF6600', marginBottom: '0.25rem' }}>
                     Macro Tracking
                 </h1>
                 <p style={{ color: '#888', fontSize: '0.85rem' }}>
@@ -775,7 +775,7 @@ export default function MacroTrackingPage() {
                 marginBottom: '1.5rem',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <Target size={16} style={{ color: '#39ff14' }} />
+                    <Target size={16} style={{ color: '#FF6600' }} />
                     <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e5e5e7' }}>Daily Progress</span>
                     {loadingTargets && <Loader2 size={14} style={{ color: '#888', animation: 'spin 1s linear infinite' }} />}
                     {targets?.training_phase && (
@@ -783,8 +783,8 @@ export default function MacroTrackingPage() {
                             fontSize: '0.65rem',
                             padding: '0.15rem 0.5rem',
                             borderRadius: '12px',
-                            background: 'rgba(57,255,20,0.1)',
-                            color: '#39ff14',
+                            background: 'rgba(255,102,0,0.1)',
+                            color: '#FF6600',
                             textTransform: 'capitalize',
                             marginLeft: 'auto',
                         }}>
@@ -805,7 +805,7 @@ export default function MacroTrackingPage() {
                         label="Protein"
                         current={dailyTotals.protein_g}
                         target={targets?.protein_g || 150}
-                        color="#39ff14"
+                        color="#FF6600"
                         unit="g"
                         icon={Beef}
                     />
@@ -813,7 +813,7 @@ export default function MacroTrackingPage() {
                         label="Carbs"
                         current={dailyTotals.carbs_g}
                         target={targets?.carbs_g || 200}
-                        color="#00d4ff"
+                        color="#FF6600"
                         unit="g"
                         icon={Wheat}
                     />

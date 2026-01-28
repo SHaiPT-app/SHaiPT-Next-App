@@ -327,7 +327,7 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
                             marginBottom: '0.5rem',
                             textAlign: 'center'
                         }}>
-                            🏆 NEW PR!
+                            NEW PR!
                         </div>
                         <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
                             {post.content}

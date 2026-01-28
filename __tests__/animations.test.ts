@@ -136,8 +136,8 @@ describe("Animation Variants", () => {
   })
 
   describe("hoverGlow", () => {
-    it("applies neon blue glow on hover", () => {
-      expect(hoverGlow.whileHover.boxShadow).toContain("rgba(0, 212, 255")
+    it("applies neon orange glow on hover", () => {
+      expect(hoverGlow.whileHover.boxShadow).toContain("rgba(255, 102, 0")
     })
   })
 

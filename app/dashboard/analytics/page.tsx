@@ -247,7 +247,7 @@ export default function AnalyticsDashboardPage() {
                 <h1 style={{
                     fontFamily: 'var(--font-orbitron)',
                     fontSize: '1.75rem',
-                    color: '#39ff14',
+                    color: '#FF6600',
                     margin: 0,
                 }}>
                     Analytics
@@ -298,7 +298,7 @@ export default function AnalyticsDashboardPage() {
                                     position: 'relative',
                                     overflow: 'hidden',
                                     border: pr.is_recent
-                                        ? '1px solid rgba(57, 255, 20, 0.3)'
+                                        ? '1px solid rgba(255, 102, 0, 0.3)'
                                         : undefined,
                                 }}
                             >
@@ -310,8 +310,8 @@ export default function AnalyticsDashboardPage() {
                                             position: 'absolute',
                                             top: '0.75rem',
                                             right: '0.75rem',
-                                            background: 'rgba(57, 255, 20, 0.15)',
-                                            color: '#39ff14',
+                                            background: 'rgba(255, 102, 0, 0.15)',
+                                            color: '#FF6600',
                                             padding: '0.2rem 0.6rem',
                                             borderRadius: '12px',
                                             fontSize: '0.7rem',
@@ -344,7 +344,7 @@ export default function AnalyticsDashboardPage() {
                                             <div style={{
                                                 fontSize: '1.25rem',
                                                 fontWeight: '700',
-                                                color: '#39ff14',
+                                                color: '#FF6600',
                                             }}>
                                                 {pr.max_weight}
                                             </div>
@@ -488,7 +488,7 @@ export default function AnalyticsDashboardPage() {
                                         cursor: 'pointer',
                                         transition: 'border-color 0.2s',
                                         border: isExpanded
-                                            ? '1px solid rgba(57, 255, 20, 0.2)'
+                                            ? '1px solid rgba(255, 102, 0, 0.2)'
                                             : '1px solid transparent',
                                     }}
                                     onClick={() => toggleExpanded(log.id)}
@@ -526,7 +526,7 @@ export default function AnalyticsDashboardPage() {
                                         }}>
                                             <span style={{
                                                 fontSize: '0.85rem',
-                                                color: '#39ff14',
+                                                color: '#FF6600',
                                                 fontWeight: '500',
                                             }}>
                                                 {formatDuration(log.total_duration_seconds)}
@@ -552,7 +552,7 @@ export default function AnalyticsDashboardPage() {
                                     }}>
                                         <span style={{
                                             padding: '0.2rem 0.6rem',
-                                            background: 'rgba(57, 255, 20, 0.08)',
+                                            background: 'rgba(255, 102, 0, 0.08)',
                                             color: '#aaa',
                                             borderRadius: '16px',
                                             fontSize: '0.78rem',
@@ -624,7 +624,7 @@ export default function AnalyticsDashboardPage() {
                                                                             <div style={{
                                                                                 fontWeight: '600',
                                                                                 fontSize: '0.9rem',
-                                                                                color: '#39ff14',
+                                                                                color: '#FF6600',
                                                                                 marginBottom: '0.5rem',
                                                                             }}>
                                                                                 {exercise?.name || el.exercise_id}

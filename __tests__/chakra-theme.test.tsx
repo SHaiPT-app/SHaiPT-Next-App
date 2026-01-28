@@ -46,14 +46,9 @@ describe('Chakra UI Theme', () => {
         expect(system.token).toBeDefined()
     })
 
-    it('has neon blue color tokens defined', () => {
-        const neonBlue500 = system.token('colors.neonBlue.500')
-        expect(neonBlue500).toBe('#00d4ff')
-    })
-
-    it('has neon green color tokens defined', () => {
-        const neonGreen500 = system.token('colors.neonGreen.500')
-        expect(neonGreen500).toBe('#39ff14')
+    it('has neon orange color tokens defined', () => {
+        const neonOrange500 = system.token('colors.neonOrange.500')
+        expect(neonOrange500).toBe('#FF6600')
     })
 
     it('has neon pink color tokens defined', () => {

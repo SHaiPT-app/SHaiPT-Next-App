@@ -113,7 +113,7 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
             if (vis1 < 0.3 || vis2 < 0.3) continue;
 
             const alpha = Math.min(vis1, vis2);
-            ctx.strokeStyle = `rgba(57, 255, 20, ${alpha})`;
+            ctx.strokeStyle = `rgba(255, 102, 0, ${alpha})`;
             ctx.beginPath();
             ctx.moveTo(p1.x * width, p1.y * height);
             ctx.lineTo(p2.x * width, p2.y * height);
@@ -134,7 +134,7 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
             ctx.fill();
 
             // Neon glow ring
-            ctx.strokeStyle = `rgba(57, 255, 20, ${vis * 0.6})`;
+            ctx.strokeStyle = `rgba(255, 102, 0, ${vis * 0.6})`;
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(p.x * width, p.y * height, 6, 0, 2 * Math.PI);
@@ -316,7 +316,7 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
 
     const severityColor = (severity: FormFeedback['severity']) => {
         switch (severity) {
-            case 'good': return '#39ff14';
+            case 'good': return '#FF6600';
             case 'warning': return '#ffaa00';
             case 'error': return '#ef4444';
         }
@@ -337,7 +337,7 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
                     borderRadius: '12px',
                     overflow: 'hidden',
                     background: '#000',
-                    border: '1px solid rgba(57, 255, 20, 0.3)',
+                    border: '1px solid rgba(255, 102, 0, 0.3)',
                 }}
             >
                 {/* Close button */}
@@ -351,8 +351,8 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
                         right: '8px',
                         zIndex: 30,
                         background: 'rgba(0, 0, 0, 0.7)',
-                        border: '1px solid rgba(57, 255, 20, 0.4)',
-                        color: '#39ff14',
+                        border: '1px solid rgba(255, 102, 0, 0.4)',
+                        color: '#FF6600',
                         width: '32px',
                         height: '32px',
                         borderRadius: '50%',
@@ -414,7 +414,7 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
                             }}
                         >
                             <div className="spinner" />
-                            <span style={{ color: '#39ff14', fontSize: '0.85rem' }}>
+                            <span style={{ color: '#FF6600', fontSize: '0.85rem' }}>
                                 Loading pose detection...
                             </span>
                         </div>
@@ -445,8 +445,8 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
                                 onClick={startCamera}
                                 style={{
                                     background: 'none',
-                                    border: '1px solid rgba(57, 255, 20, 0.4)',
-                                    color: '#39ff14',
+                                    border: '1px solid rgba(255, 102, 0, 0.4)',
+                                    color: '#FF6600',
                                     padding: '0.5rem 1rem',
                                     borderRadius: '8px',
                                     cursor: 'pointer',
@@ -480,11 +480,11 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
                                         width: '8px',
                                         height: '8px',
                                         borderRadius: '50%',
-                                        background: '#39ff14',
+                                        background: '#FF6600',
                                         animation: 'pulse 2s infinite',
                                     }}
                                 />
-                                <span style={{ color: '#39ff14', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                <span style={{ color: '#FF6600', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                     Form Check
                                 </span>
                             </div>
@@ -499,7 +499,7 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
                                     transform: 'translateX(-50%)',
                                     zIndex: 25,
                                     background: 'rgba(0, 0, 0, 0.75)',
-                                    border: '1px solid rgba(57, 255, 20, 0.5)',
+                                    border: '1px solid rgba(255, 102, 0, 0.5)',
                                     borderRadius: '12px',
                                     padding: '4px 14px',
                                     display: 'flex',
@@ -513,7 +513,7 @@ export default function PoseDetectionOverlay({ visible, onClose, exerciseName, o
                                 <span
                                     data-testid="rep-count-value"
                                     style={{
-                                        color: '#39ff14',
+                                        color: '#FF6600',
                                         fontSize: '1.1rem',
                                         fontFamily: 'var(--font-orbitron)',
                                         fontWeight: 700,

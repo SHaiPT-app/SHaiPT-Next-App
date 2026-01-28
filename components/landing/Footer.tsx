@@ -43,11 +43,11 @@ export default function Footer() {
         >
           <div
             style={{
-              background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(57, 255, 20, 0.05))',
+              background: 'linear-gradient(135deg, rgba(255, 102, 0, 0.1), rgba(255, 102, 0, 0.05))',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               borderRadius: '24px',
-              border: '1px solid rgba(0, 212, 255, 0.15)',
+              border: '1px solid rgba(255, 102, 0, 0.15)',
               padding: '4rem 2rem',
               textAlign: 'center',
               position: 'relative',
@@ -63,7 +63,7 @@ export default function Footer() {
                 transform: 'translateX(-50%)',
                 width: '60%',
                 height: '100%',
-                background: 'radial-gradient(ellipse, rgba(0, 212, 255, 0.1), transparent 70%)',
+                background: 'radial-gradient(ellipse, rgba(255, 102, 0, 0.1), transparent 70%)',
                 filter: 'blur(60px)',
                 zIndex: 0,
               }}
@@ -95,14 +95,14 @@ export default function Footer() {
                 href="/login"
                 style={{
                   display: 'inline-block',
-                  background: 'linear-gradient(135deg, #00d4ff, #0088cc)',
+                  background: 'linear-gradient(135deg, #FF6600, #CC5200)',
                   color: '#fff',
                   padding: '1rem 3rem',
                   borderRadius: '50px',
                   fontSize: '1.1rem',
                   fontWeight: '700',
                   textDecoration: 'none',
-                  boxShadow: '0 0 30px rgba(0, 212, 255, 0.3)',
+                  boxShadow: '0 0 30px rgba(255, 102, 0, 0.3)',
                   transition: 'transform 0.2s',
                 }}
               >
@@ -143,7 +143,7 @@ export default function Footer() {
                   fontSize: '1.25rem',
                   fontWeight: '800',
                   fontFamily: 'var(--font-orbitron)',
-                  background: 'linear-gradient(135deg, #00d4ff, #39ff14)',
+                  background: 'linear-gradient(135deg, #FF6600, #FF8533)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',

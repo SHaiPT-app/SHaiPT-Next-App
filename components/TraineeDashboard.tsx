@@ -239,8 +239,8 @@ export default function TraineeDashboard({ user }: { user: User }) {
                                                     padding: '0.25rem 0.75rem',
                                                     borderRadius: '20px',
                                                     fontSize: '0.75rem',
-                                                    background: 'rgba(0, 212, 255, 0.1)',
-                                                    border: '1px solid rgba(0, 212, 255, 0.2)',
+                                                    background: 'rgba(255, 102, 0, 0.1)',
+                                                    border: '1px solid rgba(255, 102, 0, 0.2)',
                                                     color: 'var(--primary)',
                                                 }}>
                                                     Assigned
@@ -274,7 +274,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
                                     {/* Show PRs if any */}
                                     {log.exercises.some(ex => ex.sets.some(s => s.isPr)) && (
                                         <div style={{ marginTop: '0.5rem', color: 'var(--accent)', fontSize: '0.875rem', fontWeight: 'bold' }}>
-                                            🏆 PRs set!
+                                            PRs set!
                                         </div>
                                     )}
                                 </div>

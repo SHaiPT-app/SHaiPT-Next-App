@@ -35,7 +35,8 @@ export default function HomePage() {
             setPlans(workoutPlans);
             setNutritionPlans(dietPlans);
         } catch (err) {
-            console.error('Error loading plans:', err);
+            // Supabase may fail if user is only in localStorage (not authenticated)
+            console.warn('Could not load plans:', err);
         } finally {
             setPlansLoading(false);
         }
@@ -146,7 +147,7 @@ export default function HomePage() {
                 {/* AI Coach Card */}
                 <button
                     data-testid="ai-coach-card"
-                    onClick={() => router.push('/ai')}
+                    onClick={() => router.push('/coach')}
                     className="glass-panel"
                     style={{
                         padding: '2rem 1.5rem',
@@ -372,7 +373,7 @@ function MyLibrary({
                                 icon={ClipboardList}
                                 title="No workout plans yet"
                                 description="Use the AI Coach to generate your first personalized training plan."
-                                action={{ label: 'Open AI Coach', onClick: () => router.push('/ai') }}
+                                action={{ label: 'Open AI Coach', onClick: () => router.push('/coach') }}
                             />
                         ) : (
                             <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -489,7 +490,7 @@ function MyLibrary({
                                 icon={UtensilsCrossed}
                                 title="No diet plans yet"
                                 description="Use the AI Coach to generate a personalized nutrition plan."
-                                action={{ label: 'Open AI Coach', onClick: () => router.push('/ai') }}
+                                action={{ label: 'Open AI Coach', onClick: () => router.push('/coach') }}
                             />
                         ) : (
                             <div style={{ display: 'grid', gap: '0.75rem' }}>

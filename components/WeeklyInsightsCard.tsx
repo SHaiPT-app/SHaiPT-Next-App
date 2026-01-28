@@ -62,9 +62,9 @@ function AdherenceBar({ percentage }: { percentage: number }) {
                     height: '100%',
                     background:
                         percentage >= 80
-                            ? 'var(--neon-green, #00ff88)'
+                            ? 'var(--neon-orange, #FF6600)'
                             : percentage >= 50
-                              ? 'var(--neon-blue, #00d4ff)'
+                              ? 'var(--neon-orange, #FF6600)'
                               : 'var(--neon-pink, #ff0080)',
                     borderRadius: '4px',
                 }}
@@ -84,10 +84,10 @@ function TrendTag({ label, direction }: { label: string; direction: 'up' | 'down
                 fontWeight: 600,
                 background:
                     direction === 'up'
-                        ? 'rgba(0, 255, 136, 0.15)'
+                        ? 'rgba(255, 102, 0, 0.15)'
                         : 'rgba(255, 0, 128, 0.15)',
-                color: direction === 'up' ? 'var(--neon-green, #00ff88)' : 'var(--neon-pink, #ff0080)',
-                border: `1px solid ${direction === 'up' ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 0, 128, 0.3)'}`,
+                color: direction === 'up' ? 'var(--neon-orange, #FF6600)' : 'var(--neon-pink, #ff0080)',
+                border: `1px solid ${direction === 'up' ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 0, 128, 0.3)'}`,
             }}
         >
             {direction === 'up' ? '\u2191' : '\u2193'} {label}
@@ -293,7 +293,7 @@ export default function WeeklyInsightsCard({ userId, logs }: WeeklyInsightsCardP
                         style={{
                             background: 'transparent',
                             border: 'none',
-                            color: 'var(--neon-blue, #00d4ff)',
+                            color: 'var(--neon-orange, #FF6600)',
                             cursor: 'pointer',
                             fontSize: '0.8rem',
                             padding: '0.25rem 0',

@@ -44,7 +44,7 @@ export default function FeatureGate({ user, feature, children }: FeatureGateProp
                     <p style={{ marginBottom: '1.5rem', color: '#ccc' }}>
                         Unlock the full power of AI coaching with the Bro Version. Ask your trainer to enable this feature for you.
                     </p>
-                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💪🤖</div>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '1rem', fontFamily: 'var(--font-orbitron)', color: 'var(--neon-orange)' }}>SHaiPT PRO</div>
                     <button
                         disabled
                         className="btn-primary"

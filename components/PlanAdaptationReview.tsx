@@ -19,9 +19,9 @@ const TYPE_LABELS: Record<AdaptationType, string> = {
 };
 
 const TYPE_COLORS: Record<AdaptationType, string> = {
-    weight_progression: '#39ff14',
+    weight_progression: '#FF6600',
     exercise_substitution: '#ff9f43',
-    volume_adjustment: '#54a0ff',
+    volume_adjustment: '#FF8533',
     deload_recommendation: '#ff6b6b',
 };
 
@@ -58,7 +58,7 @@ export default function PlanAdaptationReview({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="glass-panel"
-                style={{ padding: '1.25rem', border: '1px solid rgba(57, 255, 20, 0.15)' }}
+                style={{ padding: '1.25rem', border: '1px solid rgba(255, 102, 0, 0.15)' }}
             >
                 <p style={{ color: '#aaa', fontSize: '0.9rem' }}>
                     {adaptation.summary || 'Your performance is tracking well. No plan changes recommended at this time.'}
@@ -76,7 +76,7 @@ export default function PlanAdaptationReview({
             {/* Summary */}
             <div
                 className="glass-panel"
-                style={{ padding: '1.25rem', border: '1px solid rgba(57, 255, 20, 0.15)' }}
+                style={{ padding: '1.25rem', border: '1px solid rgba(255, 102, 0, 0.15)' }}
             >
                 <p style={{ color: '#ddd', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {adaptation.summary}
@@ -187,7 +187,7 @@ export default function PlanAdaptationReview({
                 >
                     <div style={{
                         fontSize: '0.75rem',
-                        color: '#39ff14',
+                        color: '#FF6600',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         marginBottom: '0.5rem',
@@ -227,7 +227,7 @@ export default function PlanAdaptationReview({
                     style={{
                         flex: 2,
                         padding: '0.85rem',
-                        background: loading || selectedIndices.size === 0 ? '#333' : '#39ff14',
+                        background: loading || selectedIndices.size === 0 ? '#333' : '#FF6600',
                         color: loading || selectedIndices.size === 0 ? '#666' : '#000',
                         border: 'none',
                         borderRadius: '10px',

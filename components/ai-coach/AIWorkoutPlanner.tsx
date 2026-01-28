@@ -314,7 +314,7 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                                     disabled={loading}
                                     style={{ marginTop: '1rem', padding: '1rem' }}
                                 >
-                                    {loading ? 'Generating Plan...' : 'Generate Workout Plan 🚀'}
+                                    {loading ? 'Generating Plan...' : 'Generate Workout Plan'}
                                 </button>
                             </div>
                         </div>

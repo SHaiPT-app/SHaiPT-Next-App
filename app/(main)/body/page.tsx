@@ -53,7 +53,7 @@ function TrendIndicator({ current, previous }: { current?: number; previous?: nu
     if (current === undefined || previous === undefined) return null;
     const diff = current - previous;
     if (Math.abs(diff) < 0.01) return <Minus size={14} style={{ color: 'rgba(255,255,255,0.4)' }} />;
-    if (diff > 0) return <TrendingUp size={14} style={{ color: '#39ff14' }} />;
+    if (diff > 0) return <TrendingUp size={14} style={{ color: '#FF6600' }} />;
     return <TrendingDown size={14} style={{ color: '#ff007f' }} />;
 }
 
@@ -78,7 +78,7 @@ function MeasurementCard({ field, value, previousValue, onClick }: {
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                e.currentTarget.style.borderColor = 'rgba(57, 255, 20, 0.3)';
+                e.currentTarget.style.borderColor = 'rgba(255, 102, 0, 0.3)';
             }}
             onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
@@ -89,7 +89,7 @@ function MeasurementCard({ field, value, previousValue, onClick }: {
                 <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{field.label}</span>
                 <TrendIndicator current={value} previous={previousValue} />
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: value !== undefined ? '#39ff14' : 'rgba(255,255,255,0.2)' }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: value !== undefined ? '#FF6600' : 'rgba(255,255,255,0.2)' }}>
                 {value !== undefined ? `${value}` : '--'}
                 <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'rgba(255,255,255,0.4)', marginLeft: '0.25rem' }}>
                     {field.unit}
@@ -129,7 +129,7 @@ function MediaThumbnail({ media, onDelete }: {
                             justifyContent: 'center',
                             background: 'rgba(0,0,0,0.5)',
                         }}>
-                            <Video size={32} style={{ color: '#39ff14' }} />
+                            <Video size={32} style={{ color: '#FF6600' }} />
                         </div>
                     ) : (
                         <img
@@ -440,7 +440,7 @@ export default function BodyCompositionPage() {
                 alignItems: 'center',
                 minHeight: '60vh',
             }}>
-                <Loader2 size={32} style={{ color: '#39ff14', animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={32} style={{ color: '#FF6600', animation: 'spin 1s linear infinite' }} />
             </div>
         );
     }
@@ -453,7 +453,7 @@ export default function BodyCompositionPage() {
                     fontSize: '1.75rem',
                     fontWeight: 800,
                     fontFamily: 'var(--font-orbitron)',
-                    color: '#39ff14',
+                    color: '#FF6600',
                     marginBottom: '0.25rem',
                 }}>
                     Body Composition
@@ -482,8 +482,8 @@ export default function BodyCompositionPage() {
                             padding: '0.75rem',
                             borderRadius: '10px',
                             border: 'none',
-                            background: activeTab === tab ? 'rgba(57, 255, 20, 0.15)' : 'transparent',
-                            color: activeTab === tab ? '#39ff14' : 'rgba(255,255,255,0.5)',
+                            background: activeTab === tab ? 'rgba(255, 102, 0, 0.15)' : 'transparent',
+                            color: activeTab === tab ? '#FF6600' : 'rgba(255,255,255,0.5)',
                             fontWeight: 600,
                             fontSize: '0.9rem',
                             cursor: 'pointer',
@@ -537,11 +537,11 @@ export default function BodyCompositionPage() {
                                 <button
                                     onClick={() => handleOpenForm(latestMeasurement)}
                                     style={{
-                                        background: 'rgba(57, 255, 20, 0.1)',
-                                        border: '1px solid rgba(57, 255, 20, 0.3)',
+                                        background: 'rgba(255, 102, 0, 0.1)',
+                                        border: '1px solid rgba(255, 102, 0, 0.3)',
                                         borderRadius: '8px',
                                         padding: '0.4rem 0.75rem',
-                                        color: '#39ff14',
+                                        color: '#FF6600',
                                         fontSize: '0.8rem',
                                         cursor: 'pointer',
                                         display: 'flex',
@@ -561,14 +561,14 @@ export default function BodyCompositionPage() {
                                     gap: '0.5rem',
                                     marginBottom: '1rem',
                                 }}>
-                                    <Scale size={20} style={{ color: '#39ff14' }} />
-                                    <span style={{ fontSize: '2rem', fontWeight: 800, color: '#39ff14' }}>
+                                    <Scale size={20} style={{ color: '#FF6600' }} />
+                                    <span style={{ fontSize: '2rem', fontWeight: 800, color: '#FF6600' }}>
                                         {displayWeight(latestMeasurement.weight_kg, user?.preferred_weight_unit)}
                                     </span>
                                     {previousMeasurement?.weight_kg !== undefined && latestMeasurement.weight_kg !== undefined && (
                                         <span style={{
                                             fontSize: '0.8rem',
-                                            color: latestMeasurement.weight_kg - previousMeasurement.weight_kg > 0 ? '#ff007f' : '#39ff14',
+                                            color: latestMeasurement.weight_kg - previousMeasurement.weight_kg > 0 ? '#ff007f' : '#FF6600',
                                         }}>
                                             {latestMeasurement.weight_kg - previousMeasurement.weight_kg > 0 ? '+' : ''}
                                             {(latestMeasurement.weight_kg - previousMeasurement.weight_kg).toFixed(1)} kg
@@ -602,10 +602,10 @@ export default function BodyCompositionPage() {
                         style={{
                             width: '100%',
                             padding: '1rem',
-                            background: 'rgba(57, 255, 20, 0.1)',
-                            border: '1px solid rgba(57, 255, 20, 0.3)',
+                            background: 'rgba(255, 102, 0, 0.1)',
+                            border: '1px solid rgba(255, 102, 0, 0.3)',
                             borderRadius: '12px',
-                            color: '#39ff14',
+                            color: '#FF6600',
                             fontSize: '0.95rem',
                             fontWeight: 600,
                             cursor: 'pointer',
@@ -617,10 +617,10 @@ export default function BodyCompositionPage() {
                             transition: 'all 0.2s',
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
+                            e.currentTarget.style.background = 'rgba(255, 102, 0, 0.2)';
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                            e.currentTarget.style.background = 'rgba(255, 102, 0, 0.1)';
                         }}
                     >
                         <Plus size={18} /> Log New Measurements
@@ -682,12 +682,12 @@ export default function BodyCompositionPage() {
                                                         </div>
                                                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                                             {m.weight_kg !== undefined && (
-                                                                <span style={{ fontSize: '0.8rem', color: '#39ff14' }}>
+                                                                <span style={{ fontSize: '0.8rem', color: '#FF6600' }}>
                                                                     {displayWeight(m.weight_kg, user?.preferred_weight_unit)}
                                                                 </span>
                                                             )}
                                                             {m.body_fat_percentage !== undefined && (
-                                                                <span style={{ fontSize: '0.8rem', color: '#00d4ff' }}>
+                                                                <span style={{ fontSize: '0.8rem', color: '#FF6600' }}>
                                                                     {m.body_fat_percentage}% BF
                                                                 </span>
                                                             )}
@@ -767,10 +767,10 @@ export default function BodyCompositionPage() {
                         style={{
                             width: '100%',
                             padding: '1rem',
-                            background: uploading ? 'rgba(255,255,255,0.05)' : 'rgba(57, 255, 20, 0.1)',
-                            border: `1px solid ${uploading ? 'rgba(255,255,255,0.1)' : 'rgba(57, 255, 20, 0.3)'}`,
+                            background: uploading ? 'rgba(255,255,255,0.05)' : 'rgba(255, 102, 0, 0.1)',
+                            border: `1px solid ${uploading ? 'rgba(255,255,255,0.1)' : 'rgba(255, 102, 0, 0.3)'}`,
                             borderRadius: '12px',
-                            color: uploading ? 'rgba(255,255,255,0.4)' : '#39ff14',
+                            color: uploading ? 'rgba(255,255,255,0.4)' : '#FF6600',
                             fontSize: '0.95rem',
                             fontWeight: 600,
                             cursor: uploading ? 'not-allowed' : 'pointer',
@@ -852,7 +852,7 @@ export default function BodyCompositionPage() {
                                 <h2 style={{
                                     fontSize: '1.25rem',
                                     fontWeight: 700,
-                                    color: '#39ff14',
+                                    color: '#FF6600',
                                     fontFamily: 'var(--font-orbitron)',
                                 }}>
                                     {editingId ? 'Edit Measurements' : 'Log Measurements'}
@@ -967,10 +967,10 @@ export default function BodyCompositionPage() {
                                 style={{
                                     width: '100%',
                                     padding: '1rem',
-                                    background: saving ? 'rgba(57, 255, 20, 0.1)' : '#39ff14',
+                                    background: saving ? 'rgba(255, 102, 0, 0.1)' : '#FF6600',
                                     border: 'none',
                                     borderRadius: '12px',
-                                    color: saving ? '#39ff14' : '#000',
+                                    color: saving ? '#FF6600' : '#000',
                                     fontSize: '1rem',
                                     fontWeight: 700,
                                     cursor: saving ? 'not-allowed' : 'pointer',

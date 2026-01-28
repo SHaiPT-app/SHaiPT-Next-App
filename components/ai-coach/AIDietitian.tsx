@@ -310,7 +310,7 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                     disabled={loading}
                                     style={{ marginTop: '1rem', padding: '1rem' }}
                                 >
-                                    {loading ? 'Generating Plan...' : 'Generate Meal Plan 🥗'}
+                                    {loading ? 'Generating Plan...' : 'Generate Meal Plan'}
                                 </button>
                             </div>
                         </div>

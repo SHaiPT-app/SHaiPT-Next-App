@@ -64,18 +64,18 @@ type CreationMode = 'manual' | 'ai';
 // ============================================
 
 const PHASE_OPTIONS: { value: PhaseType; label: string; icon: typeof Dumbbell; color: string }[] = [
-    { value: 'hypertrophy', label: 'Hypertrophy', icon: Dumbbell, color: '#39ff14' },
+    { value: 'hypertrophy', label: 'Hypertrophy', icon: Dumbbell, color: '#FF6600' },
     { value: 'strength', label: 'Strength', icon: Target, color: '#ff007f' },
-    { value: 'endurance', label: 'Endurance', icon: Zap, color: '#00d4ff' },
+    { value: 'endurance', label: 'Endurance', icon: Zap, color: '#FF6600' },
     { value: 'power', label: 'Power', icon: Shield, color: '#f59e0b' },
     { value: 'deload', label: 'Deload', icon: RotateCcw, color: '#a78bfa' },
     { value: 'general', label: 'General', icon: Layers, color: '#888' },
 ];
 
 const PHASE_COLORS: Record<PhaseType, string> = {
-    hypertrophy: '#39ff14',
+    hypertrophy: '#FF6600',
     strength: '#ff007f',
-    endurance: '#00d4ff',
+    endurance: '#FF6600',
     power: '#f59e0b',
     deload: '#a78bfa',
     general: '#888',
@@ -599,7 +599,7 @@ export default function NewPlanPage() {
                     fontFamily: 'var(--font-orbitron)',
                     fontSize: '1.5rem',
                     margin: 0,
-                    color: '#39ff14',
+                    color: '#FF6600',
                 }}>
                     {editPlanId ? 'Edit Training Plan' : 'Create Training Plan'}
                 </h1>
@@ -608,11 +608,11 @@ export default function NewPlanPage() {
                         onClick={handleShare}
                         style={{
                             marginLeft: 'auto',
-                            background: 'rgba(57, 255, 20, 0.1)',
-                            border: '1px solid rgba(57, 255, 20, 0.3)',
+                            background: 'rgba(255, 102, 0, 0.1)',
+                            border: '1px solid rgba(255, 102, 0, 0.3)',
                             borderRadius: '8px',
                             padding: '0.5rem 1rem',
-                            color: '#39ff14',
+                            color: '#FF6600',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -631,11 +631,11 @@ export default function NewPlanPage() {
                 <div className="glass-panel" style={{
                     padding: '1rem',
                     marginBottom: '1.5rem',
-                    border: '1px solid rgba(57, 255, 20, 0.3)',
+                    border: '1px solid rgba(255, 102, 0, 0.3)',
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                            <p style={{ color: '#39ff14', fontWeight: 600, marginBottom: '0.25rem' }}>
+                            <p style={{ color: '#FF6600', fontWeight: 600, marginBottom: '0.25rem' }}>
                                 Plan link copied to clipboard
                             </p>
                             <p style={{ color: '#888', fontSize: '0.85rem', wordBreak: 'break-all' }}>
@@ -670,8 +670,8 @@ export default function NewPlanPage() {
                             borderRadius: '10px',
                             border: 'none',
                             cursor: 'pointer',
-                            background: creationMode === 'manual' ? 'rgba(57, 255, 20, 0.15)' : 'transparent',
-                            color: creationMode === 'manual' ? '#39ff14' : '#888',
+                            background: creationMode === 'manual' ? 'rgba(255, 102, 0, 0.15)' : 'transparent',
+                            color: creationMode === 'manual' ? '#FF6600' : '#888',
                             fontWeight: creationMode === 'manual' ? 600 : 400,
                             display: 'flex',
                             alignItems: 'center',
@@ -691,8 +691,8 @@ export default function NewPlanPage() {
                             borderRadius: '10px',
                             border: 'none',
                             cursor: 'pointer',
-                            background: creationMode === 'ai' ? 'rgba(57, 255, 20, 0.15)' : 'transparent',
-                            color: creationMode === 'ai' ? '#39ff14' : '#888',
+                            background: creationMode === 'ai' ? 'rgba(255, 102, 0, 0.15)' : 'transparent',
+                            color: creationMode === 'ai' ? '#FF6600' : '#888',
                             fontWeight: creationMode === 'ai' ? 600 : 400,
                             display: 'flex',
                             alignItems: 'center',
@@ -712,7 +712,7 @@ export default function NewPlanPage() {
                 <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
                     <h3 style={{
                         marginBottom: '1.25rem',
-                        color: '#39ff14',
+                        color: '#FF6600',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
@@ -850,8 +850,8 @@ export default function NewPlanPage() {
                                 padding: '0.875rem',
                                 borderRadius: '10px',
                                 border: 'none',
-                                background: aiGenerating ? 'rgba(57, 255, 20, 0.1)' : '#39ff14',
-                                color: aiGenerating ? '#39ff14' : '#000',
+                                background: aiGenerating ? 'rgba(255, 102, 0, 0.1)' : '#FF6600',
+                                color: aiGenerating ? '#FF6600' : '#000',
                                 fontWeight: 700,
                                 fontSize: '1rem',
                                 cursor: aiGenerating ? 'not-allowed' : 'pointer',
@@ -885,13 +885,13 @@ export default function NewPlanPage() {
                     <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
                         <h3 style={{
                             marginBottom: '1rem',
-                            color: '#39ff14',
+                            color: '#FF6600',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.5rem',
                         }}>
                             <span style={{
-                                background: '#39ff14',
+                                background: '#FF6600',
                                 color: '#000',
                                 borderRadius: '50%',
                                 width: '24px',
@@ -931,15 +931,15 @@ export default function NewPlanPage() {
 
                             <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#ccc', fontSize: '0.9rem' }}>
-                                    <input type="checkbox" checked={isTemplate} onChange={(e) => setIsTemplate(e.target.checked)} style={{ accentColor: '#39ff14' }} />
+                                    <input type="checkbox" checked={isTemplate} onChange={(e) => setIsTemplate(e.target.checked)} style={{ accentColor: '#FF6600' }} />
                                     Save as Template
                                 </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#ccc', fontSize: '0.9rem' }}>
-                                    <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} style={{ accentColor: '#39ff14' }} />
+                                    <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} style={{ accentColor: '#FF6600' }} />
                                     Public
                                 </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#ccc', fontSize: '0.9rem' }}>
-                                    <input type="checkbox" checked={isShareable} onChange={(e) => setIsShareable(e.target.checked)} style={{ accentColor: '#39ff14' }} />
+                                    <input type="checkbox" checked={isShareable} onChange={(e) => setIsShareable(e.target.checked)} style={{ accentColor: '#FF6600' }} />
                                     Shareable
                                 </label>
                             </div>
@@ -950,14 +950,14 @@ export default function NewPlanPage() {
                     <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{
-                                color: '#39ff14',
+                                color: '#FF6600',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem',
                                 margin: 0,
                             }}>
                                 <span style={{
-                                    background: '#39ff14',
+                                    background: '#FF6600',
                                     color: '#000',
                                     borderRadius: '50%',
                                     width: '24px',
@@ -1087,14 +1087,14 @@ export default function NewPlanPage() {
                     <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{
-                                color: '#39ff14',
+                                color: '#FF6600',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem',
                                 margin: 0,
                             }}>
                                 <span style={{
-                                    background: '#39ff14', color: '#000', borderRadius: '50%',
+                                    background: '#FF6600', color: '#000', borderRadius: '50%',
                                     width: '24px', height: '24px', display: 'flex',
                                     alignItems: 'center', justifyContent: 'center',
                                     fontSize: '0.8rem', fontWeight: 700,
@@ -1110,9 +1110,9 @@ export default function NewPlanPage() {
 
                                 return (
                                     <div key={session.id} style={{
-                                        border: isExpanded ? '1px solid rgba(57, 255, 20, 0.2)' : '1px solid rgba(255,255,255,0.06)',
+                                        border: isExpanded ? '1px solid rgba(255, 102, 0, 0.2)' : '1px solid rgba(255,255,255,0.06)',
                                         borderRadius: '12px', overflow: 'hidden',
-                                        background: isExpanded ? 'rgba(57, 255, 20, 0.03)' : 'rgba(255,255,255,0.02)',
+                                        background: isExpanded ? 'rgba(255, 102, 0, 0.03)' : 'rgba(255,255,255,0.02)',
                                         transition: 'all 0.2s',
                                     }}>
                                         {/* Session Header */}
@@ -1125,7 +1125,7 @@ export default function NewPlanPage() {
                                         >
                                             <div style={{
                                                 width: '32px', height: '32px',
-                                                background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14',
+                                                background: 'rgba(255, 102, 0, 0.15)', color: '#FF6600',
                                                 borderRadius: '8px', display: 'flex', alignItems: 'center',
                                                 justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0,
                                             }}>
@@ -1218,7 +1218,7 @@ export default function NewPlanPage() {
                                                                         display: 'grid', gridTemplateColumns: '30px 1fr 1fr 1fr 30px',
                                                                         gap: '0.5rem', alignItems: 'center',
                                                                     }}>
-                                                                        <span style={{ color: '#39ff14', fontWeight: 600, fontSize: '0.8rem' }}>{setIdx + 1}</span>
+                                                                        <span style={{ color: '#FF6600', fontWeight: 600, fontSize: '0.8rem' }}>{setIdx + 1}</span>
                                                                         <input
                                                                             type="text" value={set.reps}
                                                                             onChange={(e) => updateSet(session.id, exIdx, setIdx, { reps: e.target.value })}
@@ -1296,7 +1296,7 @@ export default function NewPlanPage() {
                                                 <button onClick={() => addExercise(session.id)} style={{
                                                     width: '100%', marginTop: '0.75rem', padding: '0.65rem',
                                                     background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)',
-                                                    borderRadius: '8px', color: '#39ff14', cursor: 'pointer', fontSize: '0.85rem',
+                                                    borderRadius: '8px', color: '#FF6600', cursor: 'pointer', fontSize: '0.85rem',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem',
                                                 }}>
                                                     <Plus size={14} />
@@ -1311,8 +1311,8 @@ export default function NewPlanPage() {
 
                         <button onClick={addSession} style={{
                             width: '100%', marginTop: '0.75rem', padding: '0.75rem',
-                            background: 'rgba(57, 255, 20, 0.08)', border: '1px dashed rgba(57, 255, 20, 0.2)',
-                            borderRadius: '10px', color: '#39ff14', cursor: 'pointer', fontSize: '0.9rem',
+                            background: 'rgba(255, 102, 0, 0.08)', border: '1px dashed rgba(255, 102, 0, 0.2)',
+                            borderRadius: '10px', color: '#FF6600', cursor: 'pointer', fontSize: '0.9rem',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: 500,
                         }}>
                             <Plus size={16} />
@@ -1331,11 +1331,11 @@ export default function NewPlanPage() {
                         padding: '1rem 2rem', borderRadius: '50px',
                         display: 'flex', alignItems: 'center', gap: '0.75rem',
                         fontSize: '1rem', fontWeight: 700,
-                        background: saving ? 'rgba(57, 255, 20, 0.1)' : '#39ff14',
-                        color: saving ? '#39ff14' : '#000',
+                        background: saving ? 'rgba(255, 102, 0, 0.1)' : '#FF6600',
+                        color: saving ? '#FF6600' : '#000',
                         border: 'none',
                         cursor: (saving || !planName.trim() || sessions.length === 0) ? 'not-allowed' : 'pointer',
-                        boxShadow: '0 4px 20px rgba(57, 255, 20, 0.3)',
+                        boxShadow: '0 4px 20px rgba(255, 102, 0, 0.3)',
                         transition: 'all 0.2s',
                         opacity: (!planName.trim() || sessions.length === 0) ? 0.5 : 1,
                     }}

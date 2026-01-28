@@ -83,9 +83,9 @@ function CellValue({ value }: { value: boolean | string }) {
     return (
       <span
         style={{
-          color: '#39ff14',
+          color: '#FF6600',
           fontSize: '1.1rem',
-          textShadow: '0 0 8px rgba(57, 255, 20, 0.4)',
+          textShadow: '0 0 8px rgba(255, 102, 0, 0.4)',
         }}
       >
         ✓
@@ -116,7 +116,7 @@ export default function Comparison() {
               style={{
                 fontSize: '0.85rem',
                 fontWeight: '600',
-                color: '#00d4ff',
+                color: '#FF6600',
                 textTransform: 'uppercase',
                 letterSpacing: '3px',
                 marginBottom: '1rem',
@@ -202,7 +202,7 @@ export default function Comparison() {
                         fontFamily: 'var(--font-orbitron)',
                         fontWeight: '800',
                         fontSize: '1rem',
-                        background: 'linear-gradient(135deg, #00d4ff, #39ff14)',
+                        background: 'linear-gradient(135deg, #FF6600, #FF8533)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
@@ -278,7 +278,7 @@ export default function Comparison() {
                       style={{
                         padding: '1rem',
                         textAlign: 'center',
-                        background: 'rgba(0, 212, 255, 0.04)',
+                        background: 'rgba(255, 102, 0, 0.04)',
                         borderBottom:
                           index < comparisonData.length - 1
                             ? '1px solid rgba(255,255,255,0.04)'
