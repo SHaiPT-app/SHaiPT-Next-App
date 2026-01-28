@@ -77,7 +77,7 @@ export default function ActivityPage() {
                     const enrichedComments = await Promise.all(
                         comments.map(async (comment) => ({
                             ...comment,
-                            user: await db.profiles.getById(comment.user_id)
+                            user: (await db.profiles.getById(comment.user_id)) || undefined
                         }))
                     );
 
