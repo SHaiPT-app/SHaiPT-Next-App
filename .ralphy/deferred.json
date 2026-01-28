@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "markdown:/home/nezamilab/Projects/kk/prd.md:44": {
+      "count": 1,
+      "last": "2026-01-27T23:56:03.446Z",
+      "title": "Add AI weekly insights: every week, AI generates a progress report analyzing workout adherence, strength trends, plateaus, and actionable recommendations. Display on dashboard as a card with Framer Motion reveal animation"
+    }
+  }
+}

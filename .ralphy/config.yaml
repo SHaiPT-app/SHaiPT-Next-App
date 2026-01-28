@@ -23,7 +23,8 @@ rules:
   - "Use Supabase for database, auth, storage, and realtime"
   - "Use Google Gemini (Generative AI) for all AI features"
   - "Use MediaPipe for client-side pose detection and form analysis"
-  - "Dark theme with neon accents is the default visual style"
+  - "Dark theme with neon accents is the default visual style. Primary accent color for buttons, links, CTAs, borders, glows must be NEON ORANGE (#FF6600 or similar, matching the SHaiPT logo). NEVER use blue or green as primary accent. Body text is WHITE. Background is DARK (#15151F)"
+  - "NEVER use emojis anywhere in the UI — no emoji in headings, buttons, labels, descriptions, cards, or any user-facing text"
   - "All layouts must be mobile-first and responsive"
   - "Camera/MediaPipe features must work in mobile Safari and Chrome"
   - "All AI recommendations (plans, exercises, weights) must be user-editable"
@@ -31,7 +32,8 @@ rules:
   - "Database operations go through lib/supabaseDb.ts"
   - "Follow existing patterns in the codebase for new features"
   - "Read PRD.md for full product requirements before implementing features"
-  - "Commit to alis-branch, never directly to main"
+  - "Commit to alis-branch, never directly to main. MUST git add and git commit after EVERY completed task or bug fix — do not batch multiple tasks into one commit. Push to origin/alis-branch after each commit"
+  - "Gemini API is on a paid tier. Use gemini-2.5-flash model. All AI API routes should still include proper error handling and graceful fallbacks when the API key is missing"
 
 # Boundaries - files/folders the AI should not modify
 boundaries:
