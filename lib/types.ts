@@ -668,3 +668,26 @@ export interface ClientAlertSummary {
     alerts: ClientAlert[];
     totalCount: number;
 }
+
+// ============================================
+// SUBSCRIPTION TYPES
+// ============================================
+
+export type SubscriptionTier = 'starter' | 'pro' | 'elite';
+export type SubscriptionStatus = 'trialing' | 'active' | 'canceled' | 'past_due' | 'incomplete';
+
+export interface Subscription {
+    id: string;
+    user_id: string;
+    stripe_customer_id?: string;
+    stripe_subscription_id?: string;
+    tier: SubscriptionTier;
+    status: SubscriptionStatus;
+    trial_start?: string;
+    trial_end?: string;
+    current_period_start?: string;
+    current_period_end?: string;
+    cancel_at_period_end?: boolean;
+    created_at?: string;
+    updated_at?: string;
+}

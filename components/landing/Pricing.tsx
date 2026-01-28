@@ -1,9 +1,10 @@
 'use client';
 
-import Link from 'next/link';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { fadeInUp, staggerContainer } from '@/lib/animations';
+import type { SubscriptionTier } from '@/lib/types';
 
 interface PricingTier {
   name: string;
@@ -13,6 +14,7 @@ interface PricingTier {
   features: string[];
   highlighted: boolean;
   ctaText: string;
+  tier: SubscriptionTier;
 }
 
 const tiers: PricingTier[] = [
@@ -30,6 +32,7 @@ const tiers: PricingTier[] = [
     ],
     highlighted: false,
     ctaText: 'Get Started',
+    tier: 'starter',
   },
   {
     name: 'Pro',
@@ -46,6 +49,7 @@ const tiers: PricingTier[] = [
     ],
     highlighted: true,
     ctaText: 'Start Pro Trial',
+    tier: 'pro',
   },
   {
     name: 'Elite',
@@ -63,10 +67,51 @@ const tiers: PricingTier[] = [
     ],
     highlighted: false,
     ctaText: 'Contact Sales',
+    tier: 'elite',
   },
 ];
 
 export default function Pricing() {
+  const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
+
+  const handleSubscribe = useCallback(async (tier: SubscriptionTier) => {
+    // Check if user is logged in
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+
+    setLoadingTier(tier);
+    try {
+      const parsed = JSON.parse(user);
+      const session = parsed?.session?.access_token;
+      if (!session) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const res = await fetch('/api/subscriptions/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session}`,
+        },
+        body: JSON.stringify({ tier }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      // Redirect to login on error
+      window.location.href = '/login';
+    } finally {
+      setLoadingTier(null);
+    }
+  }, []);
+
   return (
     <section
       id="pricing"
@@ -275,23 +320,27 @@ export default function Pricing() {
                   ))}
                 </div>
 
-                <Link
-                  href="/login"
+                <button
+                  onClick={() => handleSubscribe(tier.tier)}
+                  disabled={loadingTier === tier.tier}
                   style={{
                     display: 'block',
+                    width: '100%',
                     textAlign: 'center',
                     padding: '0.9rem 2rem',
                     borderRadius: '12px',
                     fontSize: '1rem',
                     fontWeight: '700',
-                    textDecoration: 'none',
+                    cursor: loadingTier === tier.tier ? 'wait' : 'pointer',
                     transition: 'transform 0.2s, box-shadow 0.2s',
+                    opacity: loadingTier === tier.tier ? 0.7 : 1,
                     ...(tier.highlighted
                       ? {
                           background:
                             'linear-gradient(135deg, #00d4ff, #0088cc)',
                           color: '#fff',
                           boxShadow: '0 0 25px rgba(0, 212, 255, 0.3)',
+                          border: 'none',
                         }
                       : {
                           background: 'transparent',
@@ -300,8 +349,8 @@ export default function Pricing() {
                         }),
                   }}
                 >
-                  {tier.ctaText}
-                </Link>
+                  {loadingTier === tier.tier ? 'Loading...' : tier.ctaText}
+                </button>
               </motion.div>
             ))}
           </motion.div>
