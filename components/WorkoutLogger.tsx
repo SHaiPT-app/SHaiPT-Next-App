@@ -1,8 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { motion } from 'framer-motion';
 import { db } from '@/lib/supabaseDb';
-import type { WorkoutSession, Exercise, ExerciseLog, WorkoutLog, LoggedSet, TrainingPlan, TrainingPlanSession, Profile } from '@/lib/types';
+import type { WorkoutSession, Exercise, ExerciseLog, LoggedSet, TrainingPlan, TrainingPlanSession } from '@/lib/types';
+
+const FORM_CHECKER_PREF_KEY = 'shaipt_form_checker_enabled';
+
+const PoseDetectionOverlay = lazy(() => import('@/components/PoseDetectionOverlay'));
 
 interface WorkoutLoggerProps {
     userId: string;
@@ -11,13 +16,87 @@ interface WorkoutLoggerProps {
 
 export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps) {
     const [viewMode, setViewMode] = useState<'plans' | 'workouts'>('plans');
-    const [step, setStep] = useState<'selectPlan' | 'selectSession' | 'active'>('selectPlan');
+    const [step, setStep] = useState<'selectPlan' | 'selectSession' | 'formCheckerPrompt' | 'active'>('selectPlan');
     const [plans, setPlans] = useState<TrainingPlan[]>([]);
     const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
     const [planSessions, setPlanSessions] = useState<(TrainingPlanSession & { session?: WorkoutSession })[]>([]);
     const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(null);
     const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
     const [loading, setLoading] = useState(true);
+    const [formCheckerEnabled, setFormCheckerEnabled] = useState(false);
+
+    // Today's workout from active plan assignment
+    const [todaySession, setTodaySession] = useState<WorkoutSession | null>(null);
+    const [todayDayNumber, setTodayDayNumber] = useState<number | null>(null);
+    const [activePlanName, setActivePlanName] = useState<string>('');
+    const [todayLoading, setTodayLoading] = useState(true);
+
+    // Load saved form checker preference
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(FORM_CHECKER_PREF_KEY);
+            if (saved !== null) {
+                setFormCheckerEnabled(saved === 'true');
+            }
+        } catch {
+            // localStorage unavailable
+        }
+    }, []);
+
+    // Load today's workout from active plan assignment
+    useEffect(() => {
+        loadTodayWorkout();
+    }, [userId]);
+
+    const loadTodayWorkout = async () => {
+        if (!userId) {
+            setTodayLoading(false);
+            return;
+        }
+        setTodayLoading(true);
+        try {
+            const assignment = await db.trainingPlanAssignments.getActiveByUser(userId);
+            if (!assignment) {
+                setTodayLoading(false);
+                return;
+            }
+            // Calculate which day of the plan we're on
+            const startDate = new Date(assignment.start_date);
+            const today = new Date();
+            // Reset time to compare dates only
+            startDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            const diffDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            // Get plan sessions
+            const planSessionsList = await db.trainingPlanSessions.getByPlan(assignment.plan_id);
+            if (planSessionsList.length === 0) {
+                setTodayLoading(false);
+                return;
+            }
+
+            // Get plan name
+            const plan = await db.trainingPlans.getById(assignment.plan_id);
+            if (plan) {
+                setActivePlanName(plan.name);
+            }
+
+            // Find today's session: use day_number cycling within the plan's sessions
+            const maxDay = Math.max(...planSessionsList.map(ps => ps.day_number));
+            const todayDayNum = (diffDays % maxDay) + 1;
+            setTodayDayNumber(todayDayNum);
+
+            const todayPlanSession = planSessionsList.find(ps => ps.day_number === todayDayNum);
+            if (todayPlanSession) {
+                const session = await db.workoutSessions.getById(todayPlanSession.session_id);
+                setTodaySession(session);
+            }
+        } catch (err) {
+            console.error('Error loading today workout:', err);
+        } finally {
+            setTodayLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (viewMode === 'plans') {
@@ -82,33 +161,134 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
     const handleSelectSession = (planSession: TrainingPlanSession & { session?: WorkoutSession }) => {
         if (planSession.session) {
             setSelectedSession(planSession.session);
-            setStep('active');
+            setStep('formCheckerPrompt');
         }
     };
 
     const handleSelectDirectSession = (session: WorkoutSession) => {
         setSelectedSession(session);
+        setStep('formCheckerPrompt');
+    };
+
+    const handleStartTodayWorkout = () => {
+        if (todaySession) {
+            setSelectedSession(todaySession);
+            setStep('formCheckerPrompt');
+        }
+    };
+
+    const handleToggleFormChecker = (enabled: boolean) => {
+        setFormCheckerEnabled(enabled);
+        try {
+            localStorage.setItem(FORM_CHECKER_PREF_KEY, String(enabled));
+        } catch {
+            // localStorage unavailable
+        }
+    };
+
+    const handleConfirmStart = () => {
         setStep('active');
     };
 
     const handleBack = () => {
         if (step === 'selectSession') {
-            setStep('selectPlan'); // Go back to main selection view
+            setStep('selectPlan');
             setSelectedPlan(null);
             setPlanSessions([]);
-        } else if (step === 'active') {
+        } else if (step === 'formCheckerPrompt') {
             if (selectedPlan) {
-                setStep('selectSession'); // If came from plan, go back to plan sessions
+                setStep('selectSession');
             } else {
-                setStep('selectPlan'); // If came from direct workout, go back to main selection
+                setStep('selectPlan');
             }
             setSelectedSession(null);
+        } else if (step === 'active') {
+            setStep('formCheckerPrompt');
         }
     };
 
     if (step === 'selectPlan') {
         return (
             <div>
+                {/* Today's Workout Card */}
+                {!todayLoading && todaySession && (
+                    <motion.div
+                        data-testid="today-workout-card"
+                        className="glass-panel"
+                        style={{
+                            padding: '1.5rem',
+                            marginBottom: '1.5rem',
+                            border: '1px solid rgba(255, 102, 0, 0.3)',
+                            background: 'rgba(255, 102, 0, 0.05)',
+                        }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            marginBottom: '0.75rem',
+                        }}>
+                            <div>
+                                <div style={{
+                                    fontSize: '0.75rem',
+                                    color: '#FF6600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em',
+                                    fontWeight: 600,
+                                    marginBottom: '0.25rem',
+                                }}>
+                                    Today&apos;s Workout
+                                </div>
+                                <h3 style={{ fontWeight: 600, fontSize: '1.1rem', margin: 0 }}>
+                                    {todaySession.name}
+                                </h3>
+                            </div>
+                            {todayDayNumber !== null && (
+                                <span style={{
+                                    background: '#FF6600',
+                                    color: '#000',
+                                    padding: '0.25rem 0.75rem',
+                                    borderRadius: '20px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                }}>
+                                    Day {todayDayNumber}
+                                </span>
+                            )}
+                        </div>
+                        {activePlanName && (
+                            <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+                                {activePlanName}
+                            </p>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: '#888', fontSize: '0.85rem' }}>
+                                {todaySession.exercises?.length || 0} exercises
+                            </span>
+                            <button
+                                data-testid="start-today-workout-btn"
+                                onClick={handleStartTodayWorkout}
+                                style={{
+                                    padding: '0.6rem 1.25rem',
+                                    background: '#FF6600',
+                                    color: '#000',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: 700,
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                Start
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
                 {/* Selection View Header with Tabs */}
                 <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <h2 style={{ fontFamily: 'var(--font-orbitron)', fontSize: '1.25rem', margin: 0 }}>
@@ -352,6 +532,18 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
         );
     }
 
+    if (step === 'formCheckerPrompt' && selectedSession) {
+        return (
+            <FormCheckerPrompt
+                session={selectedSession}
+                formCheckerEnabled={formCheckerEnabled}
+                onToggleFormChecker={handleToggleFormChecker}
+                onStart={handleConfirmStart}
+                onBack={handleBack}
+            />
+        );
+    }
+
     if (step === 'active' && selectedSession) {
         return (
             <ActiveWorkout
@@ -359,11 +551,191 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
                 userId={userId}
                 onBack={handleBack}
                 onComplete={onComplete}
+                formCheckerEnabled={formCheckerEnabled}
             />
         );
     }
 
     return null;
+}
+
+// ============================================
+// FORM CHECKER PROMPT COMPONENT
+// ============================================
+
+interface FormCheckerPromptProps {
+    session: WorkoutSession;
+    formCheckerEnabled: boolean;
+    onToggleFormChecker: (enabled: boolean) => void;
+    onStart: () => void;
+    onBack: () => void;
+}
+
+function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, onStart, onBack }: FormCheckerPromptProps) {
+    return (
+        <div>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <button
+                    onClick={onBack}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#FF6600',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                    }}
+                >
+                    &larr; Back
+                </button>
+                <h2 style={{ fontFamily: 'var(--font-orbitron)', fontSize: '1.25rem', margin: 0 }}>
+                    Ready to Start
+                </h2>
+            </div>
+
+            {/* Session Overview */}
+            <motion.div
+                className="glass-panel"
+                style={{ padding: '1.5rem', marginBottom: '1.5rem' }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+            >
+                <h3 style={{
+                    fontFamily: 'var(--font-orbitron)',
+                    fontSize: '1.1rem',
+                    color: '#FF6600',
+                    marginBottom: '0.75rem',
+                }}>
+                    {session.name}
+                </h3>
+                {session.description && (
+                    <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                        {session.description}
+                    </p>
+                )}
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                    {session.exercises?.map((ex, i) => (
+                        <ExercisePreviewRow key={i} exerciseId={ex.exercise_id} sets={ex.sets.length} reps={ex.sets[0]?.reps} />
+                    ))}
+                </div>
+            </motion.div>
+
+            {/* Form Checker Toggle */}
+            <motion.div
+                data-testid="form-checker-prompt"
+                className="glass-panel"
+                style={{
+                    padding: '1.5rem',
+                    marginBottom: '1.5rem',
+                    border: formCheckerEnabled ? '1px solid rgba(255, 102, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    transition: 'border-color 0.2s',
+                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                        <h4 style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '1rem' }}>
+                            Real-Time Form Checker
+                        </h4>
+                        <p style={{ color: '#888', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                            Would you like to enable the real-time form checker? This uses your camera to analyze your form and give feedback during exercises.
+                        </p>
+                    </div>
+                    {/* Toggle Switch */}
+                    <button
+                        data-testid="form-checker-toggle"
+                        role="switch"
+                        aria-checked={formCheckerEnabled}
+                        onClick={() => onToggleFormChecker(!formCheckerEnabled)}
+                        style={{
+                            flexShrink: 0,
+                            width: '52px',
+                            height: '28px',
+                            borderRadius: '14px',
+                            border: 'none',
+                            background: formCheckerEnabled ? '#FF6600' : 'rgba(255, 255, 255, 0.15)',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            transition: 'background 0.2s',
+                            marginTop: '0.25rem',
+                        }}
+                    >
+                        <div style={{
+                            width: '22px',
+                            height: '22px',
+                            borderRadius: '50%',
+                            background: '#fff',
+                            position: 'absolute',
+                            top: '3px',
+                            left: formCheckerEnabled ? '27px' : '3px',
+                            transition: 'left 0.2s',
+                        }} />
+                    </button>
+                </div>
+            </motion.div>
+
+            {/* Start Button */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+            >
+                <button
+                    data-testid="confirm-start-workout-btn"
+                    onClick={onStart}
+                    style={{
+                        width: '100%',
+                        padding: '1rem',
+                        background: '#FF6600',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-orbitron)',
+                        transition: 'all 0.2s',
+                    }}
+                >
+                    Start Workout
+                </button>
+            </motion.div>
+        </div>
+    );
+}
+
+// ============================================
+// EXERCISE PREVIEW ROW (for form checker prompt)
+// ============================================
+
+function ExercisePreviewRow({ exerciseId, sets, reps }: { exerciseId: string; sets: number; reps?: string }) {
+    const [name, setName] = useState<string>('');
+
+    useEffect(() => {
+        db.exercises.getById(exerciseId).then(ex => {
+            if (ex) setName(ex.name);
+        }).catch(() => {});
+    }, [exerciseId]);
+
+    return (
+        <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '0.5rem 0',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        }}>
+            <span style={{ color: '#ddd', fontSize: '0.9rem' }}>
+                {name || 'Loading...'}
+            </span>
+            <span style={{ color: '#888', fontSize: '0.85rem' }}>
+                {sets} sets{reps ? ` x ${reps}` : ''}
+            </span>
+        </div>
+    );
 }
 
 // ============================================
@@ -375,9 +747,10 @@ interface ActiveWorkoutProps {
     userId: string;
     onBack: () => void;
     onComplete?: () => void;
+    formCheckerEnabled?: boolean;
 }
 
-function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutProps) {
+function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled }: ActiveWorkoutProps) {
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
     const [workoutLogId, setWorkoutLogId] = useState<string | null>(null);
     const [exerciseLogs, setExerciseLogs] = useState<Map<number, ExerciseLog>>(new Map());
@@ -386,6 +759,7 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
     const [isResting, setIsResting] = useState(false);
     const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
     const [loading, setLoading] = useState(true);
+    const [showPoseDetection, setShowPoseDetection] = useState(!!formCheckerEnabled);
 
     const sessionExercise = session.exercises[currentExerciseIndex];
 
@@ -684,6 +1058,61 @@ function ActiveWorkout({ session, userId, onBack, onComplete }: ActiveWorkoutPro
                         <span style={{ color: '#666' }}>No GIF available</span>
                     )}
                 </div>
+
+                {/* Form Check Toggle */}
+                {formCheckerEnabled && (
+                    <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
+                        <button
+                            data-testid="pose-toggle-btn"
+                            onClick={() => setShowPoseDetection(prev => !prev)}
+                            style={{
+                                background: showPoseDetection
+                                    ? 'rgba(255, 102, 0, 0.15)'
+                                    : 'rgba(255, 255, 255, 0.05)',
+                                border: `1px solid ${showPoseDetection ? 'rgba(255, 102, 0, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
+                                color: showPoseDetection ? '#FF6600' : '#aaa',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                transition: 'all 0.2s',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                <circle cx="12" cy="13" r="4" />
+                            </svg>
+                            {showPoseDetection ? 'Hide Form Check' : 'Form Check'}
+                        </button>
+                    </div>
+                )}
+
+                {/* Pose Detection Overlay */}
+                {showPoseDetection && formCheckerEnabled && (
+                    <Suspense fallback={
+                        <div style={{
+                            width: '100%',
+                            aspectRatio: '4/3',
+                            background: '#000',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '0.75rem',
+                        }}>
+                            <div className="spinner" />
+                        </div>
+                    }>
+                        <PoseDetectionOverlay
+                            visible={showPoseDetection}
+                            onClose={() => setShowPoseDetection(false)}
+                            exerciseName={currentExercise?.name}
+                        />
+                    </Suspense>
+                )}
 
                 <div style={{
                     display: 'flex',
