@@ -100,7 +100,7 @@ export async function GET(request: Request) {
             const alerts = getClientAlerts(
                 athleteId,
                 clientWorkoutLogs,
-                clientExerciseLogs,
+                clientExerciseLogs as any,
                 formIssues,
                 now
             );

@@ -56,7 +56,8 @@ export async function POST(request: Request) {
                 const tier = (session.metadata?.tier || 'starter') as SubscriptionTier;
 
                 if (userId && session.subscription) {
-                    const subscription = await stripe.subscriptions.retrieve(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const subscription: any = await stripe.subscriptions.retrieve(
                         session.subscription as string
                     );
 
@@ -85,7 +86,8 @@ export async function POST(request: Request) {
 
             case 'customer.subscription.updated':
             case 'customer.subscription.deleted': {
-                const subscription = event.data.object as Stripe.Subscription;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const subscription = event.data.object as any;
                 const userId = subscription.metadata?.supabase_user_id;
 
                 if (userId) {

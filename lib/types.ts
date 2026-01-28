@@ -6,6 +6,10 @@
 // USER & PROFILE TYPES
 // ============================================
 
+export interface AIFeatures {
+    [key: string]: boolean;
+}
+
 export interface Profile {
     id: string; // uuid, NOT NULL
     email: string; // text, NOT NULL
@@ -33,6 +37,10 @@ export interface Profile {
 
     // Social
     pinned_plan_id?: string; // uuid, nullable, FK to training_plans(id) (ordinal 15)
+    trainer_id?: string | null; // uuid, nullable, FK to profiles(id)
+
+    // AI features
+    ai_features?: AIFeatures; // jsonb, nullable
 
     // Timestamps
     created_at?: string; // timestamptz, default now()

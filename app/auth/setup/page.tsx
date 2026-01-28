@@ -53,7 +53,7 @@ function UsernameSetupForm() {
                 username: username,
                 email: email!,
                 role: role,
-                display_name: username
+                full_name: username
             });
 
             localStorage.setItem('user', JSON.stringify(profile));
