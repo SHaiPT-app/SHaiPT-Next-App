@@ -406,7 +406,6 @@ export default function LoginForm() {
                         />
                         <Box
                             as="button"
-                            type="button"
                             onClick={() => setShowPassword(!showPassword)}
                             position="absolute"
                             right="12px"
@@ -631,7 +630,6 @@ export default function LoginForm() {
                         {isLogin ? "Don't have an account? " : "Already have an account? "}
                         <Box
                             as="button"
-                            type="button"
                             onClick={() => {
                                 setIsLogin(!isLogin);
                                 setError('');

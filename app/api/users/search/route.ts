@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         const availableTrainees = allProfiles.filter(profile => 
             profile.role === role &&
             !profile.trainer_id && // No trainer assigned yet
-            profile.username.toLowerCase().includes(query.toLowerCase())
+            (profile.username || '').toLowerCase().includes(query.toLowerCase())
         );
 
         // Return only first 10 results

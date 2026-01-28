@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db, dbAdmin } from '@/lib/supabaseDb';
+import { dbAdmin } from '@/lib/supabaseDb';
 import { createClient } from '@supabase/supabase-js';
-import { WorkoutPlan } from '@/lib/types';
 
 export async function POST(request: Request) {
     try {
@@ -54,7 +53,7 @@ export async function POST(request: Request) {
         }
 
         console.log('Attempting to create plan with validated data...');
-        console.log('Database functions available:', Object.keys(db));
+        console.log('Proceeding with plan creation...');
 
         // Log sessions data structure
         console.log('Sessions data:', JSON.stringify(planData.sessions, null, 2));
@@ -144,16 +143,37 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Missing plan ID' }, { status: 400 });
         }
 
-        const updatedPlan = await db.workoutPlans.update(planData.id, {
-            name: planData.name,
-            description: planData.description,
-            exercises: planData.sessions, // Map sessions to exercises column
-            is_active: planData.is_active,
-            assigned_at: planData.assigned_at,
-            expires_at: planData.expires_at
-        });
+        const authHeader = request.headers.get('Authorization');
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                global: {
+                    headers: {
+                        Authorization: authHeader || ''
+                    }
+                }
+            }
+        );
 
-        return NextResponse.json({ plan: updatedPlan });
+        const updatePayload: Record<string, unknown> = {};
+        if (planData.name !== undefined) updatePayload.name = planData.name;
+        if (planData.description !== undefined) updatePayload.description = planData.description;
+        if (planData.sessions !== undefined) updatePayload.exercises = planData.sessions;
+        if (planData.is_active !== undefined) updatePayload.is_active = planData.is_active;
+        if (planData.assigned_at !== undefined) updatePayload.assigned_at = planData.assigned_at;
+        if (planData.expires_at !== undefined) updatePayload.expires_at = planData.expires_at;
+
+        const { data, error } = await supabase
+            .from('workout_plans')
+            .update(updatePayload)
+            .eq('id', planData.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return NextResponse.json({ plan: data });
     } catch (error: any) {
         console.error('Plan update error:', error);
         return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

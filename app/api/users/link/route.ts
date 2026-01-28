@@ -53,7 +53,7 @@ export async function POST(request: Request) {
             // Let's check if we can pass null. The interface says string | undefined.
             // We might need to cast or update the interface if strict null checks are on.
             // For now, let's try passing null as any to bypass TS if needed, or just null.
-            await dbAdmin.profiles.update(traineeId, { trainer_id: null as any });
+            await dbAdmin.profiles.update(traineeId, { trainer_id: null });
         } else {
             return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
         }
