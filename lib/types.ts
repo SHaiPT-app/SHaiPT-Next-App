@@ -831,3 +831,298 @@ export interface LogSet {
     endTime?: string;
     duration?: number;
 }
+
+// ============================================
+// ENHANCED WORKOUT TRACKING TYPES
+// ============================================
+
+// Intensifier types for advanced set techniques
+export type SetType = 'warmup' | 'working';
+export type IntensifierType = 'none' | 'dropset' | 'rest_pause' | 'cluster' | 'superset';
+
+// Drop set data structure
+export interface DropSetData {
+    weight: number;
+    reps: number;
+}
+
+// Cluster set rest data
+export interface ClusterRestData {
+    duration_seconds: number;
+}
+
+// Enhanced logged set with intensifier support
+export interface EnhancedLoggedSet {
+    set_number: number;
+    reps: number;
+    weight: number;
+    weight_unit: 'lbs' | 'kg';
+    set_type: SetType;
+    intensifier: IntensifierType;
+    drops?: DropSetData[];
+    cluster_rests?: ClusterRestData[];
+    superset_partner_exercise_id?: string;
+    tempo?: string;
+    notes?: string;
+    started_at: string;
+    completed_at: string;
+    rest_started_at?: string;
+    rest_ended_at?: string;
+    actual_rest_seconds?: number;
+    rpe?: number;
+}
+
+// ============================================
+// PHONE VERIFICATION TYPES
+// ============================================
+
+export interface PhoneVerification {
+    id: string;
+    user_id: string;
+    phone_number: string;
+    verification_code: string;
+    verified_at?: string;
+    expires_at: string;
+    attempts: number;
+    created_at?: string;
+}
+
+// ============================================
+// CONSISTENCY CHALLENGE TYPES
+// ============================================
+
+export type ConsistencyChallengeStatus = 'active' | 'passed' | 'failed' | 'grace_period';
+
+export interface ConsistencyChallenge {
+    id: string;
+    user_id: string;
+    status: ConsistencyChallengeStatus;
+    started_at: string;
+    current_week_start: string;
+    weeks_completed: number;
+    missed_days_this_week: number;
+    grace_period_requested_at?: string;
+    grace_period_approved_at?: string;
+    grace_period_expires_at?: string;
+    grace_reason?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface ConsistencyLog {
+    id: string;
+    user_id: string;
+    challenge_id?: string;
+    date: string;
+    scheduled: boolean;
+    completed: boolean;
+    workout_log_id?: string;
+    completion_percentage?: number;
+    created_at?: string;
+}
+
+// ============================================
+// USER PREFERENCES TYPES
+// ============================================
+
+export type RestTimerAlertType = 'audio' | 'vibration' | 'both' | 'none';
+
+export interface UserPreferences {
+    user_id: string;
+    form_checker_enabled: boolean;
+    rest_timer_auto_start: boolean;
+    rest_timer_alert_type: RestTimerAlertType;
+    default_rest_seconds: number;
+    screen_awake_during_workout: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============================================
+// WORKOUT DRAFT TYPES (OFFLINE SUPPORT)
+// ============================================
+
+export interface WorkoutDraftData {
+    session_id: string;
+    session_name: string;
+    started_at: string;
+    current_exercise_index: number;
+    exercises: Array<{
+        exercise_id: string;
+        exercise_name: string;
+        logged_sets: EnhancedLoggedSet[];
+        target_sets: SessionSet[];
+        rpe?: number;
+        notes?: string;
+    }>;
+    rest_timer_state?: {
+        is_resting: boolean;
+        rest_seconds_remaining: number;
+        rest_started_at: string;
+    };
+}
+
+export interface WorkoutDraft {
+    id: string;
+    user_id: string;
+    workout_log_id?: string;
+    session_id?: string;
+    draft_data: WorkoutDraftData;
+    device_id?: string;
+    last_synced_at?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============================================
+// OFFLINE SYNC TYPES
+// ============================================
+
+export type OfflineActionType =
+    | 'create_workout_log'
+    | 'log_set'
+    | 'update_exercise_log'
+    | 'complete_workout'
+    | 'swap_exercise';
+
+export interface OfflineAction {
+    id: string;
+    type: OfflineActionType;
+    payload: Record<string, any>;
+    timestamp: string;
+    synced: boolean;
+    error?: string;
+}
+
+export interface SyncStatus {
+    isOnline: boolean;
+    pendingActionsCount: number;
+    lastSyncedAt?: string;
+    isSyncing: boolean;
+}
+
+// ============================================
+// WORKOUT STATE TYPES (FOR ZUSTAND STORE)
+// ============================================
+
+export interface ActiveWorkoutState {
+    workoutLogId: string | null;
+    sessionId: string | null;
+    sessionName: string | null;
+    startedAt: string | null;
+    currentExerciseIndex: number;
+    exercises: Array<{
+        exerciseLogId: string;
+        exerciseId: string;
+        exerciseName: string;
+        gifUrl?: string;
+        loggedSets: EnhancedLoggedSet[];
+        targetSets: SessionSet[];
+        rpe?: number;
+        notes?: string;
+    }>;
+    isActive: boolean;
+}
+
+export interface RestTimerState {
+    isResting: boolean;
+    totalRestSeconds: number;
+    restSecondsRemaining: number;
+    restStartedAt: string | null;
+    autoStart: boolean;
+}
+
+export interface WorkoutUIState {
+    formCheckerVisible: boolean;
+    isRecording: boolean;
+    showIntensifierModal: boolean;
+    selectedIntensifier: IntensifierType;
+}
+
+// ============================================
+// PR CALCULATION TYPES
+// ============================================
+
+export interface PRCheckResult {
+    isNewPR: boolean;
+    prType: 'weight' | 'volume' | 'reps' | null;
+    previousValue?: number;
+    newValue?: number;
+    improvement?: number;
+}
+
+export interface WorkoutPRSummary {
+    exerciseId: string;
+    exerciseName: string;
+    prType: 'weight' | 'volume' | 'reps';
+    previousValue: number;
+    newValue: number;
+}
+
+// ============================================
+// WORKOUT SUMMARY TYPES
+// ============================================
+
+export interface WorkoutSummaryData {
+    workoutLogId: string;
+    sessionName: string;
+    totalDurationSeconds: number;
+    totalRestSeconds: number;
+    totalWorkSeconds: number;
+    totalSets: number;
+    totalReps: number;
+    totalVolume: number;
+    volumeUnit: 'lbs' | 'kg';
+    exerciseCount: number;
+    prsAchieved: WorkoutPRSummary[];
+    averageRpe?: number;
+    completedAt: string;
+}
+
+// ============================================
+// EXTENDED SUBSCRIPTION TYPES (CONSISTENCY)
+// ============================================
+
+export interface SubscriptionWithConsistency extends Subscription {
+    earned_via_consistency?: boolean;
+    consistency_challenge_id?: string;
+    pro_lost_at?: string;
+    pro_regain_streak_start?: string;
+}
+
+// ============================================
+// EXTENDED PROFILE TYPES (ACCOUNT COMPLETION)
+// ============================================
+
+export interface ProfileWithCompletion extends Profile {
+    phone_verified?: boolean;
+    intake_photos_uploaded?: boolean;
+    account_completed?: boolean;
+}
+
+// ============================================
+// EXTENDED TRAINING PLAN SESSION TYPES
+// ============================================
+
+export interface TrainingPlanSessionWithRestDay extends TrainingPlanSession {
+    is_rest_day?: boolean;
+    expected_duration_minutes?: number;
+}
+
+// ============================================
+// EXTENDED WORKOUT SESSION TYPES
+// ============================================
+
+export interface WorkoutSessionWithMetadata extends WorkoutSession {
+    expected_duration_minutes?: number;
+    rest_metadata?: Record<string, any>;
+}
+
+// ============================================
+// EXTENDED EXERCISE LOG TYPES
+// ============================================
+
+export interface ExerciseLogWithNotes extends ExerciseLog {
+    rpe?: number;
+    exercise_notes?: string;
+}
