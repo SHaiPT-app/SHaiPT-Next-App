@@ -617,3 +617,32 @@ export interface UserStatsHistory {
     muscle_group_volumes: Record<string, { volume: number; sets: number }>;
     created_at: string;
 }
+
+// ============================================
+// AI WEEKLY INSIGHTS TYPES
+// ============================================
+
+export interface WeeklyInsight {
+    id: string;
+    user_id: string;
+    week_start: string; // date string (Monday)
+    week_end: string; // date string (Sunday)
+    adherence: {
+        planned_workouts: number;
+        completed_workouts: number;
+        adherence_percentage: number;
+        summary: string;
+    };
+    strength_trends: {
+        trending_up: string[];
+        trending_down: string[];
+        summary: string;
+    };
+    plateaus: {
+        exercises: string[];
+        summary: string;
+    };
+    recommendations: string[];
+    overall_summary: string;
+    generated_at: string;
+}

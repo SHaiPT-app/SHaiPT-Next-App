@@ -8,6 +8,7 @@ import PlanViewer from './PlanViewer';
 import AIWorkoutPlanner from './ai-coach/AIWorkoutPlanner';
 import AIDietitian from './ai-coach/AIDietitian';
 import AIFormChecker from './ai-coach/AIFormChecker';
+import WeeklyInsightsCard from './WeeklyInsightsCard';
 
 export default function TraineeDashboard({ user }: { user: User }) {
     const [plans, setPlans] = useState<WorkoutPlan[]>([]);
@@ -130,6 +131,11 @@ export default function TraineeDashboard({ user }: { user: User }) {
 
             {activeTab === 'plans' ? (
                 <div className="dashboard-grid">
+                    {/* Weekly AI Insights Card */}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                        <WeeklyInsightsCard userId={user.id} logs={logs} />
+                    </div>
+
                     {/* View Plan Modal */}
                     {viewingPlan && (
                         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
