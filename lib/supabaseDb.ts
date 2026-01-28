@@ -30,19 +30,28 @@ import type {
 } from './types';
 
 // Server-side Supabase client with service role (bypasses RLS)
-let supabaseAdmin: any = null;
-if (typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false
-            }
+// Uses lazy initialization to prevent build-time errors
+let _supabaseAdmin: any = null;
+
+function getSupabaseAdmin() {
+    if (_supabaseAdmin) return _supabaseAdmin;
+    if (typeof window !== 'undefined') return null;
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceKey) return null;
+
+    _supabaseAdmin = createClient(url, serviceKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
         }
-    );
+    });
+    return _supabaseAdmin;
 }
+
+// Backward compatibility - lazily initialized
+const supabaseAdmin = null;
 
 // ============================================
 // PROFILES
