@@ -87,6 +87,8 @@ jest.mock('lucide-react', () => ({
     X: () => React.createElement('span', { 'data-testid': 'x-icon' }),
     MessageSquare: () => React.createElement('span', { 'data-testid': 'message-icon' }),
     Trash2: () => React.createElement('span', { 'data-testid': 'trash-icon' }),
+    User: () => React.createElement('span', { 'data-testid': 'user-icon' }),
+    Bot: () => React.createElement('span', { 'data-testid': 'bot-icon' }),
 }));
 
 // Mock animations

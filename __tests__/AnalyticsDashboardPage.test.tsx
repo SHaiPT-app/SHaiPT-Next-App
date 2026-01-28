@@ -275,10 +275,10 @@ describe('AnalyticsDashboardPage', () => {
         render(<AnalyticsDashboardPage />)
 
         await waitFor(() => {
-            expect(screen.getByText('Bench Press')).toBeInTheDocument()
+            expect(screen.getAllByText('Bench Press').length).toBeGreaterThanOrEqual(1)
         })
 
-        expect(screen.getByText('Barbell Squat')).toBeInTheDocument()
+        expect(screen.getAllByText('Barbell Squat').length).toBeGreaterThanOrEqual(1)
     })
 
     it('displays PR max weight values', async () => {
