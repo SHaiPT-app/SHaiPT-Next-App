@@ -646,3 +646,25 @@ export interface WeeklyInsight {
     overall_summary: string;
     generated_at: string;
 }
+
+// ============================================
+// AI CLIENT ALERT TYPES
+// ============================================
+
+export type ClientAlertType = 'missed_workouts' | 'performance_plateau' | 'form_issues';
+export type ClientAlertSeverity = 'warning' | 'critical';
+
+export interface ClientAlert {
+    type: ClientAlertType;
+    severity: ClientAlertSeverity;
+    title: string;
+    message: string;
+    clientId: string;
+    detectedAt: string;
+}
+
+export interface ClientAlertSummary {
+    clientId: string;
+    alerts: ClientAlert[];
+    totalCount: number;
+}

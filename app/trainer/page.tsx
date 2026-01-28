@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { User } from '@/lib/types';
+import { User, ClientAlertSummary, ClientAlert } from '@/lib/types';
 
 interface ClientStats {
     id: string;
@@ -22,6 +22,7 @@ interface ClientStats {
 export default function TrainerDashboardPage() {
     const [user, setUser] = useState<User | null>(null);
     const [clients, setClients] = useState<ClientStats[]>([]);
+    const [clientAlerts, setClientAlerts] = useState<Record<string, ClientAlert[]>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
@@ -86,9 +87,37 @@ export default function TrainerDashboardPage() {
         }
     }, [user]);
 
+    const fetchAlerts = useCallback(async () => {
+        if (!user) return;
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: Record<string, string> = {};
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`;
+            } else if (user.id === 'dev-user-id') {
+                headers.Authorization = 'Bearer dev-token';
+            }
+
+            const res = await fetch(`/api/trainer/clients/alerts?trainerId=${user.id}`, { headers });
+            if (res.ok) {
+                const data = await res.json();
+                const alertMap: Record<string, ClientAlert[]> = {};
+                for (const summary of (data.alerts || []) as ClientAlertSummary[]) {
+                    alertMap[summary.clientId] = summary.alerts;
+                }
+                setClientAlerts(alertMap);
+            }
+        } catch (err) {
+            console.error('Error fetching alerts:', err);
+        }
+    }, [user]);
+
     useEffect(() => {
-        if (user) fetchClients();
-    }, [user, fetchClients]);
+        if (user) {
+            fetchClients();
+            fetchAlerts();
+        }
+    }, [user, fetchClients, fetchAlerts]);
 
     const formatDate = (dateStr: string | null): string => {
         if (!dateStr) return 'No workouts yet';
@@ -109,6 +138,19 @@ export default function TrainerDashboardPage() {
         if (streak >= 3) return '#f59e0b';
         if (streak >= 1) return 'var(--primary)';
         return '#888';
+    };
+
+    const getAlertBadgeColor = (severity: string): string => {
+        return severity === 'critical' ? '#ef4444' : '#f59e0b';
+    };
+
+    const getAlertIcon = (type: string): string => {
+        switch (type) {
+            case 'missed_workouts': return '!';
+            case 'performance_plateau': return '~';
+            case 'form_issues': return '!';
+            default: return '!';
+        }
     };
 
     if (!user) {
@@ -157,7 +199,7 @@ export default function TrainerDashboardPage() {
                     <div
                         style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr',
+                            gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr 1fr',
                             gap: '1rem',
                             padding: '0.75rem 1.25rem',
                             fontSize: '0.75rem',
@@ -171,6 +213,7 @@ export default function TrainerDashboardPage() {
                         <span>Last Workout</span>
                         <span>Current Plan</span>
                         <span style={{ textAlign: 'center' }}>Streak</span>
+                        <span style={{ textAlign: 'center' }}>Alerts</span>
                     </div>
 
                     {/* Client rows */}
@@ -182,7 +225,7 @@ export default function TrainerDashboardPage() {
                             onClick={() => router.push(`/trainer/client/${client.id}/progress`)}
                             style={{
                                 display: 'grid',
-                                gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr',
+                                gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr 1fr',
                                 gap: '1rem',
                                 padding: '1rem 1.25rem',
                                 alignItems: 'center',
@@ -266,6 +309,38 @@ export default function TrainerDashboardPage() {
                                 >
                                     {client.streak > 0 ? `${client.streak}d` : '-'}
                                 </span>
+                            </div>
+
+                            {/* Alerts */}
+                            <div style={{ textAlign: 'center' }} data-testid="client-alerts">
+                                {clientAlerts[client.id] && clientAlerts[client.id].length > 0 ? (
+                                    <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                        {clientAlerts[client.id].map((alert, idx) => (
+                                            <span
+                                                key={idx}
+                                                data-testid={`alert-badge-${alert.type}`}
+                                                title={alert.message}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    minWidth: '22px',
+                                                    height: '22px',
+                                                    borderRadius: '11px',
+                                                    fontSize: '0.6875rem',
+                                                    fontWeight: 700,
+                                                    color: 'white',
+                                                    background: getAlertBadgeColor(alert.severity),
+                                                    padding: '0 0.375rem',
+                                                }}
+                                            >
+                                                {getAlertIcon(alert.type)}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span style={{ fontSize: '0.8125rem', color: '#666' }}>--</span>
+                                )}
                             </div>
                         </div>
                     ))}
