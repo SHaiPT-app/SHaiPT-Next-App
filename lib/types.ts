@@ -738,3 +738,27 @@ export interface CoachInterview {
     created_at?: string;
     updated_at?: string;
 }
+
+// ============================================
+// DIETITIAN INTERVIEW / INTAKE TYPES
+// ============================================
+
+export interface DietIntakeFormData {
+    // Allergies & intolerances
+    allergies: string;
+    intolerances: string;
+
+    // Dietary preferences
+    diet_style: string;
+
+    // Food preferences
+    foods_love: string;
+    foods_hate: string;
+
+    // Medical / dietary considerations
+    medical_dietary_considerations: string;
+
+    // Meal preferences
+    meals_per_day: string;
+    cooking_preferences: string;
+}

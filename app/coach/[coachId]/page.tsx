@@ -4,15 +4,19 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Box, Text, Flex } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, FileText, X, Save, Dumbbell } from 'lucide-react';
+import { ArrowLeft, FileText, X, Save, Dumbbell, UtensilsCrossed } from 'lucide-react';
 import { coaches } from '@/data/coaches';
 import InterviewChat from '@/components/ai-coach/InterviewChat';
 import IntakeForm from '@/components/ai-coach/IntakeForm';
+import DietIntakeForm from '@/components/ai-coach/DietIntakeForm';
+import DietitianChat from '@/components/ai-coach/DietitianChat';
 import SplitSelection from '@/components/ai-coach/SplitSelection';
 import InterviewPlanView from '@/components/ai-coach/InterviewPlanView';
-import type { IntakeFormData } from '@/lib/types';
+import NutritionPlanView from '@/components/ai-coach/NutritionPlanView';
+import type { IntakeFormData, DietIntakeFormData } from '@/lib/types';
 import type { SplitOption } from '@/components/ai-coach/SplitSelection';
 import type { GeneratedPlanData } from '@/app/api/ai-coach/generate-plan/route';
+import type { GeneratedNutritionPlanData } from '@/app/api/ai-coach/generate-nutrition-plan/route';
 import { supabase } from '@/lib/supabase';
 
 const MotionBox = motion.create(Box);
@@ -36,7 +40,25 @@ const EMPTY_FORM: IntakeFormData = {
     fitness_level: '',
 };
 
-type FlowStage = 'interview' | 'split_selection' | 'generating' | 'plan_review';
+const EMPTY_DIET_FORM: DietIntakeFormData = {
+    allergies: '',
+    intolerances: '',
+    diet_style: '',
+    foods_love: '',
+    foods_hate: '',
+    medical_dietary_considerations: '',
+    meals_per_day: '',
+    cooking_preferences: '',
+};
+
+type FlowStage =
+    | 'interview'
+    | 'split_selection'
+    | 'generating'
+    | 'plan_review'
+    | 'dietitian_interview'
+    | 'generating_nutrition'
+    | 'nutrition_review';
 
 export default function CoachInterviewPage() {
     const params = useParams();
@@ -46,6 +68,7 @@ export default function CoachInterviewPage() {
     const coach = coaches.find(c => c.id === coachId);
 
     const [formData, setFormData] = useState<IntakeFormData>({ ...EMPTY_FORM });
+    const [dietFormData, setDietFormData] = useState<DietIntakeFormData>({ ...EMPTY_DIET_FORM });
     const [showMobileForm, setShowMobileForm] = useState(false);
     const [isInterviewComplete, setIsInterviewComplete] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -61,6 +84,13 @@ export default function CoachInterviewPage() {
     const [planSaveStatus, setPlanSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [isPlanSaving, setIsPlanSaving] = useState(false);
     const planViewRef = useRef<HTMLDivElement>(null);
+
+    // Dietitian flow state
+    const [, setDietitianMessages] = useState<{ role: string; content: string }[]>([]);
+    const [generatedNutritionPlan, setGeneratedNutritionPlan] = useState<GeneratedNutritionPlanData | null>(null);
+    const [nutritionPlanSaveStatus, setNutritionPlanSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const [isNutritionPlanSaving, setIsNutritionPlanSaving] = useState(false);
+    const nutritionViewRef = useRef<HTMLDivElement>(null);
 
     // Redirect if invalid coach
     useEffect(() => {
@@ -84,6 +114,23 @@ export default function CoachInterviewPage() {
 
     const handleFieldChange = useCallback((field: keyof IntakeFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    }, []);
+
+    const handleDietFormDataUpdate = useCallback((data: Partial<DietIntakeFormData>) => {
+        setDietFormData(prev => {
+            const updated = { ...prev };
+            for (const key of Object.keys(data) as (keyof DietIntakeFormData)[]) {
+                const newVal = data[key];
+                if (newVal && newVal.trim().length > 0) {
+                    updated[key] = newVal;
+                }
+            }
+            return updated;
+        });
+    }, []);
+
+    const handleDietFieldChange = useCallback((field: keyof DietIntakeFormData, value: string) => {
+        setDietFormData(prev => ({ ...prev, [field]: value }));
     }, []);
 
     const handleInterviewComplete = useCallback(async (messages: { role: string; content: string }[]) => {
@@ -300,6 +347,97 @@ export default function CoachInterviewPage() {
         }
     }, [flowStage]);
 
+    // Scroll to nutrition view when it appears
+    useEffect(() => {
+        if (flowStage === 'nutrition_review' && nutritionViewRef.current) {
+            setTimeout(() => {
+                nutritionViewRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+    }, [flowStage]);
+
+    // Transition to dietitian interview after plan is saved
+    const handleStartDietitianInterview = useCallback(() => {
+        setFlowStage('dietitian_interview');
+    }, []);
+
+    // Handle dietitian interview completion
+    const handleDietitianInterviewComplete = useCallback(async (messages: { role: string; content: string }[]) => {
+        setDietitianMessages(messages);
+        setFlowStage('generating_nutrition');
+
+        try {
+            const res = await fetch('/api/ai-coach/generate-nutrition-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages,
+                    dietIntakeData: dietFormData,
+                    intakeData: formData,
+                }),
+            });
+
+            if (!res.ok) {
+                throw new Error('Nutrition plan generation failed');
+            }
+
+            const data = await res.json();
+            if (data.plan) {
+                setGeneratedNutritionPlan(data.plan);
+                setFlowStage('nutrition_review');
+
+                // Auto-save the nutrition plan
+                saveNutritionPlanToSupabase(data.plan);
+            }
+        } catch (error) {
+            console.error('Nutrition plan generation error:', error);
+            // Go back to dietitian interview on error
+            setFlowStage('dietitian_interview');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dietFormData, formData]);
+
+    // Auto-save nutrition plan to Supabase
+    const saveNutritionPlanToSupabase = useCallback(async (plan: GeneratedNutritionPlanData) => {
+        setIsNutritionPlanSaving(true);
+        setNutritionPlanSaveStatus('saving');
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                setNutritionPlanSaveStatus('error');
+                return;
+            }
+
+            const { error } = await supabase
+                .from('nutrition_plans')
+                .insert({
+                    user_id: user.id,
+                    name: plan.name,
+                    dietary_preferences: plan.dietary_preferences,
+                    plan_overview: plan.plan_overview,
+                    daily_schedule: plan.daily_schedule,
+                    shopping_list: plan.shopping_list,
+                    nutrition_tips: plan.nutrition_tips,
+                });
+
+            if (error) throw error;
+
+            setNutritionPlanSaveStatus('saved');
+        } catch (error) {
+            console.error('Nutrition plan save error:', error);
+            setNutritionPlanSaveStatus('error');
+        } finally {
+            setIsNutritionPlanSaving(false);
+        }
+    }, []);
+
+    // Handle nutrition plan edits
+    const handleNutritionPlanUpdate = useCallback((updatedPlan: GeneratedNutritionPlanData) => {
+        setGeneratedNutritionPlan(updatedPlan);
+        setNutritionPlanSaveStatus('idle');
+    }, []);
+
     const handleSaveProfile = useCallback(async () => {
         setIsSaving(true);
         setSaveStatus('idle');
@@ -359,6 +497,11 @@ export default function CoachInterviewPage() {
                 savePlanToSupabase(generatedPlan);
             }
 
+            // Also re-save nutrition plan if edited
+            if (generatedNutritionPlan && nutritionPlanSaveStatus === 'idle') {
+                saveNutritionPlanToSupabase(generatedNutritionPlan);
+            }
+
             setSaveStatus('saved');
         } catch (error) {
             console.error('Save error:', error);
@@ -366,7 +509,7 @@ export default function CoachInterviewPage() {
         } finally {
             setIsSaving(false);
         }
-    }, [formData, coachId, isInterviewComplete, generatedPlan, planSaveStatus, savePlanToSupabase]);
+    }, [formData, coachId, isInterviewComplete, generatedPlan, planSaveStatus, savePlanToSupabase, generatedNutritionPlan, nutritionPlanSaveStatus, saveNutritionPlanToSupabase]);
 
     if (!coach) {
         return (
@@ -382,8 +525,30 @@ export default function CoachInterviewPage() {
         );
     }
 
-    const filledFields = Object.values(formData).filter(v => v.trim().length > 0).length;
-    const totalFields = Object.keys(formData).length;
+    // Determine which form to show based on flow stage
+    const isDietitianPhase = flowStage === 'dietitian_interview' || flowStage === 'generating_nutrition' || flowStage === 'nutrition_review';
+    const filledFields = isDietitianPhase
+        ? Object.values(dietFormData).filter(v => v.trim().length > 0).length
+        : Object.values(formData).filter(v => v.trim().length > 0).length;
+    const totalFields = isDietitianPhase
+        ? Object.keys(dietFormData).length
+        : Object.keys(formData).length;
+
+    // Determine header title
+    const getHeaderTitle = () => {
+        switch (flowStage) {
+            case 'plan_review':
+                return 'Your Training Plan';
+            case 'dietitian_interview':
+                return 'Nutrition Interview';
+            case 'generating_nutrition':
+                return 'Generating Nutrition Plan';
+            case 'nutrition_review':
+                return 'Your Nutrition Plan';
+            default:
+                return 'Intake Interview';
+        }
+    };
 
     return (
         <Box
@@ -432,10 +597,10 @@ export default function CoachInterviewPage() {
                             fontWeight="600"
                             color="var(--neon-orange)"
                         >
-                            {flowStage === 'plan_review' ? 'Your Training Plan' : 'Intake Interview'}
+                            {getHeaderTitle()}
                         </Text>
                         <Text fontSize="0.7rem" color="#888">
-                            {coach.displayName}
+                            {isDietitianPhase ? "Dr. Nadia 'The Fuel'" : coach.displayName}
                         </Text>
                     </Box>
                 </Flex>
@@ -522,11 +687,14 @@ export default function CoachInterviewPage() {
                     overflow="hidden"
                 >
                     <Box flex={1} overflow="auto">
-                        <InterviewChat
-                            coach={coach}
-                            onFormDataUpdate={handleFormDataUpdate}
-                            onInterviewComplete={handleInterviewComplete}
-                        />
+                        {/* Training interview chat (always rendered to preserve state) */}
+                        {!isDietitianPhase && (
+                            <InterviewChat
+                                coach={coach}
+                                onFormDataUpdate={handleFormDataUpdate}
+                                onInterviewComplete={handleInterviewComplete}
+                            />
+                        )}
 
                         {/* Split Selection (appears after interview completes) */}
                         {(flowStage === 'split_selection' || flowStage === 'generating') && (
@@ -614,7 +782,98 @@ export default function CoachInterviewPage() {
                                     saveStatus={planSaveStatus}
                                 />
 
-                                {/* Continue to dashboard button */}
+                                {/* Continue to dietitian interview */}
+                                <Box mt="0.75rem" mb="1rem">
+                                    <button
+                                        onClick={handleStartDietitianInterview}
+                                        data-testid="start-dietitian-btn"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.85rem',
+                                            background: '#FF6600',
+                                            color: '#0B0B15',
+                                            border: 'none',
+                                            borderRadius: '10px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '700',
+                                            fontFamily: 'var(--font-orbitron)',
+                                            cursor: 'pointer',
+                                            transition: 'opacity 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem',
+                                        }}
+                                    >
+                                        <UtensilsCrossed size={18} />
+                                        Continue to Nutrition Plan
+                                    </button>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Dietitian Interview Chat */}
+                        {isDietitianPhase && (
+                            <DietitianChat
+                                coach={coach}
+                                onFormDataUpdate={handleDietFormDataUpdate}
+                                onInterviewComplete={handleDietitianInterviewComplete}
+                                previousMessages={interviewMessages}
+                            />
+                        )}
+
+                        {/* Generating Nutrition Plan Indicator */}
+                        {flowStage === 'generating_nutrition' && (
+                            <Box
+                                p="1rem"
+                                data-testid="nutrition-generating"
+                            >
+                                <Box
+                                    p="1.25rem"
+                                    borderRadius="12px"
+                                    bg="rgba(255, 102, 0, 0.05)"
+                                    border="1px solid rgba(255, 102, 0, 0.2)"
+                                    textAlign="center"
+                                >
+                                    <Flex
+                                        gap="0.3rem"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        mb="0.75rem"
+                                    >
+                                        <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out infinite" />
+                                        <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out 0.2s infinite" />
+                                        <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out 0.4s infinite" />
+                                    </Flex>
+                                    <Flex alignItems="center" justifyContent="center" gap="0.5rem" mb="0.25rem">
+                                        <UtensilsCrossed size={16} color="#FF6600" />
+                                        <Text
+                                            color="var(--neon-orange)"
+                                            fontFamily="var(--font-orbitron)"
+                                            fontSize="0.85rem"
+                                            fontWeight="600"
+                                        >
+                                            Building Your Meal Plan
+                                        </Text>
+                                    </Flex>
+                                    <Text color="#888" fontSize="0.75rem">
+                                        Dr. Nadia is creating a personalized nutrition plan with meals, macros, and recipes
+                                    </Text>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Nutrition Plan Review */}
+                        {flowStage === 'nutrition_review' && generatedNutritionPlan && (
+                            <Box p="0.75rem" ref={nutritionViewRef}>
+                                <NutritionPlanView
+                                    plan={generatedNutritionPlan}
+                                    onPlanUpdate={handleNutritionPlanUpdate}
+                                    isSaving={isNutritionPlanSaving}
+                                    saveStatus={nutritionPlanSaveStatus}
+                                />
+
+                                {/* View all plans button */}
                                 <Box mt="0.75rem" mb="1rem">
                                     <button
                                         onClick={() => router.push('/plans')}
@@ -633,7 +892,7 @@ export default function CoachInterviewPage() {
                                             transition: 'opacity 0.2s',
                                         }}
                                     >
-                                        View Full Plan
+                                        View All Plans
                                     </button>
                                 </Box>
                             </Box>
@@ -649,10 +908,17 @@ export default function CoachInterviewPage() {
                     bg="rgba(10, 10, 18, 0.5)"
                     overflow="hidden"
                 >
-                    <IntakeForm
-                        formData={formData}
-                        onFieldChange={handleFieldChange}
-                    />
+                    {isDietitianPhase ? (
+                        <DietIntakeForm
+                            formData={dietFormData}
+                            onFieldChange={handleDietFieldChange}
+                        />
+                    ) : (
+                        <IntakeForm
+                            formData={formData}
+                            onFieldChange={handleFieldChange}
+                        />
+                    )}
                 </Box>
             </Flex>
 
@@ -705,7 +971,7 @@ export default function CoachInterviewPage() {
                                         fontWeight="600"
                                         color="var(--neon-orange)"
                                     >
-                                        Intake Form
+                                        {isDietitianPhase ? 'Nutrition Form' : 'Intake Form'}
                                     </Text>
                                     <Text fontSize="0.7rem" color="#888">
                                         {filledFields}/{totalFields}
@@ -731,10 +997,17 @@ export default function CoachInterviewPage() {
                                 </button>
                             </Flex>
                             <Box flex={1} overflow="auto">
-                                <IntakeForm
-                                    formData={formData}
-                                    onFieldChange={handleFieldChange}
-                                />
+                                {isDietitianPhase ? (
+                                    <DietIntakeForm
+                                        formData={dietFormData}
+                                        onFieldChange={handleDietFieldChange}
+                                    />
+                                ) : (
+                                    <IntakeForm
+                                        formData={formData}
+                                        onFieldChange={handleFieldChange}
+                                    />
+                                )}
                             </Box>
                         </MotionBox>
                     </>

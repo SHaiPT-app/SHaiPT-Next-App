@@ -110,3 +110,14 @@ export const coaches: CoachPersona[] = [
         specialtyTags: ['Climbing', 'Grip Strength', 'Core Tension', 'Sport-Specific'],
     },
 ];
+
+export const dietitianPersona: CoachPersona = {
+    id: 'dietitian',
+    fullName: 'Dr. Nadia',
+    nickname: 'The Fuel',
+    displayName: "Dr. Nadia 'The Fuel'",
+    avatarUrl: '/avatars/coach-dietitian.png',
+    coachingStyle:
+        'Registered dietitian and sports nutritionist who creates personalized nutrition plans backed by science. Adapts to any dietary restriction and explains the reasoning behind every choice.',
+    specialtyTags: ['Nutrition', 'Meal Planning', 'Sports Nutrition', 'Dietary Science'],
+};
