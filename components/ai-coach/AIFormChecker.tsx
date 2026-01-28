@@ -159,7 +159,7 @@ export default function AIFormChecker() {
         ];
 
         ctx.lineWidth = 3;
-        ctx.strokeStyle = '#00ff00';
+        ctx.strokeStyle = '#FF6600';
 
         connections.forEach(([start, end]) => {
             const p1 = landmarks[start];

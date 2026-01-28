@@ -21,7 +21,12 @@ import type {
     AIChat,
     Exercise,
     ExerciseInstruction,
-    LoggedSet
+    LoggedSet,
+    NutritionPlan,
+    FoodItem,
+    FoodLog,
+    GroceryList,
+    BodyMeasurement
 } from './types';
 
 // Server-side Supabase client with service role (bypasses RLS)
@@ -42,6 +47,7 @@ if (typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
 // ============================================
 // PROFILES
 // ============================================
+
 
 export const db = {
     profiles: {
@@ -1141,6 +1147,347 @@ export const db = {
                 .order('step_number');
             if (error) throw error;
             return data || [];
+        }
+    },
+
+    // ============================================
+    // NUTRITION PLANS
+    // ============================================
+
+    nutritionPlans: {
+        getByUser: async (userId: string): Promise<NutritionPlan[]> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<NutritionPlan | null> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        getLatestByUser: async (userId: string): Promise<NutritionPlan | null> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (plan: Omit<NutritionPlan, 'id' | 'created_at' | 'updated_at'>): Promise<NutritionPlan> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .insert(plan)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<NutritionPlan>): Promise<NutritionPlan> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('nutrition_plans')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // FOOD DATABASE
+    // ============================================
+
+    foodDatabase: {
+        search: async (query: string, limit = 20): Promise<FoodItem[]> => {
+            const { data, error } = await supabase
+                .from('food_database')
+                .select('*')
+                .ilike('name', `%${query}%`)
+                .order('is_verified', { ascending: false })
+                .order('name')
+                .limit(limit);
+            if (error) throw error;
+            return data || [];
+        },
+
+        getByCategory: async (category: string): Promise<FoodItem[]> => {
+            const { data, error } = await supabase
+                .from('food_database')
+                .select('*')
+                .eq('category', category)
+                .order('name');
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<FoodItem | null> => {
+            const { data, error } = await supabase
+                .from('food_database')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (food: Omit<FoodItem, 'id' | 'created_at' | 'updated_at'>): Promise<FoodItem> => {
+            const { data, error } = await supabase
+                .from('food_database')
+                .insert([food])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
+    },
+
+    // ============================================
+    // FOOD LOGS
+    // ============================================
+
+    foodLogs: {
+        getByUserAndDate: async (userId: string, date: string): Promise<FoodLog[]> => {
+            const { data, error } = await supabase
+                .from('food_logs')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('logged_date', date)
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            return data || [];
+        },
+
+        getByUserDateRange: async (userId: string, startDate: string, endDate: string): Promise<FoodLog[]> => {
+            const { data, error } = await supabase
+                .from('food_logs')
+                .select('*')
+                .eq('user_id', userId)
+                .gte('logged_date', startDate)
+                .lte('logged_date', endDate)
+                .order('logged_date', { ascending: true })
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            return data || [];
+        },
+
+        create: async (log: Omit<FoodLog, 'id' | 'created_at' | 'updated_at'>): Promise<FoodLog> => {
+            const { data, error } = await supabase
+                .from('food_logs')
+                .insert([log])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<FoodLog>): Promise<FoodLog> => {
+            const { data, error } = await supabase
+                .from('food_logs')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('food_logs')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // GROCERY LISTS
+    // ============================================
+
+    groceryLists: {
+        getByUser: async (userId: string): Promise<GroceryList[]> => {
+            const { data, error } = await supabase
+                .from('grocery_lists')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<GroceryList | null> => {
+            const { data, error } = await supabase
+                .from('grocery_lists')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (list: Omit<GroceryList, 'id' | 'created_at' | 'updated_at'>): Promise<GroceryList> => {
+            const { data, error } = await supabase
+                .from('grocery_lists')
+                .insert([list])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<GroceryList>): Promise<GroceryList> => {
+            const { data, error } = await supabase
+                .from('grocery_lists')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('grocery_lists')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // BODY MEASUREMENTS
+    // ============================================
+
+    bodyMeasurements: {
+        getByUser: async (userId: string, limit = 100): Promise<BodyMeasurement[]> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .select('*')
+                .eq('user_id', userId)
+                .order('date', { ascending: false })
+                .limit(limit);
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<BodyMeasurement | null> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        getByUserAndDate: async (userId: string, date: string): Promise<BodyMeasurement | null> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('date', date)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (measurement: Omit<BodyMeasurement, 'id' | 'created_at' | 'updated_at'>): Promise<BodyMeasurement> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .insert([measurement])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<BodyMeasurement>): Promise<BodyMeasurement> => {
+            const { data, error } = await supabase
+                .from('body_measurements')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('body_measurements')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // PROGRESS MEDIA
+    // ============================================
+
+    progressMedia: {
+        getByUser: async (userId: string, limit = 50): Promise<ProgressMedia[]> => {
+            const { data, error } = await supabase
+                .from('progress_media')
+                .select('*')
+                .eq('user_id', userId)
+                .order('taken_at', { ascending: false })
+                .limit(limit);
+            if (error) throw error;
+            return data || [];
+        },
+
+        getById: async (id: string): Promise<ProgressMedia | null> => {
+            const { data, error } = await supabase
+                .from('progress_media')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (media: Omit<ProgressMedia, 'id' | 'created_at'>): Promise<ProgressMedia> => {
+            const { data, error } = await supabase
+                .from('progress_media')
+                .insert([media])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (id: string): Promise<void> => {
+            const { error } = await supabase
+                .from('progress_media')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
         }
     }
 };

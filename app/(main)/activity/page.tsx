@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Activity } from 'lucide-react';
 import { db } from '@/lib/supabaseDb';
+import EmptyState from '@/components/EmptyState';
+import ErrorState from '@/components/ErrorState';
 import type { ActivityPost, Profile, WorkoutLog, PostComment } from '@/lib/types';
 
 interface ActivityPostWithDetails extends ActivityPost {
@@ -27,6 +30,7 @@ export default function ActivityPage() {
     const [user, setUser] = useState<Profile | null>(null);
     const [posts, setPosts] = useState<ActivityPostWithDetails[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'following'>('all');
 
     useEffect(() => {
@@ -52,6 +56,7 @@ export default function ActivityPage() {
 
         try {
             setLoading(true);
+            setError(null);
 
             // Get posts based on filter
             const activityPosts = filter === 'following'
@@ -94,8 +99,9 @@ export default function ActivityPage() {
             );
 
             setPosts(enrichedPosts);
-        } catch (error) {
-            console.error('Error loading posts:', error);
+        } catch (err) {
+            console.error('Error loading posts:', err);
+            setError('Failed to load activity feed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -213,15 +219,19 @@ export default function ActivityPage() {
                 </button>
             </div>
 
+            {/* Error State */}
+            {error && (
+                <ErrorState message={error} onRetry={loadPosts} />
+            )}
+
             {/* Posts Feed */}
-            {posts.length === 0 ? (
-                <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
-                    <p style={{ color: '#888', marginBottom: '0.5rem' }}>No activity yet</p>
-                    <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                        Complete a workout to share your progress!
-                    </p>
-                </div>
-            ) : (
+            {!error && posts.length === 0 ? (
+                <EmptyState
+                    icon={Activity}
+                    title="No activity yet"
+                    description="Complete a workout to share your progress with the community!"
+                />
+            ) : !error && (
                 <div style={{ display: 'grid', gap: '1.5rem' }}>
                     {posts.map(post => (
                         <PostCard
@@ -317,7 +327,7 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
                             marginBottom: '0.5rem',
                             textAlign: 'center'
                         }}>
-                            🏆 NEW PR!
+                            NEW PR!
                         </div>
                         <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
                             {post.content}

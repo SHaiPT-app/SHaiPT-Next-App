@@ -137,7 +137,7 @@ export default function AIPage() {
                             style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                         />
                         <span style={{ color: isPrivate ? 'var(--primary)' : '#888' }}>
-                            Private Mode {isPrivate && '🔒'}
+                            Private Mode {isPrivate && '(locked)'}
                         </span>
                     </label>
                 </div>
@@ -169,10 +169,13 @@ export default function AIPage() {
                         {/* Welcome Message */}
                         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
                             <div style={{
-                                fontSize: '3rem',
-                                marginBottom: '1rem'
+                                fontSize: '1.5rem',
+                                marginBottom: '1rem',
+                                fontFamily: 'var(--font-orbitron)',
+                                color: 'var(--neon-orange)',
+                                fontWeight: '700'
                             }}>
-                                💪
+                                SHaiPT
                             </div>
                             <h2 style={{
                                 fontFamily: 'var(--font-orbitron)',
@@ -255,7 +258,7 @@ export default function AIPage() {
                                     flexShrink: 0,
                                     fontSize: '1.2rem'
                                 }}>
-                                    {message.role === 'user' ? '👤' : '🤖'}
+                                    {message.role === 'user' ? 'U' : 'AI'}
                                 </div>
 
                                 {/* Message Content */}
@@ -300,7 +303,7 @@ export default function AIPage() {
                                     justifyContent: 'center',
                                     fontSize: '1.2rem'
                                 }}>
-                                    🤖
+                                    AI
                                 </div>
                                 <div className="glass-panel" style={{ padding: '1rem' }}>
                                     <div className="spinner" style={{ width: '20px', height: '20px' }}></div>
@@ -359,7 +362,7 @@ export default function AIPage() {
                     marginTop: '0.5rem',
                     textAlign: 'center'
                 }}>
-                    🔒 Private mode: This conversation won't be saved
+                    Private mode: This conversation won't be saved
                 </p>
             )}
         </div>

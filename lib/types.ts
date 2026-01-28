@@ -97,12 +97,23 @@ export interface WorkoutSession {
     updated_at?: string; // timestamptz, default now()
 }
 
+export type PhaseType = 'hypertrophy' | 'strength' | 'endurance' | 'deload' | 'power' | 'general';
+
+export interface PeriodizedBlock {
+    phase_type: PhaseType;
+    phase_duration_weeks: number;
+    label: string;
+}
+
 export interface TrainingPlan {
     id: string; // uuid, NOT NULL, default gen_random_uuid()
     creator_id: string; // uuid, NOT NULL
     name: string; // text, NOT NULL
     description?: string; // text, nullable
     duration_weeks?: number; // integer, nullable
+    phase_type?: PhaseType; // varchar, nullable — primary phase type
+    phase_duration_weeks?: number; // integer, nullable — primary phase duration
+    periodization_blocks?: PeriodizedBlock[]; // jsonb, nullable — multi-block periodization
     tags?: string[]; // text[], default '{}'
     is_template?: boolean; // boolean, default true
     is_public?: boolean; // boolean, default false
@@ -283,6 +294,19 @@ export interface Notification {
 }
 
 // ============================================
+// ONBOARDING TYPES
+// ============================================
+
+export interface OnboardingData {
+    fitness_goals: string[];
+    experience_level: string;
+    available_equipment: string[];
+    training_frequency: number;
+    injuries_limitations: string[];
+    dietary_preferences: string[];
+}
+
+// ============================================
 // AI CHAT TYPES
 // ============================================
 
@@ -375,6 +399,190 @@ export interface LibraryItem {
 }
 
 // ============================================
+// PLAN ADAPTATION TYPES
+// ============================================
+
+export type AdaptationType = 'weight_progression' | 'exercise_substitution' | 'volume_adjustment' | 'deload_recommendation';
+
+export interface PlanAdaptationRecommendation {
+    type: AdaptationType;
+    exercise_id?: string;
+    exercise_name: string;
+    current_value: string;
+    recommended_value: string;
+    rationale: string;
+    substitute_exercise_name?: string;
+    substitute_exercise_id?: string;
+}
+
+export interface PlanAdaptationResponse {
+    summary: string;
+    recommendations: PlanAdaptationRecommendation[];
+    overall_assessment: string;
+}
+
+// ============================================
+// NUTRITION PLAN TYPES
+// ============================================
+
+export interface MealNutrition {
+    calories: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+}
+
+export interface Meal {
+    name: string;
+    ingredients: string[];
+    instructions?: string;
+    prep_time_minutes?: number;
+    nutrition: MealNutrition;
+}
+
+export interface DayMeals {
+    breakfast: Meal;
+    lunch: Meal;
+    dinner: Meal;
+    snacks?: Meal[];
+}
+
+export interface NutritionPlanOverview {
+    duration_days: number;
+    daily_calories: number;
+    macros: MealNutrition;
+    key_principles?: string[];
+}
+
+export interface NutritionPlan {
+    id: string;
+    user_id: string;
+    name?: string;
+    dietary_preferences: string[];
+    plan_overview: NutritionPlanOverview;
+    daily_schedule: Record<string, DayMeals>;
+    shopping_list?: Record<string, string[]>;
+    nutrition_tips?: string[];
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============================================
+// FOOD DATABASE & LOGGING TYPES
+// ============================================
+
+export interface FoodItem {
+    id: string; // uuid
+    name: string; // varchar(255), NOT NULL
+    brand?: string; // varchar(255), nullable
+    category?: string; // varchar(100), nullable
+    serving_size: number; // numeric, NOT NULL, default 100
+    serving_unit: string; // varchar(50), NOT NULL, default 'g'
+    calories: number; // numeric, NOT NULL
+    protein_g: number; // numeric, NOT NULL
+    carbs_g: number; // numeric, NOT NULL
+    fat_g: number; // numeric, NOT NULL
+    fiber_g?: number; // numeric, nullable
+    sugar_g?: number; // numeric, nullable
+    sodium_mg?: number; // numeric, nullable
+    is_verified?: boolean; // boolean, default false
+    created_by?: string; // uuid, nullable
+    created_at?: string; // timestamptz
+    updated_at?: string; // timestamptz
+}
+
+export type FoodLogMealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export interface FoodLog {
+    id: string; // uuid
+    user_id: string; // uuid, NOT NULL
+    food_id?: string; // uuid, nullable (reference to food_database)
+    food_name: string; // varchar(255), NOT NULL
+    meal_type: FoodLogMealType; // varchar(20), NOT NULL
+    serving_size: number; // numeric, NOT NULL, default 1
+    serving_unit: string; // varchar(50), NOT NULL, default 'serving'
+    calories: number; // numeric, NOT NULL
+    protein_g: number; // numeric, NOT NULL
+    carbs_g: number; // numeric, NOT NULL
+    fat_g: number; // numeric, NOT NULL
+    logged_date: string; // date, NOT NULL, default CURRENT_DATE
+    notes?: string; // text, nullable
+    created_at?: string; // timestamptz
+    updated_at?: string; // timestamptz
+}
+
+export interface GroceryList {
+    id: string; // uuid
+    user_id: string; // uuid, NOT NULL
+    nutrition_plan_id?: string; // uuid, nullable
+    name: string; // varchar(255), NOT NULL, default 'Grocery List'
+    items: GroceryListItem[]; // jsonb, NOT NULL, default '[]'
+    is_completed?: boolean; // boolean, default false
+    created_at?: string; // timestamptz
+    updated_at?: string; // timestamptz
+}
+
+export interface GroceryListItem {
+    name: string;
+    category?: string;
+    quantity?: string;
+    checked?: boolean;
+}
+
+export interface DailyMacroSummary {
+    date: string;
+    total_calories: number;
+    total_protein_g: number;
+    total_carbs_g: number;
+    total_fat_g: number;
+    target_calories?: number;
+    target_protein_g?: number;
+    target_carbs_g?: number;
+    target_fat_g?: number;
+    meals: {
+        breakfast: FoodLog[];
+        lunch: FoodLog[];
+        dinner: FoodLog[];
+        snack: FoodLog[];
+    };
+}
+
+export interface MacroTargets {
+    daily_calories: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    training_phase?: string;
+    rationale?: string;
+}
+
+// ============================================
+// BODY COMPOSITION TYPES
+// ============================================
+
+export interface BodyMeasurement {
+    id: string; // uuid, NOT NULL, default gen_random_uuid()
+    user_id: string; // uuid, NOT NULL
+    date: string; // date, NOT NULL, default CURRENT_DATE
+    weight_kg?: number; // numeric, nullable
+    body_fat_percentage?: number; // numeric, nullable
+    neck_cm?: number; // numeric, nullable
+    shoulders_cm?: number; // numeric, nullable
+    chest_cm?: number; // numeric, nullable
+    left_bicep_cm?: number; // numeric, nullable
+    right_bicep_cm?: number; // numeric, nullable
+    waist_cm?: number; // numeric, nullable
+    hips_cm?: number; // numeric, nullable
+    left_thigh_cm?: number; // numeric, nullable
+    right_thigh_cm?: number; // numeric, nullable
+    left_calf_cm?: number; // numeric, nullable
+    right_calf_cm?: number; // numeric, nullable
+    notes?: string; // text, nullable
+    created_at?: string; // timestamptz, default now()
+    updated_at?: string; // timestamptz, default now()
+}
+
+// ============================================
 // ANALYTICS TYPES
 // ============================================
 
@@ -408,4 +616,149 @@ export interface UserStatsHistory {
     workout_minutes: number;
     muscle_group_volumes: Record<string, { volume: number; sets: number }>;
     created_at: string;
+}
+
+// ============================================
+// AI WEEKLY INSIGHTS TYPES
+// ============================================
+
+export interface WeeklyInsight {
+    id: string;
+    user_id: string;
+    week_start: string; // date string (Monday)
+    week_end: string; // date string (Sunday)
+    adherence: {
+        planned_workouts: number;
+        completed_workouts: number;
+        adherence_percentage: number;
+        summary: string;
+    };
+    strength_trends: {
+        trending_up: string[];
+        trending_down: string[];
+        summary: string;
+    };
+    plateaus: {
+        exercises: string[];
+        summary: string;
+    };
+    recommendations: string[];
+    overall_summary: string;
+    generated_at: string;
+}
+
+// ============================================
+// AI CLIENT ALERT TYPES
+// ============================================
+
+export type ClientAlertType = 'missed_workouts' | 'performance_plateau' | 'form_issues';
+export type ClientAlertSeverity = 'warning' | 'critical';
+
+export interface ClientAlert {
+    type: ClientAlertType;
+    severity: ClientAlertSeverity;
+    title: string;
+    message: string;
+    clientId: string;
+    detectedAt: string;
+}
+
+export interface ClientAlertSummary {
+    clientId: string;
+    alerts: ClientAlert[];
+    totalCount: number;
+}
+
+// ============================================
+// SUBSCRIPTION TYPES
+// ============================================
+
+export type SubscriptionTier = 'starter' | 'pro' | 'elite';
+export type SubscriptionStatus = 'trialing' | 'active' | 'canceled' | 'past_due' | 'incomplete';
+
+export interface Subscription {
+    id: string;
+    user_id: string;
+    stripe_customer_id?: string;
+    stripe_subscription_id?: string;
+    tier: SubscriptionTier;
+    status: SubscriptionStatus;
+    trial_start?: string;
+    trial_end?: string;
+    current_period_start?: string;
+    current_period_end?: string;
+    cancel_at_period_end?: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============================================
+// COACH INTERVIEW / INTAKE TYPES
+// ============================================
+
+export interface IntakeFormData {
+    // Basic info
+    name: string;
+    age: string;
+    height: string;
+    weight: string;
+
+    // Athletic history
+    sport_history: string;
+    training_duration: string;
+    training_style: string;
+
+    // Goals
+    fitness_goals: string;
+
+    // Schedule
+    training_days_per_week: string;
+    session_duration: string;
+    preferred_time: string;
+
+    // Equipment & location
+    available_equipment: string;
+    training_location: string;
+
+    // Medical
+    injuries: string;
+    medical_considerations: string;
+
+    // Self-assessment
+    fitness_level: string;
+}
+
+export interface CoachInterview {
+    id: string;
+    user_id: string;
+    coach_id: string;
+    intake_data: IntakeFormData;
+    chat_messages: AIChatMessage[];
+    is_complete: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============================================
+// DIETITIAN INTERVIEW / INTAKE TYPES
+// ============================================
+
+export interface DietIntakeFormData {
+    // Allergies & intolerances
+    allergies: string;
+    intolerances: string;
+
+    // Dietary preferences
+    diet_style: string;
+
+    // Food preferences
+    foods_love: string;
+    foods_hate: string;
+
+    // Medical / dietary considerations
+    medical_dietary_considerations: string;
+
+    // Meal preferences
+    meals_per_day: string;
+    cooking_preferences: string;
 }

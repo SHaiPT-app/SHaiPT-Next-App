@@ -1,0 +1,139 @@
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const trainerId = searchParams.get('trainerId');
+        const clientId = searchParams.get('clientId');
+
+        if (!trainerId || !clientId) {
+            return NextResponse.json(
+                { error: 'trainerId and clientId are required' },
+                { status: 400 }
+            );
+        }
+
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Verify active coaching relationship and get permission flags
+        const { data: relationship, error: relError } = await supabase
+            .from('coaching_relationships')
+            .select('*')
+            .eq('coach_id', trainerId)
+            .eq('athlete_id', clientId)
+            .eq('status', 'active')
+            .single();
+
+        if (relError || !relationship) {
+            return NextResponse.json(
+                { error: 'No active coaching relationship found' },
+                { status: 403 }
+            );
+        }
+
+        const canViewWorkouts = relationship.can_view_workouts ?? true;
+
+        // Build response based on permission flags
+        const result: {
+            client: Record<string, unknown> | null;
+            workoutLogs: unknown[];
+            bodyMeasurements: unknown[];
+            progressMedia: unknown[];
+            permissions: { can_view_workouts: boolean; can_assign_plans: boolean };
+        } = {
+            client: null,
+            workoutLogs: [],
+            bodyMeasurements: [],
+            progressMedia: [],
+            permissions: {
+                can_view_workouts: canViewWorkouts,
+                can_assign_plans: relationship.can_assign_plans ?? true,
+            },
+        };
+
+        // Fetch client profile
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, email, username, full_name, avatar_url, role')
+            .eq('id', clientId)
+            .single();
+
+        result.client = profile;
+
+        if (!canViewWorkouts) {
+            return NextResponse.json(result);
+        }
+
+        // Fetch workout logs with exercise logs
+        const { data: workoutLogs, error: logsError } = await supabase
+            .from('workout_logs')
+            .select('*')
+            .eq('user_id', clientId)
+            .order('date', { ascending: false })
+            .limit(50);
+
+        if (logsError) throw logsError;
+
+        // Fetch exercise logs for the workout logs
+        if (workoutLogs && workoutLogs.length > 0) {
+            const logIds = workoutLogs.map(l => l.id);
+            const { data: exerciseLogs, error: exError } = await supabase
+                .from('exercise_logs')
+                .select('*')
+                .in('workout_log_id', logIds);
+
+            if (exError) throw exError;
+
+            // Attach exercise logs to their workout logs
+            result.workoutLogs = workoutLogs.map(log => ({
+                ...log,
+                exercise_logs: (exerciseLogs || []).filter(
+                    el => el.workout_log_id === log.id
+                ),
+            }));
+        }
+
+        // Fetch body measurements
+        const { data: measurements, error: measError } = await supabase
+            .from('body_measurements')
+            .select('*')
+            .eq('user_id', clientId)
+            .order('date', { ascending: false });
+
+        if (measError) throw measError;
+        result.bodyMeasurements = measurements || [];
+
+        // Fetch progress media (only public + followers visibility, or all if coach)
+        const { data: media, error: mediaError } = await supabase
+            .from('progress_media')
+            .select('*')
+            .eq('user_id', clientId)
+            .in('visibility', ['public', 'followers'])
+            .order('taken_at', { ascending: false });
+
+        if (mediaError) throw mediaError;
+
+        // Generate signed URLs for media
+        if (media && media.length > 0) {
+            const mediaWithUrls = await Promise.all(
+                media.map(async (item) => {
+                    const { data } = await supabase.storage
+                        .from('progress-media')
+                        .createSignedUrl(item.storage_path, 3600);
+                    return { ...item, url: data?.signedUrl || null };
+                })
+            );
+            result.progressMedia = mediaWithUrls;
+        }
+
+        return NextResponse.json(result);
+    } catch (error: unknown) {
+        console.error('Fetch client progress error:', error);
+        const message = error instanceof Error ? error.message : 'Internal Server Error';
+        return NextResponse.json({ error: message }, { status: 500 });
+    }
+}

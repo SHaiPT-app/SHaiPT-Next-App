@@ -2,12 +2,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, WorkoutPlan, WorkoutLog } from '@/lib/types';
+import { User, WorkoutPlan, WorkoutLog, TrainingPlan, TrainingPlanAssignment } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import PlanViewer from './PlanViewer';
 import AIWorkoutPlanner from './ai-coach/AIWorkoutPlanner';
 import AIDietitian from './ai-coach/AIDietitian';
 import AIFormChecker from './ai-coach/AIFormChecker';
+import WeeklyInsightsCard from './WeeklyInsightsCard';
 
 export default function TraineeDashboard({ user }: { user: User }) {
     const [plans, setPlans] = useState<WorkoutPlan[]>([]);
@@ -16,6 +17,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
     const [viewingPlan, setViewingPlan] = useState<WorkoutPlan | null>(null);
     const [activeTab, setActiveTab] = useState<'plans' | 'coach'>('plans');
     const [coachModule, setCoachModule] = useState<'workout' | 'diet' | 'form'>('workout');
+    const [assignedPlans, setAssignedPlans] = useState<(TrainingPlanAssignment & { plan: TrainingPlan | null })[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -73,10 +75,20 @@ export default function TraineeDashboard({ user }: { user: User }) {
                 } else {
                     setLogs([]);
                 }
+
+                // Fetch assigned training plans
+                const assignmentsRes = await fetch(`/api/plan-assignments?userId=${user.id}`, { headers });
+                if (assignmentsRes.ok) {
+                    const assignmentsData = await assignmentsRes.json();
+                    setAssignedPlans(assignmentsData.assignments || []);
+                } else {
+                    setAssignedPlans([]);
+                }
             } catch (error) {
                 console.error('Error fetching trainee data:', error);
                 setPlans([]);
                 setLogs([]);
+                setAssignedPlans([]);
             }
         };
 
@@ -130,6 +142,11 @@ export default function TraineeDashboard({ user }: { user: User }) {
 
             {activeTab === 'plans' ? (
                 <div className="dashboard-grid">
+                    {/* Weekly AI Insights Card */}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                        <WeeklyInsightsCard userId={user.id} logs={logs} />
+                    </div>
+
                     {/* View Plan Modal */}
                     {viewingPlan && (
                         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
@@ -207,6 +224,40 @@ export default function TraineeDashboard({ user }: { user: User }) {
                         </div>
                     </div>
 
+                    {/* Assigned Training Plans */}
+                    {assignedPlans.length > 0 && (
+                        <div className="glass-panel" style={{ padding: '2rem' }}>
+                            <h3 style={{ marginBottom: '1.5rem' }}>Assigned Training Plans</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {assignedPlans
+                                    .filter(a => a.is_active && a.plan)
+                                    .map(assignment => (
+                                        <div key={assignment.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                                <h4 style={{ color: 'var(--accent)' }}>{assignment.plan!.name}</h4>
+                                                <span style={{
+                                                    padding: '0.25rem 0.75rem',
+                                                    borderRadius: '20px',
+                                                    fontSize: '0.75rem',
+                                                    background: 'rgba(255, 102, 0, 0.1)',
+                                                    border: '1px solid rgba(255, 102, 0, 0.2)',
+                                                    color: 'var(--primary)',
+                                                }}>
+                                                    Assigned
+                                                </span>
+                                            </div>
+                                            {assignment.plan!.description && (
+                                                <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '0.5rem' }}>{assignment.plan!.description}</p>
+                                            )}
+                                            <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                                                {assignment.start_date} to {assignment.end_date}
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Recent Activity */}
                     <div className="glass-panel" style={{ padding: '2rem' }}>
                         <h3 style={{ marginBottom: '1.5rem' }}>Recent Activity</h3>
@@ -223,7 +274,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
                                     {/* Show PRs if any */}
                                     {log.exercises.some(ex => ex.sets.some(s => s.isPr)) && (
                                         <div style={{ marginTop: '0.5rem', color: 'var(--accent)', fontSize: '0.875rem', fontWeight: 'bold' }}>
-                                            🏆 PRs set!
+                                            PRs set!
                                         </div>
                                     )}
                                 </div>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
+import { db, dbAdmin } from '@/lib/supabaseDb';
 import { createClient } from '@supabase/supabase-js';
 import { WorkoutPlan } from '@/lib/types';
 
@@ -56,12 +56,12 @@ export async function POST(request: Request) {
         console.log('Attempting to create plan with validated data...');
         console.log('Database functions available:', Object.keys(db));
 
-        // Log exercises data structure
-        console.log('Exercises data:', JSON.stringify(planData.exercises, null, 2));
+        // Log sessions data structure
+        console.log('Sessions data:', JSON.stringify(planData.sessions, null, 2));
 
-        // Ensure exercises is a valid JSONB array
-        const exercises = Array.isArray(planData.exercises) ? planData.exercises : [];
-        console.log('Processed exercises:', exercises);
+        // Ensure sessions is a valid JSONB array
+        const sessions = Array.isArray(planData.sessions) ? planData.sessions : [];
+        console.log('Processed sessions:', sessions);
 
         // Clean the payload - remove undefined values that might cause issues
         const cleanPayload = {
@@ -69,7 +69,9 @@ export async function POST(request: Request) {
             trainer_id: planData.trainer_id,
             name: planData.name,
             description: planData.description || '',
-            exercises: exercises
+            exercises: sessions,
+            assigned_at: planData.assigned_at,
+            expires_at: planData.expires_at
         };
 
         // Remove any undefined values from the payload
@@ -82,14 +84,14 @@ export async function POST(request: Request) {
         // Check if trainer and trainee exist in profiles table
         console.log('Validating trainer and trainee exist...');
 
-        const trainer = await db.profiles.getById(planData.trainer_id);
+        const trainer = await dbAdmin.profiles.getById(planData.trainer_id);
         if (!trainer) {
             console.error('Trainer not found:', planData.trainer_id);
             return NextResponse.json({ error: `Trainer not found: ${planData.trainer_id}` }, { status: 400 });
         }
         console.log('Trainer found:', trainer.username);
 
-        const trainee = await db.profiles.getById(planData.trainee_id);
+        const trainee = await dbAdmin.profiles.getById(planData.trainee_id);
         if (!trainee) {
             console.error('Trainee not found:', planData.trainee_id);
             return NextResponse.json({ error: `Trainee not found: ${planData.trainee_id}` }, { status: 400 });
@@ -145,8 +147,10 @@ export async function PUT(request: Request) {
         const updatedPlan = await db.workoutPlans.update(planData.id, {
             name: planData.name,
             description: planData.description,
-            exercises: planData.exercises,
-            is_active: planData.is_active
+            exercises: planData.sessions, // Map sessions to exercises column
+            is_active: planData.is_active,
+            assigned_at: planData.assigned_at,
+            expires_at: planData.expires_at
         });
 
         return NextResponse.json({ plan: updatedPlan });

@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
         if (error) throw error;
 
-        return NextResponse.json(data);
+        return NextResponse.json({ trainees: data });
 
     } catch (error: any) {
         console.error('Fetch trainees error:', error);
