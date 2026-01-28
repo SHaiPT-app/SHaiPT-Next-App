@@ -1197,6 +1197,17 @@ export const db = {
             return data;
         },
 
+        update: async (id: string, updates: Partial<NutritionPlan>): Promise<NutritionPlan> => {
+            const { data, error } = await supabase
+                .from('nutrition_plans')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
         delete: async (id: string): Promise<void> => {
             const { error } = await supabase
                 .from('nutrition_plans')
