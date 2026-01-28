@@ -20,6 +20,7 @@ import {
     Trash2,
     Save,
 } from 'lucide-react';
+import ErrorState from '@/components/ErrorState';
 import type {
     Profile,
     TrainingPlan,
@@ -166,6 +167,7 @@ export default function PlansViewerPage() {
     const [user, setUser] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Plan data
     const [plans, setPlans] = useState<TrainingPlan[]>([]);
@@ -197,6 +199,7 @@ export default function PlansViewerPage() {
     // Load plans and active assignment
     const loadPlanData = useCallback(async (userId: string) => {
         setLoading(true);
+        setError(null);
         try {
             // Fetch user's plans
             const userPlans = await db.trainingPlans.getByCreator(userId);
@@ -260,8 +263,9 @@ export default function PlansViewerPage() {
                 });
                 setExerciseCache(cache);
             }
-        } catch (error) {
-            console.error('Error loading plan data:', error);
+        } catch (err) {
+            console.error('Error loading plan data:', err);
+            setError('Failed to load training plans. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -471,6 +475,34 @@ export default function PlansViewerPage() {
                 minHeight: '60vh',
             }}>
                 <div className="spinner"></div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div style={{ padding: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                    <button
+                        onClick={() => router.push('/home')}
+                        style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
+                    <h1 style={{
+                        fontFamily: 'var(--font-orbitron)',
+                        fontSize: '1.5rem',
+                        color: '#39ff14',
+                        margin: 0,
+                    }}>
+                        Training Plans
+                    </h1>
+                </div>
+                <ErrorState
+                    message={error}
+                    onRetry={() => user?.id && loadPlanData(user.id)}
+                />
             </div>
         );
     }

@@ -2,6 +2,26 @@
 
 import type { Variants, Transition } from "framer-motion"
 
+// ─── Performance Helpers ────────────────────────────────────────────────────────
+
+/**
+ * Check if user prefers reduced motion.
+ * Use this to conditionally disable animations at runtime.
+ */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+}
+
+/**
+ * Returns GPU-optimized style props for animated elements.
+ * Apply to style prop of motion elements for better compositing.
+ */
+export const gpuAccelerated = {
+  willChange: "transform, opacity" as const,
+  backfaceVisibility: "hidden" as const,
+} as const
+
 // ─── Shared Transitions ────────────────────────────────────────────────────────
 
 export const springTransition: Transition = {

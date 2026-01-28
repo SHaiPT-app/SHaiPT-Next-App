@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, type Variants } from "framer-motion"
-import { pageTransition } from "@/lib/animations"
+import { pageTransition, gpuAccelerated } from "@/lib/animations"
 import type { ReactNode } from "react"
 
 interface PageTransitionProps {
@@ -22,6 +22,7 @@ export function PageTransition({
       exit="exit"
       variants={variants}
       className={className}
+      style={gpuAccelerated}
     >
       {children}
     </motion.div>

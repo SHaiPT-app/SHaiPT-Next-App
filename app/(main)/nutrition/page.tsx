@@ -17,6 +17,7 @@ import {
     Lightbulb,
     Loader2,
 } from 'lucide-react';
+import ErrorState from '@/components/ErrorState';
 import type { Profile, NutritionPlan, Meal, DayMeals, MealNutrition } from '@/lib/types';
 
 // ============================================
@@ -514,16 +515,8 @@ export default function NutritionPage() {
 
             {/* Error state */}
             {error && (
-                <div style={{
-                    padding: '1rem',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: '8px',
-                    color: '#ef4444',
-                    marginBottom: '1.5rem',
-                    fontSize: '0.9rem',
-                }}>
-                    {error}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <ErrorState message={error} onRetry={fetchPlan} />
                 </div>
             )}
 

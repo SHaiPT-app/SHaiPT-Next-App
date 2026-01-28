@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, type Variants } from "framer-motion"
-import { fadeInUp } from "@/lib/animations"
+import { fadeInUp, gpuAccelerated } from "@/lib/animations"
 import type { ReactNode } from "react"
 
 interface ScrollRevealProps {
@@ -28,6 +28,7 @@ export function ScrollReveal({
       viewport={{ once, amount }}
       variants={variants}
       className={className}
+      style={gpuAccelerated}
     >
       {children}
     </motion.div>

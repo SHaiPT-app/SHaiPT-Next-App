@@ -20,6 +20,7 @@ import {
     Calendar,
     Edit3,
 } from 'lucide-react';
+import ErrorState from '@/components/ErrorState';
 import type { Profile, BodyMeasurement, ProgressMedia } from '@/lib/types';
 
 // ============================================
@@ -266,6 +267,7 @@ export default function BodyCompositionPage() {
     const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
     const [media, setMedia] = useState<ProgressMediaWithUrl[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'measurements' | 'photos'>('measurements');
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -289,6 +291,7 @@ export default function BodyCompositionPage() {
     const fetchData = useCallback(async () => {
         if (!user) return;
         setLoading(true);
+        setError(null);
         try {
             const [measRes, mediaRes] = await Promise.all([
                 fetch(`/api/body-measurements?userId=${user.id}`),
@@ -298,8 +301,9 @@ export default function BodyCompositionPage() {
             const mediaData = await mediaRes.json();
             setMeasurements(measData.measurements || []);
             setMedia(mediaData.media || []);
-        } catch (error) {
-            console.error('Error fetching body composition data:', error);
+        } catch (err) {
+            console.error('Error fetching body composition data:', err);
+            setError('Failed to load body composition data. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -495,8 +499,15 @@ export default function BodyCompositionPage() {
                 ))}
             </div>
 
+            {/* Error State */}
+            {error && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <ErrorState message={error} onRetry={fetchData} />
+                </div>
+            )}
+
             {/* MEASUREMENTS TAB */}
-            {activeTab === 'measurements' && (
+            {!error && activeTab === 'measurements' && (
                 <div>
                     {/* Latest Summary */}
                     {latestMeasurement && (
@@ -740,7 +751,7 @@ export default function BodyCompositionPage() {
             )}
 
             {/* PHOTOS/VIDEOS TAB */}
-            {activeTab === 'photos' && (
+            {!error && activeTab === 'photos' && (
                 <div>
                     {/* Upload Button */}
                     <input

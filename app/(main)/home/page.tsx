@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Dumbbell, ClipboardList } from 'lucide-react';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import EmptyState from '@/components/EmptyState';
+import ErrorState from '@/components/ErrorState';
 import MagicBento from '@/components/MagicBento';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import { db } from '@/lib/supabaseDb';
@@ -132,6 +135,7 @@ function LibraryView({ userId }: { userId: string }) {
     const [sessions, setSessions] = useState<WorkoutSession[]>([]);
     const [plans, setPlans] = useState<any[]>([]); // Using any for now, should be TrainingPlan[]
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const [viewMode, setViewMode] = useState<'plans' | 'sessions'>('plans'); // 'plans' or 'sessions'
 
@@ -150,6 +154,7 @@ function LibraryView({ userId }: { userId: string }) {
     const loadLibrary = async () => {
         if (!userId) return;
         setLoading(true);
+        setError(null);
 
         try {
             if (view === 'workouts') {
@@ -160,8 +165,9 @@ function LibraryView({ userId }: { userId: string }) {
                 const data = await db.trainingPlans.getByCreator(userId);
                 setPlans(data);
             }
-        } catch (error) {
-            console.error('Error loading library:', error);
+        } catch (err) {
+            console.error('Error loading library:', err);
+            setError(`Failed to load ${view}. Please try again.`);
         } finally {
             setLoading(false);
         }
@@ -218,16 +224,25 @@ function LibraryView({ userId }: { userId: string }) {
                 </button>
             </div>
 
+            {error && (
+                <ErrorState
+                    message={error}
+                    onRetry={loadLibrary}
+                />
+            )}
+
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>Loading...</div>
-            ) : (
+            ) : !error && (
                 <>
                     {view === 'workouts' ? (
                         sessions.length === 0 ? (
-                            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
-                                <p style={{ color: '#888', marginBottom: '1rem' }}>No workouts yet</p>
-                                <p style={{ color: '#666', fontSize: '0.9rem' }}>Create your first workout to get started!</p>
-                            </div>
+                            <EmptyState
+                                icon={Dumbbell}
+                                title="No workouts yet"
+                                description="Create your first workout to get started!"
+                                action={{ label: '+ New Workout', onClick: () => router.push('/workouts/new') }}
+                            />
                         ) : (
                             <div style={{ display: 'grid', gap: '1rem' }}>
                                 {sessions.map(session => (
@@ -306,10 +321,12 @@ function LibraryView({ userId }: { userId: string }) {
                         )
                     ) : (
                         plans.length === 0 ? (
-                            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
-                                <p style={{ color: '#888', marginBottom: '1rem' }}>No training plans yet</p>
-                                <p style={{ color: '#666', fontSize: '0.9rem' }}>Create a structured plan to track your progress!</p>
-                            </div>
+                            <EmptyState
+                                icon={ClipboardList}
+                                title="No training plans yet"
+                                description="Create a structured plan to track your progress!"
+                                action={{ label: '+ New Plan', onClick: () => router.push('/plans/new') }}
+                            />
                         ) : (
                             <div style={{ display: 'grid', gap: '1rem' }}>
                                 {plans.map(plan => (

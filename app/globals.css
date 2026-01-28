@@ -311,3 +311,107 @@ a {
     @apply bg-background text-foreground;
   }
 }
+
+/* ─── Mobile Safari/Chrome Responsive Polish ─────────────────────────── */
+
+/* Safe area insets for notched devices */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Prevent pull-to-refresh on mobile Chrome */
+html {
+  overscroll-behavior-y: contain;
+}
+
+/* Smooth scrolling on iOS */
+.overflow-scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Fix iOS 100vh issue */
+@supports (height: 100dvh) {
+  .h-screen-safe {
+    height: 100dvh;
+  }
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth momentum scrolling for horizontal scrollers */
+[style*="overflowX: auto"],
+[style*="overflow-x: auto"] {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+[style*="overflowX: auto"]::-webkit-scrollbar,
+[style*="overflow-x: auto"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent tap highlight on mobile */
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Spinner animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ─── Reduced Motion ─────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .spinner {
+    animation: spin 2s linear infinite !important;
+  }
+}
+
+/* ─── Small Screen Adjustments ───────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.75rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .glass-panel {
+    border-radius: 12px;
+  }
+
+  /* Stack macro bars on very small screens */
+  [style*="gridTemplateColumns: repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
