@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, WorkoutPlan, AIFeatures } from '@/lib/types';
+import { User, WorkoutPlan, AIFeatures, TrainingPlan } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import PlanCreator from './PlanCreator';
 import PlanViewer from './PlanViewer';
@@ -27,6 +27,15 @@ export default function TrainerDashboard({ user }: { user: User }) {
     const [searchResults, setSearchResults] = useState<User[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+    // Assign Plan State
+    const [showAssignPlan, setShowAssignPlan] = useState(false);
+    const [trainerPlans, setTrainerPlans] = useState<TrainingPlan[]>([]);
+    const [selectedPlanId, setSelectedPlanId] = useState('');
+    const [assignStartDate, setAssignStartDate] = useState('');
+    const [assignEndDate, setAssignEndDate] = useState('');
+    const [assigningPlan, setAssigningPlan] = useState(false);
+    const [assignError, setAssignError] = useState('');
 
     useEffect(() => {
         fetchTrainees();
@@ -245,6 +254,73 @@ export default function TrainerDashboard({ user }: { user: User }) {
         }
     };
 
+    const openAssignPlan = async () => {
+        setAssignError('');
+        setSelectedPlanId('');
+        const today = new Date().toISOString().split('T')[0];
+        setAssignStartDate(today);
+        setAssignEndDate('');
+        setShowAssignPlan(true);
+
+        try {
+            const { data, error } = await supabase
+                .from('training_plans')
+                .select('*')
+                .eq('creator_id', user.id)
+                .order('updated_at', { ascending: false });
+
+            if (error) throw error;
+            setTrainerPlans(data || []);
+        } catch (err) {
+            console.error('Error fetching trainer plans:', err);
+            setTrainerPlans([]);
+        }
+    };
+
+    const handleAssignPlan = async () => {
+        if (!selectedTrainee || !selectedPlanId || !assignStartDate || !assignEndDate) {
+            setAssignError('Please fill in all fields');
+            return;
+        }
+
+        setAssigningPlan(true);
+        setAssignError('');
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: any = { 'Content-Type': 'application/json' };
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`;
+            } else if (user.id === 'dev-user-id') {
+                headers.Authorization = 'Bearer dev-token';
+            }
+
+            const res = await fetch('/api/plan-assignments', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    plan_id: selectedPlanId,
+                    user_id: selectedTrainee.id,
+                    assigned_by_id: user.id,
+                    start_date: assignStartDate,
+                    end_date: assignEndDate,
+                }),
+            });
+
+            if (res.ok) {
+                setShowAssignPlan(false);
+            } else {
+                const data = await res.json();
+                setAssignError(data.error || 'Failed to assign plan');
+            }
+        } catch (err) {
+            console.error('Error assigning plan:', err);
+            setAssignError('An error occurred while assigning the plan');
+        } finally {
+            setAssigningPlan(false);
+        }
+    };
+
     const sortedPlans = [...plans].sort((a, b) => {
         const dateA = new Date(a.created_at || '').getTime();
         const dateB = new Date(b.created_at || '').getTime();
@@ -393,6 +469,13 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                 </button>
                                 <button
                                     className="btn-primary"
+                                    onClick={openAssignPlan}
+                                    style={{ background: 'var(--accent)' }}
+                                >
+                                    Assign Plan
+                                </button>
+                                <button
+                                    className="btn-primary"
                                     onClick={() => openAIToolkit(selectedTrainee)}
                                 >
                                     AI Toolkit
@@ -429,6 +512,83 @@ export default function TrainerDashboard({ user }: { user: User }) {
                     </div>
                 )}
             </div>
+            {/* Assign Plan Modal */}
+            {showAssignPlan && selectedTrainee && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <div className="glass-panel" style={{ width: '500px', padding: '2rem', border: '1px solid var(--accent)' }}>
+                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent)' }}>Assign Training Plan</h3>
+                        <p style={{ marginBottom: '1.5rem', color: '#ccc' }}>
+                            Assign a training plan to <strong>{selectedTrainee.display_name || selectedTrainee.username}</strong>.
+                        </p>
+
+                        {assignError && (
+                            <div style={{ padding: '0.75rem', marginBottom: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', fontSize: '0.875rem' }}>
+                                {assignError}
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888' }}>Training Plan</label>
+                                <select
+                                    value={selectedPlanId}
+                                    onChange={(e) => setSelectedPlanId(e.target.value)}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)' }}
+                                >
+                                    <option value="">Select a plan...</option>
+                                    {trainerPlans.map(plan => (
+                                        <option key={plan.id} value={plan.id}>{plan.name}</option>
+                                    ))}
+                                </select>
+                                {trainerPlans.length === 0 && (
+                                    <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem' }}>No training plans found. Create one first.</p>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888' }}>Start Date</label>
+                                    <input
+                                        type="date"
+                                        value={assignStartDate}
+                                        onChange={(e) => setAssignStartDate(e.target.value)}
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888' }}>End Date</label>
+                                    <input
+                                        type="date"
+                                        value={assignEndDate}
+                                        onChange={(e) => setAssignEndDate(e.target.value)}
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)' }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                className="btn-primary"
+                                onClick={handleAssignPlan}
+                                disabled={assigningPlan || !selectedPlanId}
+                                style={{ flex: 1 }}
+                            >
+                                {assigningPlan ? 'Assigning...' : 'Assign Plan'}
+                            </button>
+                            <button
+                                onClick={() => setShowAssignPlan(false)}
+                                style={{ flex: 1, background: 'transparent', border: '1px solid #666', color: 'white', borderRadius: '8px', cursor: 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* AI Toolkit Modal */}
             {showAIToolkit && selectedTrainee && (
                 <div style={{
