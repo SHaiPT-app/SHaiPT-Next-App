@@ -20,6 +20,8 @@ jest.mock('@/lib/supabase', () => ({
     },
 }));
 
+const mockDbAdminGetById = jest.fn();
+
 jest.mock('@/lib/supabaseDb', () => ({
     db: {
         workoutPlans: {
@@ -29,6 +31,11 @@ jest.mock('@/lib/supabaseDb', () => ({
         },
         profiles: {
             getById: jest.fn(),
+        },
+    },
+    dbAdmin: {
+        profiles: {
+            getById: (...args: unknown[]) => mockDbAdminGetById(...args),
         },
     },
 }));
@@ -83,6 +90,11 @@ describe('/api/plans', () => {
     });
 
     describe('POST', () => {
+        beforeEach(() => {
+            process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+        });
+
         it('creates a new plan', async () => {
             const trainerId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
             const traineeId = '550e8400-e29b-41d4-a716-446655440000';
@@ -91,12 +103,15 @@ describe('/api/plans', () => {
                 data: { user: { id: trainerId } },
                 error: null
             });
-            (db.profiles.getById as jest.Mock).mockResolvedValue({ id: 'user-1', username: 'user' });
+            // Mock dbAdmin.profiles.getById for trainer and trainee validation
+            mockDbAdminGetById
+                .mockResolvedValueOnce({ id: trainerId, username: 'trainer' })
+                .mockResolvedValueOnce({ id: traineeId, username: 'trainee' });
 
             // Mock supabase.from chain for insert
-            const mockInsert = jest.fn().mockReturnThis();
-            const mockSelect = jest.fn().mockReturnThis();
             const mockSingle = jest.fn().mockResolvedValue({ data: { id: 'new-plan', name: 'New Plan' }, error: null });
+            const mockSelect = jest.fn().mockReturnValue({ single: mockSingle });
+            const mockInsert = jest.fn().mockReturnValue({ select: mockSelect });
 
             (createClient as jest.Mock).mockReturnValue({
                 from: jest.fn(() => ({

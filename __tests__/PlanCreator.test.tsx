@@ -55,8 +55,8 @@ describe('PlanCreator', () => {
         )
 
         expect(screen.getByText('Create New Workout Plan')).toBeInTheDocument()
-        expect(screen.getByPlaceholderText('Plan Name (e.g., Chest & Triceps)')).toBeInTheDocument()
-        expect(screen.getByText('+ Add Exercise')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('e.g., Hypertrophy Phase 1')).toBeInTheDocument()
+        expect(screen.getByText(/Add Exercise/)).toBeInTheDocument()
     })
 
     it('allows adding an exercise', () => {
@@ -69,7 +69,7 @@ describe('PlanCreator', () => {
             />
         )
 
-        fireEvent.click(screen.getByText('+ Add Exercise'))
+        fireEvent.click(screen.getByText(/Add Exercise/))
 
         expect(screen.getByText('Exercise 1')).toBeInTheDocument()
         expect(screen.getByTestId('mock-exercise-search')).toBeInTheDocument()
@@ -89,12 +89,12 @@ describe('PlanCreator', () => {
         expect(screen.getByRole('button', { name: /save plan/i })).toBeInTheDocument()
 
         // Enter plan name
-        fireEvent.change(screen.getByPlaceholderText('Plan Name (e.g., Chest & Triceps)'), {
+        fireEvent.change(screen.getByPlaceholderText('e.g., Hypertrophy Phase 1'), {
             target: { value: 'My New Plan' }
         })
 
         // Add exercise
-        fireEvent.click(screen.getByText('+ Add Exercise'))
+        fireEvent.click(screen.getByText(/Add Exercise/))
 
         // Select exercise from mock search
         fireEvent.click(screen.getByTestId('mock-exercise-search'))

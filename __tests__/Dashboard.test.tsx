@@ -141,7 +141,7 @@ describe('Dashboard Home Page', () => {
             });
 
             fireEvent.click(screen.getByTestId('ai-coach-card'));
-            expect(mockPush).toHaveBeenCalledWith('/ai');
+            expect(mockPush).toHaveBeenCalledWith('/coach');
         });
 
         it('shows Recommended badge on AI Coach card when user has no plans', async () => {
