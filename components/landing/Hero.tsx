@@ -266,6 +266,23 @@ export default function Hero() {
             Start Free Trial
           </Link>
           <Link
+            href="/demo"
+            data-testid="try-demo-cta"
+            style={{
+              background: 'linear-gradient(135deg, rgba(242, 95, 41, 0.15), rgba(242, 95, 41, 0.05))',
+              color: '#F25F29',
+              padding: '1rem 2.5rem',
+              borderRadius: '50px',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              textDecoration: 'none',
+              border: '1px solid rgba(242, 95, 41, 0.3)',
+              transition: 'border-color 0.2s, background 0.2s',
+            }}
+          >
+            Try 5-Min Demo
+          </Link>
+          <Link
             href="#features"
             style={{
               background: 'transparent',
