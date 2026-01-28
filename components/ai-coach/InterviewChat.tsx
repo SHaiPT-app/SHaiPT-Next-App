@@ -7,6 +7,8 @@ import { fadeInUp } from '@/lib/animations';
 import { Send, User, Bot } from 'lucide-react';
 import type { CoachPersona } from '@/data/coaches';
 import type { IntakeFormData } from '@/lib/types';
+import IntakePhotoUpload from './IntakePhotoUpload';
+import { supabase } from '@/lib/supabase';
 
 const MotionFlex = motion.create(Flex);
 
@@ -22,6 +24,9 @@ interface ChatMessage {
     content: string;
 }
 
+// After how many user messages should we prompt for photo upload
+const PHOTO_PROMPT_AFTER_MESSAGES = 4;
+
 export default function InterviewChat({
     coach,
     onFormDataUpdate,
@@ -31,20 +36,24 @@ export default function InterviewChat({
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [hasStarted, setHasStarted] = useState(false);
+    const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+    const [photoUploadComplete, setPhotoUploadComplete] = useState(false);
+    const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+    const [userMessageCount, setUserMessageCount] = useState(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Scroll to bottom on new messages
+    // Scroll to bottom on new messages or photo upload state change
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages, showPhotoUpload]);
 
     // Focus input
     useEffect(() => {
-        if (!isLoading && inputRef.current) {
+        if (!isLoading && !showPhotoUpload && inputRef.current) {
             inputRef.current.focus();
         }
-    }, [isLoading]);
+    }, [isLoading, showPhotoUpload]);
 
     // Extract form data from conversation
     const extractFormData = useCallback(async (allMessages: ChatMessage[]) => {
@@ -70,6 +79,147 @@ export default function InterviewChat({
             // Non-critical -- form extraction failing shouldn't break chat
         }
     }, [onFormDataUpdate]);
+
+    // Trigger photo upload prompt after enough conversation
+    useEffect(() => {
+        if (
+            userMessageCount >= PHOTO_PROMPT_AFTER_MESSAGES &&
+            !photoUploadComplete &&
+            !showPhotoUpload &&
+            !isLoading
+        ) {
+            // Add coach message asking for photos
+            const photoAskId = `assistant-photo-ask-${Date.now()}`;
+            const photoAskMessage: ChatMessage = {
+                id: photoAskId,
+                role: 'assistant',
+                content: `Great info so far. Before we continue, I'd like to get a look at where you're starting from. Could you upload a few physique photos -- front, back, and side views? Stand with your arms out in a T-shape if possible, and wear minimal clothing so I can assess your build. This helps me tailor your program to your body type and current development. If you'd rather skip this, that's totally fine too.`,
+            };
+            setMessages(prev => [...prev, photoAskMessage]);
+            setShowPhotoUpload(true);
+        }
+    }, [userMessageCount, photoUploadComplete, showPhotoUpload, isLoading]);
+
+    // Upload photos to Supabase storage and save records
+    const uploadPhotosToStorage = useCallback(async (files: File[]): Promise<number> => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('Not authenticated');
+        }
+
+        let uploadedCount = 0;
+
+        for (const file of files) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('user_id', user.id);
+                formData.append('caption', 'intake_photo');
+                formData.append('visibility', 'private');
+
+                const res = await fetch('/api/progress-media', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (res.ok) {
+                    uploadedCount++;
+                }
+            } catch (err) {
+                console.error('Failed to upload photo:', err);
+            }
+        }
+
+        return uploadedCount;
+    }, []);
+
+    // Handle photo submission
+    const handlePhotosSubmitted = useCallback(async (files: File[]) => {
+        setIsUploadingPhotos(true);
+
+        try {
+            // Upload to storage
+            const uploadedCount = await uploadPhotosToStorage(files);
+
+            // Add user message about photo upload
+            const userPhotoMsg: ChatMessage = {
+                id: `user-photos-${Date.now()}`,
+                role: 'user',
+                content: `[Uploaded ${uploadedCount} physique photo${uploadedCount !== 1 ? 's' : ''}]`,
+            };
+
+            setMessages(prev => [...prev, userPhotoMsg]);
+            setShowPhotoUpload(false);
+            setPhotoUploadComplete(true);
+            setIsLoading(true);
+
+            // Get AI assessment
+            const assistantId = `assistant-assessment-${Date.now()}`;
+            setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
+
+            try {
+                const assessmentRes = await fetch('/api/ai-coach/photo-assessment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        coachId: coach.id,
+                        photoCount: uploadedCount,
+                    }),
+                });
+
+                const { assessment } = await assessmentRes.json();
+
+                setMessages(prev =>
+                    prev.map(m =>
+                        m.id === assistantId ? { ...m, content: assessment } : m
+                    )
+                );
+            } catch {
+                setMessages(prev =>
+                    prev.map(m =>
+                        m.id === assistantId
+                            ? { ...m, content: 'Thanks for sharing those photos. I\'ve saved them to your profile. Let\'s continue with the interview -- we have a few more things to cover.' }
+                            : m
+                    )
+                );
+            }
+        } catch (error) {
+            console.error('Photo upload error:', error);
+            // Still dismiss the upload widget and continue
+            setShowPhotoUpload(false);
+            setPhotoUploadComplete(true);
+
+            const errorMsg: ChatMessage = {
+                id: `assistant-photo-err-${Date.now()}`,
+                role: 'assistant',
+                content: 'I had some trouble saving the photos, but no worries -- we can always add them later. Let\'s keep going with the interview.',
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
+            setIsUploadingPhotos(false);
+            setIsLoading(false);
+        }
+    }, [coach.id, uploadPhotosToStorage]);
+
+    // Handle photo skip
+    const handlePhotoSkip = useCallback(() => {
+        setShowPhotoUpload(false);
+        setPhotoUploadComplete(true);
+
+        const skipMsg: ChatMessage = {
+            id: `user-photo-skip-${Date.now()}`,
+            role: 'user',
+            content: 'I\'ll skip the photos for now.',
+        };
+
+        const coachContinueMsg: ChatMessage = {
+            id: `assistant-photo-skip-${Date.now()}`,
+            role: 'assistant',
+            content: 'No problem at all. You can always upload physique photos later from your profile. Let\'s continue where we left off.',
+        };
+
+        setMessages(prev => [...prev, skipMsg, coachContinueMsg]);
+    }, []);
 
     // Start the interview automatically
     const startInterview = useCallback(async () => {
@@ -144,6 +294,7 @@ export default function InterviewChat({
         setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
+        setUserMessageCount(prev => prev + 1);
 
         const assistantId = `assistant-${Date.now()}`;
         setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
@@ -363,6 +514,16 @@ export default function InterviewChat({
                             </MotionFlex>
                         ))}
                     </AnimatePresence>
+
+                    {/* Photo Upload Widget */}
+                    {showPhotoUpload && (
+                        <IntakePhotoUpload
+                            onPhotosSubmitted={handlePhotosSubmitted}
+                            onSkip={handlePhotoSkip}
+                            isUploading={isUploadingPhotos}
+                        />
+                    )}
+
                     <div ref={messagesEndRef} />
                 </VStack>
             </Box>
@@ -382,8 +543,8 @@ export default function InterviewChat({
                         ref={inputRef}
                         value={input}
                         onChange={e => setInput(e.target.value)}
-                        placeholder="Type your answer..."
-                        disabled={isLoading}
+                        placeholder={showPhotoUpload ? 'Upload photos or skip to continue...' : 'Type your answer...'}
+                        disabled={isLoading || showPhotoUpload}
                         data-testid="interview-chat-input"
                         style={{
                             flex: 1,
@@ -395,6 +556,7 @@ export default function InterviewChat({
                             color: 'var(--foreground)',
                             outline: 'none',
                             transition: 'border-color 0.2s',
+                            opacity: showPhotoUpload ? 0.5 : 1,
                         }}
                         onFocus={e => {
                             e.currentTarget.style.borderColor = 'var(--neon-orange)';
@@ -405,18 +567,18 @@ export default function InterviewChat({
                     />
                     <button
                         type="submit"
-                        disabled={isLoading || !input.trim()}
+                        disabled={isLoading || !input.trim() || showPhotoUpload}
                         data-testid="interview-chat-send"
                         style={{
                             padding: '0.7rem',
                             background:
-                                isLoading || !input.trim()
+                                isLoading || !input.trim() || showPhotoUpload
                                     ? 'rgba(255, 102, 0, 0.3)'
                                     : '#FF6600',
                             color: '#0B0B15',
                             border: 'none',
                             borderRadius: '10px',
-                            cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
+                            cursor: isLoading || !input.trim() || showPhotoUpload ? 'not-allowed' : 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
