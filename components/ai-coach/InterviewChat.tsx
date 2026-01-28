@@ -15,7 +15,7 @@ const MotionFlex = motion.create(Flex);
 interface InterviewChatProps {
     coach: CoachPersona;
     onFormDataUpdate: (data: Partial<IntakeFormData>) => void;
-    onInterviewComplete: () => void;
+    onInterviewComplete: (messages: { role: string; content: string }[]) => void;
 }
 
 interface ChatMessage {
@@ -361,7 +361,9 @@ export default function InterviewChat({
             extractFormData(finalMessages);
 
             if (isComplete) {
-                onInterviewComplete();
+                onInterviewComplete(
+                    finalMessages.map(m => ({ role: m.role, content: m.content }))
+                );
             }
         } catch (error) {
             console.error('Chat error:', error);

@@ -1,14 +1,18 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Box, Text, Flex } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, FileText, X, Save } from 'lucide-react';
+import { ArrowLeft, FileText, X, Save, Dumbbell } from 'lucide-react';
 import { coaches } from '@/data/coaches';
 import InterviewChat from '@/components/ai-coach/InterviewChat';
 import IntakeForm from '@/components/ai-coach/IntakeForm';
+import SplitSelection from '@/components/ai-coach/SplitSelection';
+import InterviewPlanView from '@/components/ai-coach/InterviewPlanView';
 import type { IntakeFormData } from '@/lib/types';
+import type { SplitOption } from '@/components/ai-coach/SplitSelection';
+import type { GeneratedPlanData } from '@/app/api/ai-coach/generate-plan/route';
 import { supabase } from '@/lib/supabase';
 
 const MotionBox = motion.create(Box);
@@ -32,6 +36,8 @@ const EMPTY_FORM: IntakeFormData = {
     fitness_level: '',
 };
 
+type FlowStage = 'interview' | 'split_selection' | 'generating' | 'plan_review';
+
 export default function CoachInterviewPage() {
     const params = useParams();
     const router = useRouter();
@@ -45,6 +51,17 @@ export default function CoachInterviewPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
 
+    // Plan generation flow state
+    const [flowStage, setFlowStage] = useState<FlowStage>('interview');
+    const [interviewMessages, setInterviewMessages] = useState<{ role: string; content: string }[]>([]);
+    const [splitOptions, setSplitOptions] = useState<SplitOption[]>([]);
+    const [selectedSplit, setSelectedSplit] = useState<string | null>(null);
+    const [isLoadingSplits, setIsLoadingSplits] = useState(false);
+    const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlanData | null>(null);
+    const [planSaveStatus, setPlanSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const [isPlanSaving, setIsPlanSaving] = useState(false);
+    const planViewRef = useRef<HTMLDivElement>(null);
+
     // Redirect if invalid coach
     useEffect(() => {
         if (!coach) {
@@ -57,7 +74,6 @@ export default function CoachInterviewPage() {
             const updated = { ...prev };
             for (const key of Object.keys(data) as (keyof IntakeFormData)[]) {
                 const newVal = data[key];
-                // Only update if the AI extracted a non-empty value
                 if (newVal && newVal.trim().length > 0) {
                     updated[key] = newVal;
                 }
@@ -70,9 +86,219 @@ export default function CoachInterviewPage() {
         setFormData(prev => ({ ...prev, [field]: value }));
     }, []);
 
-    const handleInterviewComplete = useCallback(() => {
+    const handleInterviewComplete = useCallback(async (messages: { role: string; content: string }[]) => {
         setIsInterviewComplete(true);
+        setInterviewMessages(messages);
+        setFlowStage('split_selection');
+        setIsLoadingSplits(true);
+
+        // Fetch split recommendations
+        try {
+            const res = await fetch('/api/ai-coach/generate-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages,
+                    intakeData: formData,
+                    action: 'recommend_splits',
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setSplitOptions(data.splits || []);
+                // Auto-select the recommended split
+                const recommended = data.splits?.find((s: SplitOption) => s.recommended);
+                if (recommended) {
+                    setSelectedSplit(recommended.id);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch split recommendations:', error);
+        } finally {
+            setIsLoadingSplits(false);
+        }
+    }, [formData]);
+
+    const handleConfirmSplit = useCallback(async () => {
+        if (!selectedSplit) return;
+
+        setFlowStage('generating');
+
+        try {
+            const res = await fetch('/api/ai-coach/generate-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: interviewMessages,
+                    intakeData: formData,
+                    splitType: selectedSplit,
+                }),
+            });
+
+            if (!res.ok) {
+                throw new Error('Plan generation failed');
+            }
+
+            const data = await res.json();
+            if (data.plan) {
+                setGeneratedPlan(data.plan);
+                setFlowStage('plan_review');
+
+                // Auto-save the plan
+                savePlanToSupabase(data.plan);
+            }
+        } catch (error) {
+            console.error('Plan generation error:', error);
+            // Go back to split selection on error
+            setFlowStage('split_selection');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- savePlanToSupabase is stable but triggers re-render loop if included
+    }, [selectedSplit, interviewMessages, formData]);
+
+    // Auto-save plan to Supabase
+    const savePlanToSupabase = useCallback(async (plan: GeneratedPlanData) => {
+        setIsPlanSaving(true);
+        setPlanSaveStatus('saving');
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                setPlanSaveStatus('error');
+                return;
+            }
+
+            // 1. Create the training plan
+            const { data: trainingPlan, error: planError } = await supabase
+                .from('training_plans')
+                .insert({
+                    creator_id: user.id,
+                    name: plan.name,
+                    description: plan.description,
+                    duration_weeks: plan.duration_weeks,
+                    periodization_blocks: plan.periodization_blocks,
+                    tags: [
+                        `split:${plan.split_type}`,
+                        ...(formData.fitness_goals
+                            ? formData.fitness_goals.split(/[,;]/).map(g => g.trim()).filter(Boolean)
+                            : []),
+                    ],
+                    is_template: false,
+                    is_public: false,
+                })
+                .select()
+                .single();
+
+            if (planError) throw planError;
+
+            // 2. Create workout sessions and link them
+            const planSessions: {
+                plan_id: string;
+                session_id: string;
+                day_number: number;
+                week_number: number;
+            }[] = [];
+
+            for (const session of plan.sessions) {
+                const { data: workoutSession, error: sessionError } = await supabase
+                    .from('workout_sessions')
+                    .insert({
+                        creator_id: user.id,
+                        name: session.name,
+                        description: '',
+                        exercises: session.exercises.map(ex => ({
+                            exercise_id: ex.exercise_name
+                                .toLowerCase()
+                                .replace(/\s+/g, '_')
+                                .substring(0, 20),
+                            sets: ex.sets.map(s => ({
+                                reps: s.reps,
+                                weight: s.weight || '',
+                                rest_seconds: s.rest_seconds || 90,
+                            })),
+                            notes: ex.notes || '',
+                        })),
+                        tags: [],
+                        is_template: false,
+                        is_public: false,
+                    })
+                    .select()
+                    .single();
+
+                if (sessionError) throw sessionError;
+
+                planSessions.push({
+                    plan_id: trainingPlan.id,
+                    session_id: workoutSession.id,
+                    day_number: session.day_number,
+                    week_number: 1,
+                });
+            }
+
+            // 3. Bulk create plan-session links
+            if (planSessions.length > 0) {
+                const { error: linkError } = await supabase
+                    .from('training_plan_sessions')
+                    .insert(planSessions);
+                if (linkError) throw linkError;
+            }
+
+            // 4. Assign the plan to the user
+            const today = new Date();
+            const endDate = new Date(today);
+            endDate.setDate(endDate.getDate() + (plan.duration_weeks || 8) * 7);
+
+            const { error: assignError } = await supabase
+                .from('training_plan_assignments')
+                .insert({
+                    plan_id: trainingPlan.id,
+                    user_id: user.id,
+                    is_self_assigned: true,
+                    start_date: today.toISOString().split('T')[0],
+                    end_date: endDate.toISOString().split('T')[0],
+                    is_active: true,
+                });
+
+            if (assignError) throw assignError;
+
+            setPlanSaveStatus('saved');
+
+            // Also update localStorage with the plan info
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+                parsed.pinned_plan_id = trainingPlan.id;
+                if (formData.fitness_goals) {
+                    parsed.fitness_goals = formData.fitness_goals
+                        .split(/[,;]/)
+                        .map((g: string) => g.trim())
+                        .filter(Boolean);
+                }
+                localStorage.setItem('user', JSON.stringify(parsed));
+            }
+        } catch (error) {
+            console.error('Plan save error:', error);
+            setPlanSaveStatus('error');
+        } finally {
+            setIsPlanSaving(false);
+        }
+    }, [formData]);
+
+    // Handle plan edits -- re-save when user modifies
+    const handlePlanUpdate = useCallback((updatedPlan: GeneratedPlanData) => {
+        setGeneratedPlan(updatedPlan);
+        // Debounced auto-save: mark as changed, actual save happens on user action
+        setPlanSaveStatus('idle');
     }, []);
+
+    // Scroll to plan view when it appears
+    useEffect(() => {
+        if (flowStage === 'plan_review' && planViewRef.current) {
+            setTimeout(() => {
+                planViewRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+    }, [flowStage]);
 
     const handleSaveProfile = useCallback(async () => {
         setIsSaving(true);
@@ -85,19 +311,16 @@ export default function CoachInterviewPage() {
                 return;
             }
 
-            // Map intake form data to profile fields
             const profileUpdates: Record<string, unknown> = {
                 updated_at: new Date().toISOString(),
             };
 
             if (formData.name) profileUpdates.full_name = formData.name;
             if (formData.height) {
-                // Try to parse height to cm
                 const heightCm = parseHeightToCm(formData.height);
                 if (heightCm) profileUpdates.height_cm = heightCm;
             }
             if (formData.weight) {
-                // Try to parse weight to kg
                 const weightKg = parseWeightToKg(formData.weight);
                 if (weightKg) profileUpdates.weight_kg = weightKg;
             }
@@ -108,7 +331,6 @@ export default function CoachInterviewPage() {
                     .filter(Boolean);
             }
 
-            // Save profile updates
             const { error: profileError } = await supabase
                 .from('profiles')
                 .update(profileUpdates)
@@ -116,7 +338,6 @@ export default function CoachInterviewPage() {
 
             if (profileError) throw profileError;
 
-            // Save the full intake data as a coach interview record
             const { error: interviewError } = await supabase
                 .from('coach_interviews')
                 .upsert({
@@ -129,9 +350,13 @@ export default function CoachInterviewPage() {
                     onConflict: 'user_id,coach_id',
                 });
 
-            // If coach_interviews table doesn't exist yet, just save to profile
             if (interviewError && interviewError.code !== '42P01') {
                 console.warn('Could not save to coach_interviews table:', interviewError.message);
+            }
+
+            // Also re-save the plan if it was edited
+            if (generatedPlan && planSaveStatus === 'idle') {
+                savePlanToSupabase(generatedPlan);
             }
 
             setSaveStatus('saved');
@@ -141,7 +366,7 @@ export default function CoachInterviewPage() {
         } finally {
             setIsSaving(false);
         }
-    }, [formData, coachId, isInterviewComplete]);
+    }, [formData, coachId, isInterviewComplete, generatedPlan, planSaveStatus, savePlanToSupabase]);
 
     if (!coach) {
         return (
@@ -207,7 +432,7 @@ export default function CoachInterviewPage() {
                             fontWeight="600"
                             color="var(--neon-orange)"
                         >
-                            Intake Interview
+                            {flowStage === 'plan_review' ? 'Your Training Plan' : 'Intake Interview'}
                         </Text>
                         <Text fontSize="0.7rem" color="#888">
                             {coach.displayName}
@@ -216,12 +441,10 @@ export default function CoachInterviewPage() {
                 </Flex>
 
                 <Flex alignItems="center" gap="0.5rem">
-                    {/* Progress indicator */}
                     <Text fontSize="0.7rem" color="#888" display={{ base: 'none', md: 'block' }}>
                         {filledFields}/{totalFields} fields
                     </Text>
 
-                    {/* Save button */}
                     <button
                         onClick={handleSaveProfile}
                         disabled={isSaving}
@@ -249,7 +472,6 @@ export default function CoachInterviewPage() {
                         {isSaving ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
                     </button>
 
-                    {/* Mobile: View Form button */}
                     <button
                         onClick={() => setShowMobileForm(true)}
                         data-testid="view-form-btn"
@@ -291,7 +513,7 @@ export default function CoachInterviewPage() {
 
             {/* Main Content: Split Screen */}
             <Flex flex={1} overflow="hidden">
-                {/* LEFT: Chat (full width on mobile, 50% on desktop) */}
+                {/* LEFT: Chat + Plan Flow (full width on mobile, 50% on desktop) */}
                 <Box
                     flex={{ base: 1, md: 1 }}
                     borderRight={{ base: 'none', md: '1px solid rgba(255, 255, 255, 0.1)' }}
@@ -299,11 +521,124 @@ export default function CoachInterviewPage() {
                     flexDirection="column"
                     overflow="hidden"
                 >
-                    <InterviewChat
-                        coach={coach}
-                        onFormDataUpdate={handleFormDataUpdate}
-                        onInterviewComplete={handleInterviewComplete}
-                    />
+                    <Box flex={1} overflow="auto">
+                        <InterviewChat
+                            coach={coach}
+                            onFormDataUpdate={handleFormDataUpdate}
+                            onInterviewComplete={handleInterviewComplete}
+                        />
+
+                        {/* Split Selection (appears after interview completes) */}
+                        {(flowStage === 'split_selection' || flowStage === 'generating') && (
+                            <SplitSelection
+                                splits={splitOptions}
+                                selectedSplit={selectedSplit}
+                                onSelectSplit={setSelectedSplit}
+                                onConfirm={handleConfirmSplit}
+                                isLoading={isLoadingSplits || flowStage === 'generating'}
+                            />
+                        )}
+
+                        {/* Generating Indicator */}
+                        {flowStage === 'generating' && (
+                            <Box
+                                p="1rem"
+                                data-testid="plan-generating"
+                            >
+                                <Box
+                                    p="1.25rem"
+                                    borderRadius="12px"
+                                    bg="rgba(255, 102, 0, 0.05)"
+                                    border="1px solid rgba(255, 102, 0, 0.2)"
+                                    textAlign="center"
+                                >
+                                    <Flex
+                                        gap="0.3rem"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        mb="0.75rem"
+                                    >
+                                        <Box
+                                            as="span"
+                                            w="8px"
+                                            h="8px"
+                                            borderRadius="50%"
+                                            bg="var(--neon-orange)"
+                                            display="inline-block"
+                                            animation="pulse 1.4s ease-in-out infinite"
+                                        />
+                                        <Box
+                                            as="span"
+                                            w="8px"
+                                            h="8px"
+                                            borderRadius="50%"
+                                            bg="var(--neon-orange)"
+                                            display="inline-block"
+                                            animation="pulse 1.4s ease-in-out 0.2s infinite"
+                                        />
+                                        <Box
+                                            as="span"
+                                            w="8px"
+                                            h="8px"
+                                            borderRadius="50%"
+                                            bg="var(--neon-orange)"
+                                            display="inline-block"
+                                            animation="pulse 1.4s ease-in-out 0.4s infinite"
+                                        />
+                                    </Flex>
+                                    <Flex alignItems="center" justifyContent="center" gap="0.5rem" mb="0.25rem">
+                                        <Dumbbell size={16} color="#FF6600" />
+                                        <Text
+                                            color="var(--neon-orange)"
+                                            fontFamily="var(--font-orbitron)"
+                                            fontSize="0.85rem"
+                                            fontWeight="600"
+                                        >
+                                            Building Your Plan
+                                        </Text>
+                                    </Flex>
+                                    <Text color="#888" fontSize="0.75rem">
+                                        Generating a personalized periodized program based on your profile
+                                    </Text>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Plan Review */}
+                        {flowStage === 'plan_review' && generatedPlan && (
+                            <Box p="0.75rem" ref={planViewRef}>
+                                <InterviewPlanView
+                                    plan={generatedPlan}
+                                    onPlanUpdate={handlePlanUpdate}
+                                    isSaving={isPlanSaving}
+                                    saveStatus={planSaveStatus}
+                                />
+
+                                {/* Continue to dashboard button */}
+                                <Box mt="0.75rem" mb="1rem">
+                                    <button
+                                        onClick={() => router.push('/plans')}
+                                        data-testid="view-plans-btn"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.85rem',
+                                            background: '#FF6600',
+                                            color: '#0B0B15',
+                                            border: 'none',
+                                            borderRadius: '10px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '700',
+                                            fontFamily: 'var(--font-orbitron)',
+                                            cursor: 'pointer',
+                                            transition: 'opacity 0.2s',
+                                        }}
+                                    >
+                                        View Full Plan
+                                    </button>
+                                </Box>
+                            </Box>
+                        )}
+                    </Box>
                 </Box>
 
                 {/* RIGHT: Form (hidden on mobile, 50% on desktop) */}
@@ -325,7 +660,6 @@ export default function CoachInterviewPage() {
             <AnimatePresence>
                 {showMobileForm && (
                     <>
-                        {/* Backdrop */}
                         <MotionBox
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -336,7 +670,6 @@ export default function CoachInterviewPage() {
                             zIndex={50}
                             onClick={() => setShowMobileForm(false)}
                         />
-                        {/* Slide-up panel */}
                         <MotionBox
                             initial={{ y: '100%' }}
                             animate={{ y: 0 }}
@@ -356,7 +689,6 @@ export default function CoachInterviewPage() {
                             overflow="hidden"
                             data-testid="mobile-form-modal"
                         >
-                            {/* Modal header */}
                             <Flex
                                 px="1rem"
                                 py="0.75rem"
@@ -398,8 +730,6 @@ export default function CoachInterviewPage() {
                                     <X size={16} />
                                 </button>
                             </Flex>
-
-                            {/* Form content */}
                             <Box flex={1} overflow="auto">
                                 <IntakeForm
                                     formData={formData}
@@ -427,7 +757,6 @@ export default function CoachInterviewPage() {
 function parseHeightToCm(height: string): number | null {
     const trimmed = height.trim().toLowerCase();
 
-    // Feet and inches: 5'10, 5'10", 5 ft 10 in
     const feetInchesMatch = trimmed.match(/(\d+)['\s]+(ft\s*)?(\d+)?/);
     if (feetInchesMatch) {
         const feet = parseInt(feetInchesMatch[1], 10);
@@ -435,13 +764,11 @@ function parseHeightToCm(height: string): number | null {
         return Math.round(feet * 30.48 + inches * 2.54);
     }
 
-    // CM value: 178cm, 178 cm
     const cmMatch = trimmed.match(/(\d+\.?\d*)\s*cm/);
     if (cmMatch) {
         return parseFloat(cmMatch[1]);
     }
 
-    // Plain number (assume cm if > 100, inches if < 100)
     const num = parseFloat(trimmed);
     if (!isNaN(num)) {
         return num > 100 ? num : Math.round(num * 2.54);
@@ -454,19 +781,16 @@ function parseHeightToCm(height: string): number | null {
 function parseWeightToKg(weight: string): number | null {
     const trimmed = weight.trim().toLowerCase();
 
-    // LBS: 180 lbs, 180lbs, 180 pounds
     const lbsMatch = trimmed.match(/(\d+\.?\d*)\s*(lbs?|pounds?)/);
     if (lbsMatch) {
         return Math.round(parseFloat(lbsMatch[1]) * 0.453592 * 10) / 10;
     }
 
-    // KG: 82kg, 82 kg
     const kgMatch = trimmed.match(/(\d+\.?\d*)\s*kg/);
     if (kgMatch) {
         return parseFloat(kgMatch[1]);
     }
 
-    // Plain number (assume lbs if > 100, kg otherwise)
     const num = parseFloat(trimmed);
     if (!isNaN(num)) {
         return num > 100
