@@ -179,6 +179,7 @@ export default function TrainerDashboardPage() {
                             key={client.id}
                             className="glass-panel"
                             data-testid="client-row"
+                            onClick={() => router.push(`/trainer/client/${client.id}/progress`)}
                             style={{
                                 display: 'grid',
                                 gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr',
