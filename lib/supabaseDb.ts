@@ -1489,6 +1489,332 @@ export const db = {
                 .eq('id', id);
             if (error) throw error;
         }
+    },
+
+    // ============================================
+    // PHONE VERIFICATIONS
+    // ============================================
+
+    phoneVerifications: {
+        getByUser: async (userId: string): Promise<any | null> => {
+            const { data, error } = await supabase
+                .from('phone_verifications')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (verification: {
+            user_id: string;
+            phone_number: string;
+            verification_code: string;
+            expires_at: string;
+        }): Promise<any> => {
+            const { data, error } = await supabase
+                .from('phone_verifications')
+                .upsert([verification], { onConflict: 'user_id' })
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        verify: async (userId: string, code: string): Promise<boolean> => {
+            const { data, error } = await supabase
+                .from('phone_verifications')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('verification_code', code)
+                .gt('expires_at', new Date().toISOString())
+                .single();
+
+            if (error || !data) return false;
+
+            // Mark as verified
+            await supabase
+                .from('phone_verifications')
+                .update({ verified_at: new Date().toISOString() })
+                .eq('id', data.id);
+
+            return true;
+        },
+
+        incrementAttempts: async (userId: string): Promise<void> => {
+            const { error } = await supabase.rpc('increment_phone_verification_attempts', {
+                p_user_id: userId,
+            });
+            // Silently fail if function doesn't exist
+        },
+
+        delete: async (userId: string): Promise<void> => {
+            const { error } = await supabase
+                .from('phone_verifications')
+                .delete()
+                .eq('user_id', userId);
+            if (error) throw error;
+        }
+    },
+
+    // ============================================
+    // CONSISTENCY CHALLENGES
+    // ============================================
+
+    consistencyChallenges: {
+        getByUser: async (userId: string): Promise<any | null> => {
+            const { data, error } = await supabase
+                .from('consistency_challenges')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        getActive: async (userId: string): Promise<any | null> => {
+            const { data, error } = await supabase
+                .from('consistency_challenges')
+                .select('*')
+                .eq('user_id', userId)
+                .in('status', ['active', 'grace_period'])
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        create: async (challenge: {
+            user_id: string;
+            status: string;
+            current_week_start: string;
+        }): Promise<any> => {
+            const { data, error } = await supabase
+                .from('consistency_challenges')
+                .insert([challenge])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (id: string, updates: Partial<any>): Promise<any> => {
+            const { data, error } = await supabase
+                .from('consistency_challenges')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        requestGrace: async (id: string, reason: string): Promise<any> => {
+            const { data, error } = await supabase
+                .from('consistency_challenges')
+                .update({
+                    status: 'grace_period',
+                    grace_period_requested_at: new Date().toISOString(),
+                    grace_reason: reason,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        approveGrace: async (id: string, expiresAt: string): Promise<any> => {
+            const { data, error } = await supabase
+                .from('consistency_challenges')
+                .update({
+                    grace_period_approved_at: new Date().toISOString(),
+                    grace_period_expires_at: expiresAt,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
+    },
+
+    // ============================================
+    // CONSISTENCY LOGS
+    // ============================================
+
+    consistencyLogs: {
+        getByUser: async (userId: string, startDate?: string, endDate?: string): Promise<any[]> => {
+            let query = supabase
+                .from('consistency_logs')
+                .select('*')
+                .eq('user_id', userId)
+                .order('date', { ascending: false });
+
+            if (startDate) {
+                query = query.gte('date', startDate);
+            }
+            if (endDate) {
+                query = query.lte('date', endDate);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            return data || [];
+        },
+
+        getByChallenge: async (challengeId: string): Promise<any[]> => {
+            const { data, error } = await supabase
+                .from('consistency_logs')
+                .select('*')
+                .eq('challenge_id', challengeId)
+                .order('date', { ascending: true });
+            if (error) throw error;
+            return data || [];
+        },
+
+        upsert: async (log: {
+            user_id: string;
+            challenge_id?: string;
+            date: string;
+            scheduled?: boolean;
+            completed?: boolean;
+            workout_log_id?: string;
+            completion_percentage?: number;
+        }): Promise<any> => {
+            const { data, error } = await supabase
+                .from('consistency_logs')
+                .upsert([log], { onConflict: 'user_id,date' })
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        markCompleted: async (userId: string, date: string, workoutLogId: string): Promise<any> => {
+            const { data, error } = await supabase
+                .from('consistency_logs')
+                .upsert([{
+                    user_id: userId,
+                    date,
+                    completed: true,
+                    workout_log_id: workoutLogId,
+                    completion_percentage: 100,
+                }], { onConflict: 'user_id,date' })
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
+    },
+
+    // ============================================
+    // USER PREFERENCES
+    // ============================================
+
+    userPreferences: {
+        get: async (userId: string): Promise<any | null> => {
+            const { data, error } = await supabase
+                .from('user_preferences')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        upsert: async (preferences: {
+            user_id: string;
+            form_checker_enabled?: boolean;
+            rest_timer_auto_start?: boolean;
+            rest_timer_alert_type?: string;
+            default_rest_seconds?: number;
+            screen_awake_during_workout?: boolean;
+        }): Promise<any> => {
+            const { data, error } = await supabase
+                .from('user_preferences')
+                .upsert([{ ...preferences, updated_at: new Date().toISOString() }])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        update: async (userId: string, updates: Partial<any>): Promise<any> => {
+            const { data, error } = await supabase
+                .from('user_preferences')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('user_id', userId)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
+    },
+
+    // ============================================
+    // WORKOUT DRAFTS
+    // ============================================
+
+    workoutDrafts: {
+        get: async (userId: string, sessionId: string): Promise<any | null> => {
+            const { data, error } = await supabase
+                .from('workout_drafts')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('session_id', sessionId)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        },
+
+        getByUser: async (userId: string): Promise<any[]> => {
+            const { data, error } = await supabase
+                .from('workout_drafts')
+                .select('*')
+                .eq('user_id', userId)
+                .order('updated_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        },
+
+        upsert: async (draft: {
+            user_id: string;
+            session_id: string;
+            draft_data: any;
+            device_id?: string;
+            workout_log_id?: string;
+        }): Promise<any> => {
+            const { data, error } = await supabase
+                .from('workout_drafts')
+                .upsert([{
+                    ...draft,
+                    last_synced_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                }], { onConflict: 'user_id,session_id' })
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+
+        delete: async (userId: string, sessionId: string): Promise<void> => {
+            const { error } = await supabase
+                .from('workout_drafts')
+                .delete()
+                .eq('user_id', userId)
+                .eq('session_id', sessionId);
+            if (error) throw error;
+        },
+
+        deleteByWorkoutLog: async (workoutLogId: string): Promise<void> => {
+            const { error } = await supabase
+                .from('workout_drafts')
+                .delete()
+                .eq('workout_log_id', workoutLogId);
+            if (error) throw error;
+        }
     }
 };
 
