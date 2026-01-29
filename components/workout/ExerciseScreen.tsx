@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronLeft,
@@ -33,6 +33,7 @@ interface ExerciseScreenProps {
     onSaveNotes: (notes: string) => void;
     onSwapExercise: () => void;
     onShowIntensifier: (type: IntensifierType) => void;
+    onFinishWorkout?: () => void;
     prsForExercise?: string[];
     weightUnit: 'lbs' | 'kg';
 }
@@ -51,6 +52,7 @@ export function ExerciseScreen({
     onSaveNotes,
     onSwapExercise,
     onShowIntensifier,
+    onFinishWorkout,
     prsForExercise = [],
     weightUnit,
 }: ExerciseScreenProps) {
@@ -58,6 +60,19 @@ export function ExerciseScreen({
     const { preferences } = useUserPreferencesStore();
     const [showExerciseInfo, setShowExerciseInfo] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown menu on outside click (Bug 16)
+    useEffect(() => {
+        if (!showMenu) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setShowMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showMenu]);
 
     // Calculate next set number
     const nextSetNumber = loggedSets.length + 1;
@@ -168,7 +183,7 @@ export function ExerciseScreen({
                             >
                                 <Info className="w-5 h-5" />
                             </button>
-                            <div className="relative">
+                            <div className="relative" ref={menuRef}>
                                 <button
                                     onClick={() => setShowMenu(!showMenu)}
                                     className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"
@@ -228,8 +243,8 @@ export function ExerciseScreen({
                     )}
                 </AnimatePresence>
 
-                {/* Set Logger */}
-                {!timer.isResting && !isExerciseComplete && (
+                {/* Set Logger — visible even during rest so user can prepare next set */}
+                {!isExerciseComplete && (
                     <SetLogger
                         setNumber={nextSetNumber}
                         targetSet={currentTargetSet}
@@ -251,6 +266,21 @@ export function ExerciseScreen({
                     >
                         <CheckCircle2 className="w-5 h-5" />
                         Exercise Complete - Next Exercise
+                    </motion.button>
+                )}
+
+                {/* Finish Workout Button (last exercise, all sets done) */}
+                {isExerciseComplete && !timer.isResting && exerciseIndex === totalExercises - 1 && onFinishWorkout && (
+                    <motion.button
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={onFinishWorkout}
+                        className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500
+                                 text-white font-bold flex items-center justify-center gap-2
+                                 shadow-lg shadow-cyan-500/20"
+                    >
+                        <CheckCircle2 className="w-5 h-5" />
+                        Finish Workout
                     </motion.button>
                 )}
 

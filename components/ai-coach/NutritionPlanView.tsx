@@ -141,7 +141,7 @@ export default function NutritionPlanView({
                         )}
                     </Box>
                     <Flex gap="0.25rem" alignItems="center" ml="0.5rem">
-                        {meal.prep_time_minutes && (
+                        {meal.prep_time_minutes != null && meal.prep_time_minutes > 0 && (
                             <Flex alignItems="center" gap="0.2rem" mr="0.5rem">
                                 <Clock size={10} color="#888" />
                                 <Text fontSize="0.65rem" color="#888">{meal.prep_time_minutes}m</Text>
@@ -299,13 +299,13 @@ export default function NutritionPlanView({
                         </Text>
                         <Text fontSize="0.65rem" color="#666">|</Text>
                         <Text fontSize="0.75rem" color="#888">
-                            P: {plan.plan_overview.macros.protein_g}g
+                            P: {plan.plan_overview.macros?.protein_g ?? 0}g
                         </Text>
                         <Text fontSize="0.75rem" color="#888">
-                            C: {plan.plan_overview.macros.carbs_g}g
+                            C: {plan.plan_overview.macros?.carbs_g ?? 0}g
                         </Text>
                         <Text fontSize="0.75rem" color="#888">
-                            F: {plan.plan_overview.macros.fat_g}g
+                            F: {plan.plan_overview.macros?.fat_g ?? 0}g
                         </Text>
                     </Flex>
                     {plan.dietary_preferences.length > 0 && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Box, Text, Flex, VStack } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
@@ -37,6 +37,21 @@ export default function DietitianChat({
     const [hasStarted, setHasStarted] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const mountedRef = useRef(true);
+    const messagesRef = useRef<ChatMessage[]>([]);
+    const idCounter = useRef(0);
+    const nextId = useMemo(() => (prefix: string) => `${prefix}-${Date.now()}-${++idCounter.current}`, []);
+
+    // Track mounted state for async cleanup
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
+
+    // Keep messagesRef in sync
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
 
     // Scroll to bottom on new messages
     useEffect(() => {
@@ -83,7 +98,7 @@ export default function DietitianChat({
 
         // Coach handoff message
         const handoffMsg: ChatMessage = {
-            id: `coach-handoff-${Date.now()}`,
+            id: nextId('coach-handoff'),
             role: 'assistant',
             content: `Great news -- your training plan is saved and ready to go. Now, to really maximize your results, I want to introduce you to someone special on our team. Dr. Nadia "The Fuel" is a registered dietitian and sports nutritionist who is going to build you a nutrition plan that perfectly complements your training. I'll let her take it from here.`,
             persona: 'coach',
@@ -92,8 +107,9 @@ export default function DietitianChat({
 
         // Small delay before Dr. Nadia's intro
         await new Promise(r => setTimeout(r, 800));
+        if (!mountedRef.current) return;
 
-        const introId = `dietitian-intro-${Date.now()}`;
+        const introId = nextId('dietitian-intro');
         setMessages(prev => [...prev, { id: introId, role: 'assistant', content: '', persona: 'dietitian' }]);
 
         try {
@@ -152,17 +168,17 @@ export default function DietitianChat({
         if (!text || isLoading) return;
 
         const userMessage: ChatMessage = {
-            id: `user-${Date.now()}`,
+            id: nextId('user'),
             role: 'user',
             content: text,
         };
 
-        const updatedMessages = [...messages, userMessage];
-        setMessages(updatedMessages);
+        setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
 
-        const assistantId = `dietitian-${Date.now()}`;
+        const assistantId = nextId('dietitian');
+        const updatedMessages = [...messagesRef.current, userMessage];
         setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', persona: 'dietitian' }]);
 
         try {
@@ -226,12 +242,14 @@ export default function DietitianChat({
             ];
 
             // Extract form data after each assistant response
-            extractDietFormData(finalMessages);
+            await extractDietFormData(finalMessages);
 
             if (isComplete) {
-                onInterviewComplete(
-                    finalMessages.map(m => ({ role: m.role, content: m.content }))
-                );
+                // Filter out coach handoff messages from completion payload
+                const interviewMessages = finalMessages
+                    .filter(m => m.persona !== 'coach')
+                    .map(m => ({ role: m.role, content: m.content }));
+                onInterviewComplete(interviewMessages);
             }
         } catch (error) {
             console.error('Dietitian chat error:', error);

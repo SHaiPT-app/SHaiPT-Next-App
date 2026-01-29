@@ -92,6 +92,22 @@ export default function CoachInterviewPage() {
     const [isNutritionPlanSaving, setIsNutritionPlanSaving] = useState(false);
     const nutritionViewRef = useRef<HTMLDivElement>(null);
 
+    // Ref to always have latest formData (avoids stale closure in callbacks)
+    const formDataRef = useRef(formData);
+    useEffect(() => {
+        formDataRef.current = formData;
+    }, [formData]);
+
+    // Auth guard: redirect to /login if no user
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (!user) {
+                router.push('/login');
+            }
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // Redirect if invalid coach
     useEffect(() => {
         if (!coach) {
@@ -146,7 +162,7 @@ export default function CoachInterviewPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages,
-                    intakeData: formData,
+                    intakeData: formDataRef.current,
                     action: 'recommend_splits',
                 }),
             });
@@ -165,7 +181,7 @@ export default function CoachInterviewPage() {
         } finally {
             setIsLoadingSplits(false);
         }
-    }, [formData]);
+    }, []);
 
     const handleConfirmSplit = useCallback(async () => {
         if (!selectedSplit) return;
@@ -193,7 +209,7 @@ export default function CoachInterviewPage() {
                 setFlowStage('plan_review');
 
                 // Auto-save the plan
-                savePlanToSupabase(data.plan);
+                await savePlanToSupabase(data.plan);
             }
         } catch (error) {
             console.error('Plan generation error:', error);
@@ -246,6 +262,10 @@ export default function CoachInterviewPage() {
                 week_number: number;
             }[] = [];
 
+            const daysPerWeek = plan.sessions.length > 0
+                ? Math.max(...plan.sessions.map(s => s.day_number))
+                : plan.sessions.length || 1;
+
             for (const session of plan.sessions) {
                 const { data: workoutSession, error: sessionError } = await supabase
                     .from('workout_sessions')
@@ -253,11 +273,11 @@ export default function CoachInterviewPage() {
                         creator_id: user.id,
                         name: session.name,
                         description: '',
-                        exercises: session.exercises.map(ex => ({
-                            exercise_id: ex.exercise_name
+                        exercises: session.exercises.map((ex, exIndex) => ({
+                            exercise_id: `${ex.exercise_name
                                 .toLowerCase()
-                                .replace(/\s+/g, '_')
-                                .substring(0, 20),
+                                .replace(/[^a-z0-9]+/g, '_')
+                                .substring(0, 50)}_d${session.day_number}_e${exIndex}`,
                             sets: ex.sets.map(s => ({
                                 reps: s.reps,
                                 weight: s.weight || '',
@@ -278,7 +298,7 @@ export default function CoachInterviewPage() {
                     plan_id: trainingPlan.id,
                     session_id: workoutSession.id,
                     day_number: session.day_number,
-                    week_number: 1,
+                    week_number: Math.ceil(session.day_number / daysPerWeek),
                 });
             }
 
@@ -387,7 +407,7 @@ export default function CoachInterviewPage() {
                 setFlowStage('nutrition_review');
 
                 // Auto-save the nutrition plan
-                saveNutritionPlanToSupabase(data.plan);
+                await saveNutritionPlanToSupabase(data.plan);
             }
         } catch (error) {
             console.error('Nutrition plan generation error:', error);
@@ -494,12 +514,24 @@ export default function CoachInterviewPage() {
 
             // Also re-save the plan if it was edited
             if (generatedPlan && planSaveStatus === 'idle') {
-                savePlanToSupabase(generatedPlan);
+                try {
+                    await savePlanToSupabase(generatedPlan);
+                } catch (planSaveError) {
+                    console.error('Plan re-save error:', planSaveError);
+                    setSaveStatus('error');
+                    return;
+                }
             }
 
             // Also re-save nutrition plan if edited
             if (generatedNutritionPlan && nutritionPlanSaveStatus === 'idle') {
-                saveNutritionPlanToSupabase(generatedNutritionPlan);
+                try {
+                    await saveNutritionPlanToSupabase(generatedNutritionPlan);
+                } catch (nutritionSaveError) {
+                    console.error('Nutrition plan re-save error:', nutritionSaveError);
+                    setSaveStatus('error');
+                    return;
+                }
             }
 
             setSaveStatus('saved');
@@ -786,27 +818,29 @@ export default function CoachInterviewPage() {
                                 <Box mt="0.75rem" mb="1rem">
                                     <button
                                         onClick={handleStartDietitianInterview}
+                                        disabled={planSaveStatus !== 'saved'}
                                         data-testid="start-dietitian-btn"
                                         style={{
                                             width: '100%',
                                             padding: '0.85rem',
-                                            background: '#FF6600',
+                                            background: planSaveStatus !== 'saved' ? 'rgba(255, 102, 0, 0.3)' : '#FF6600',
                                             color: '#0B0B15',
                                             border: 'none',
                                             borderRadius: '10px',
                                             fontSize: '0.9rem',
                                             fontWeight: '700',
                                             fontFamily: 'var(--font-orbitron)',
-                                            cursor: 'pointer',
+                                            cursor: planSaveStatus !== 'saved' ? 'not-allowed' : 'pointer',
                                             transition: 'opacity 0.2s',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: '0.5rem',
+                                            opacity: planSaveStatus !== 'saved' ? 0.6 : 1,
                                         }}
                                     >
                                         <UtensilsCrossed size={18} />
-                                        Continue to Nutrition Plan
+                                        {planSaveStatus === 'saving' ? 'Saving Plan...' : planSaveStatus === 'error' ? 'Plan Save Failed' : 'Continue to Nutrition Plan'}
                                     </button>
                                 </Box>
                             </Box>

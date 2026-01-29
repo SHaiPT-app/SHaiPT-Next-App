@@ -309,6 +309,7 @@ interface WorkoutSummaryProps {
     session: WorkoutSession;
     exerciseLogs: Map<number, { log: ExerciseLog; exercise: Exercise | null }>;
     startedAt: string;
+    finishedAt: string;
     prsAchieved: Array<{ exerciseName: string; weight: number; reps: number; unit: string }>;
     weightUnit: 'lbs' | 'kg';
     userGoals?: string[];
@@ -317,7 +318,7 @@ interface WorkoutSummaryProps {
     onFinish: () => void;
 }
 
-function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, weightUnit, userGoals, workoutLogId, userId, onFinish }: WorkoutSummaryProps) {
+function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchieved, weightUnit, userGoals, workoutLogId, userId, onFinish }: WorkoutSummaryProps) {
     const [aiFeedback, setAiFeedback] = useState<AIFeedback | null>(null);
     const [aiFeedbackLoading, setAiFeedbackLoading] = useState(true);
     const [aiFeedbackError, setAiFeedbackError] = useState(false);
@@ -326,7 +327,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, weightU
     const [adaptationApplying, setAdaptationApplying] = useState(false);
     const [adaptationApplied, setAdaptationApplied] = useState(false);
 
-    const durationMs = Date.now() - new Date(startedAt).getTime();
+    const durationMs = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
     const totalMinutes = Math.floor(durationMs / 60000);
     const totalSeconds = Math.floor((durationMs % 60000) / 1000);
 
@@ -451,8 +452,24 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, prsAchieved, weightU
                 const adaptationNotes = accepted
                     .map((rec) => `[${rec.type}] ${rec.exercise_name}: ${rec.current_value} -> ${rec.recommended_value}`)
                     .join('; ');
+
+                // Read current notes first, then append to avoid overwriting
+                let existingNotes = '';
+                try {
+                    const currentLog = await db.workoutLogs.getById(workoutLogId);
+                    if (currentLog?.notes) {
+                        existingNotes = currentLog.notes;
+                    }
+                } catch {
+                    // If we can't read existing notes, proceed with just the new notes
+                }
+
+                const combinedNotes = existingNotes
+                    ? `${existingNotes} | Adaptations: ${adaptationNotes}`
+                    : adaptationNotes;
+
                 await db.workoutLogs.update(workoutLogId, {
-                    notes: adaptationNotes,
+                    notes: combinedNotes,
                 });
             }
             setAdaptationApplied(true);
@@ -739,8 +756,12 @@ export default function WorkoutExecutionPage() {
     const [isResting, setIsResting] = useState(false);
     const restIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Guard against concurrent set submissions
+    const submittingSetRef = useRef(false);
+
     // Summary
     const [startedAt, setStartedAt] = useState('');
+    const [finishedAt, setFinishedAt] = useState('');
     const [prsAchieved, setPrsAchieved] = useState<Array<{ exerciseName: string; weight: number; reps: number; unit: string }>>([]);
 
     // Pose detection
@@ -846,17 +867,19 @@ export default function WorkoutExecutionPage() {
 
     // Rest timer countdown
     useEffect(() => {
-        if (isResting && restTimer > 0) {
+        if (isResting) {
             restIntervalRef.current = setInterval(() => {
                 setRestTimer((prev) => {
                     if (prev <= 1) {
-                        setIsResting(false);
+                        // Don't call setIsResting inside updater (anti-pattern).
+                        // Instead, clear to 0 and handle below via queueMicrotask.
+                        queueMicrotask(() => setIsResting(false));
                         return 0;
                     }
                     return prev - 1;
                 });
             }, 1000);
-        } else if (!isResting || restTimer <= 0) {
+        } else {
             if (restIntervalRef.current) {
                 clearInterval(restIntervalRef.current);
                 restIntervalRef.current = null;
@@ -865,14 +888,18 @@ export default function WorkoutExecutionPage() {
         return () => {
             if (restIntervalRef.current) {
                 clearInterval(restIntervalRef.current);
+                restIntervalRef.current = null;
             }
         };
-    }, [isResting, restTimer]);
+    }, [isResting]);
 
     const handleLogSet = useCallback(async (weight: number, reps: number, rpe: number | undefined) => {
+        if (submittingSetRef.current) return;
         if (!workoutLogId || !session) return;
         const sessionExercise = session.exercises[currentExerciseIndex];
         if (!sessionExercise) return;
+
+        submittingSetRef.current = true;
 
         const setNumber = currentSets.length + 1;
         const now = new Date().toISOString();
@@ -925,6 +952,8 @@ export default function WorkoutExecutionPage() {
             }
         } catch (err) {
             console.error('Error logging set:', err);
+        } finally {
+            submittingSetRef.current = false;
         }
     }, [workoutLogId, session, currentExerciseIndex, currentSets, exerciseLogs, currentExercise, weightUnit]);
 
@@ -959,9 +988,12 @@ export default function WorkoutExecutionPage() {
 
                 if (!maxWeightSet) continue;
 
+                // Skip PR detection for bodyweight / weight=0 exercises
+                if (maxWeightSet.weight === 0) continue;
+
                 const existingPRs = await db.personalRecords.getByExercise(profile.id, exerciseId);
                 const isPR = existingPRs.length === 0 ||
-                    existingPRs.every((pr) => !pr.max_weight || maxWeightSet.weight > pr.max_weight);
+                    existingPRs.every((pr) => pr.max_weight == null || maxWeightSet.weight > pr.max_weight);
 
                 if (isPR) {
                     await db.personalRecords.create({
@@ -1012,6 +1044,7 @@ export default function WorkoutExecutionPage() {
             }
 
             setPrsAchieved(detectedPRs);
+            setFinishedAt(now);
             setPageState('summary');
         } catch (err) {
             console.error('Error finishing workout:', err);
@@ -1026,7 +1059,7 @@ export default function WorkoutExecutionPage() {
             setCurrentSets([]);
             setIsResting(false);
             setRestTimer(0);
-            setShowPoseDetection(false);
+            // Bug 22: Don't reset showPoseDetection - preserve user's form checker preference
         } else {
             handleFinishWorkout();
         }
@@ -1090,6 +1123,7 @@ export default function WorkoutExecutionPage() {
                     session={session}
                     exerciseLogs={exerciseLogs}
                     startedAt={startedAt}
+                    finishedAt={finishedAt}
                     prsAchieved={prsAchieved}
                     weightUnit={weightUnit}
                     userGoals={profile?.fitness_goals}
@@ -1121,7 +1155,24 @@ export default function WorkoutExecutionPage() {
                 paddingTop: '0.5rem',
             }}>
                 <button
-                    onClick={() => router.push('/home')}
+                    onClick={async () => {
+                        const confirmed = window.confirm(
+                            'Are you sure you want to exit? Your in-progress workout will be marked as abandoned.'
+                        );
+                        if (!confirmed) return;
+                        // Mark the workout log as abandoned before navigating away
+                        if (workoutLogId) {
+                            try {
+                                await db.workoutLogs.update(workoutLogId, {
+                                    finished_at: new Date().toISOString(),
+                                    notes: 'Workout abandoned by user',
+                                });
+                            } catch (err) {
+                                console.error('Error marking workout as abandoned:', err);
+                            }
+                        }
+                        router.push('/home');
+                    }}
                     style={{
                         background: 'none',
                         border: 'none',

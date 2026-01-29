@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
             .join('\n\n');
 
         const recentContext = recentWorkouts?.length
-            ? `\nRecent Workout History (last ${recentWorkouts.length} sessions):\n${recentWorkouts.map((w) => `- ${w.sessionName} on ${w.date}: ${w.totalVolume.toLocaleString()} volume${w.averageRpe ? `, avg RPE ${w.averageRpe}` : ''}`).join('\n')}`
+            ? `\nRecent Workout History (last ${recentWorkouts.length} sessions):\n${recentWorkouts.map((w) => `- ${w.sessionName} on ${w.date}: ${w.totalVolume.toLocaleString('en-US')} volume${w.averageRpe ? `, avg RPE ${w.averageRpe}` : ''}`).join('\n')}`
             : '';
 
         const phaseContext = currentPhaseType
@@ -158,8 +158,14 @@ JSON only, no markdown code fences.`;
             parsed.recommendations = parsed.recommendations.filter(
                 (rec: PlanAdaptationRecommendation) => validTypes.includes(rec.type) && rec.exercise_name && rec.rationale
             );
-        } catch {
-            parsed = MOCK_ADAPTATION;
+        } catch (parseError) {
+            console.error('Plan adaptation JSON parse error:', parseError);
+            // Return a generic response instead of mock data with hardcoded exercise names
+            parsed = {
+                summary: 'Your workout data has been recorded. We were unable to generate specific adaptation recommendations at this time.',
+                recommendations: [],
+                overall_assessment: 'Continue following your current program. Adaptation recommendations will be available after your next session.',
+            };
         }
 
         return new Response(JSON.stringify(parsed), {

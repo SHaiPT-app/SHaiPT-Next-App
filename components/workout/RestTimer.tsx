@@ -29,27 +29,9 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
         ? ((timer.totalRestSeconds - timer.restSecondsRemaining) / timer.totalRestSeconds) * 100
         : 0;
 
-    // Handle timer tick
-    useEffect(() => {
-        if (timer.isResting && timer.restSecondsRemaining > 0) {
-            intervalRef.current = setInterval(() => {
-                tickRestTimer();
-            }, 1000);
-        } else if (timer.restSecondsRemaining <= 0 && timer.isResting) {
-            // Timer complete
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-            playAlert();
-            onComplete?.();
-        }
-
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-        };
-    }, [timer.isResting, timer.restSecondsRemaining, tickRestTimer, onComplete]);
+    const onCompleteRef = useRef(onComplete);
+    onCompleteRef.current = onComplete;
+    const hasCompletedRef = useRef(false);
 
     // Play alert sound/vibration
     const playAlert = useCallback(() => {
@@ -83,10 +65,46 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
         }
     }, [preferences?.rest_timer_alert_type]);
 
-    // Quick adjust time
+    // Handle timer tick — only depend on isResting to avoid re-creating interval every second
+    useEffect(() => {
+        if (timer.isResting) {
+            hasCompletedRef.current = false;
+            intervalRef.current = setInterval(() => {
+                tickRestTimer();
+            }, 1000);
+        } else {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        }
+
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, [timer.isResting, tickRestTimer]);
+
+    // Handle timer completion separately to avoid firing multiple times
+    useEffect(() => {
+        if (timer.restSecondsRemaining <= 0 && timer.isResting && !hasCompletedRef.current) {
+            hasCompletedRef.current = true;
+            playAlert();
+            onCompleteRef.current?.();
+        }
+    }, [timer.restSecondsRemaining, timer.isResting, playAlert]);
+
+    // Quick adjust time — add/subtract from remaining without resetting progress circle
     const adjustTime = (delta: number) => {
-        const newTime = Math.max(0, timer.restSecondsRemaining + delta);
-        startRestTimer(newTime);
+        const newRemaining = Math.max(0, timer.restSecondsRemaining + delta);
+        const newTotal = Math.max(timer.totalRestSeconds + delta, newRemaining);
+        startRestTimer(newTotal);
+        // Immediately set remaining to adjusted value
+        for (let i = 0; i < (newTotal - newRemaining); i++) {
+            tickRestTimer();
+        }
         if (timer.isResting) {
             resumeRestTimer();
         }
@@ -253,7 +271,7 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                             }
                         `}
                     >
-                        {seconds < 60 ? `${seconds}s` : `${seconds / 60}m`}
+                        {seconds < 60 ? `${seconds}s` : seconds % 60 === 0 ? `${seconds / 60}m` : formatTime(seconds)}
                     </button>
                 ))}
             </div>

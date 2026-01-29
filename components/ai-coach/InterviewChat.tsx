@@ -42,6 +42,18 @@ export default function InterviewChat({
     const [userMessageCount, setUserMessageCount] = useState(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const messagesRef = useRef<ChatMessage[]>([]);
+    const idCounter = useRef(0);
+
+    // Keep messagesRef in sync with messages state
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
+
+    // Unique ID generator to avoid Date.now() collisions
+    const nextId = useCallback((prefix: string) => {
+        return `${prefix}-${Date.now()}-${++idCounter.current}`;
+    }, []);
 
     // Scroll to bottom on new messages or photo upload state change
     useEffect(() => {
@@ -89,7 +101,7 @@ export default function InterviewChat({
             !isLoading
         ) {
             // Add coach message asking for photos
-            const photoAskId = `assistant-photo-ask-${Date.now()}`;
+            const photoAskId = nextId('assistant-photo-ask');
             const photoAskMessage: ChatMessage = {
                 id: photoAskId,
                 role: 'assistant',
@@ -143,7 +155,7 @@ export default function InterviewChat({
 
             // Add user message about photo upload
             const userPhotoMsg: ChatMessage = {
-                id: `user-photos-${Date.now()}`,
+                id: nextId('user-photos'),
                 role: 'user',
                 content: `[Uploaded ${uploadedCount} physique photo${uploadedCount !== 1 ? 's' : ''}]`,
             };
@@ -154,7 +166,7 @@ export default function InterviewChat({
             setIsLoading(true);
 
             // Get AI assessment
-            const assistantId = `assistant-assessment-${Date.now()}`;
+            const assistantId = nextId('assistant-assessment');
             setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
             try {
@@ -190,7 +202,7 @@ export default function InterviewChat({
             setPhotoUploadComplete(true);
 
             const errorMsg: ChatMessage = {
-                id: `assistant-photo-err-${Date.now()}`,
+                id: nextId('assistant-photo-err'),
                 role: 'assistant',
                 content: 'I had some trouble saving the photos, but no worries -- we can always add them later. Let\'s keep going with the interview.',
             };
@@ -207,13 +219,13 @@ export default function InterviewChat({
         setPhotoUploadComplete(true);
 
         const skipMsg: ChatMessage = {
-            id: `user-photo-skip-${Date.now()}`,
+            id: nextId('user-photo-skip'),
             role: 'user',
             content: 'I\'ll skip the photos for now.',
         };
 
         const coachContinueMsg: ChatMessage = {
-            id: `assistant-photo-skip-${Date.now()}`,
+            id: nextId('assistant-photo-skip'),
             role: 'assistant',
             content: 'No problem at all. You can always upload physique photos later from your profile. Let\'s continue where we left off.',
         };
@@ -228,13 +240,13 @@ export default function InterviewChat({
         setIsLoading(true);
 
         const introMessage: ChatMessage = {
-            id: `user-init-${Date.now()}`,
+            id: nextId('user-init'),
             role: 'user',
             content: 'Hi, I just selected you as my coach. Let\'s get started with the intake interview.',
         };
 
-        const assistantId = `assistant-${Date.now()}`;
-        setMessages([{ id: assistantId, role: 'assistant', content: '' }]);
+        const assistantId = nextId('assistant');
+        setMessages([introMessage, { id: assistantId, role: 'assistant', content: '' }]);
 
         try {
             const response = await fetch('/api/ai-coach/interview', {
@@ -261,11 +273,11 @@ export default function InterviewChat({
                 if (done) break;
                 const chunk = decoder.decode(value, { stream: true });
                 fullText += chunk;
-                setMessages([{ id: assistantId, role: 'assistant', content: fullText }]);
+                setMessages([introMessage, { id: assistantId, role: 'assistant', content: fullText }]);
             }
         } catch (error) {
             console.error('Interview start error:', error);
-            setMessages([{
+            setMessages([introMessage, {
                 id: assistantId,
                 role: 'assistant',
                 content: 'Sorry, I had trouble starting up. Please refresh and try again.',
@@ -273,7 +285,7 @@ export default function InterviewChat({
         } finally {
             setIsLoading(false);
         }
-    }, [hasStarted, coach.id]);
+    }, [hasStarted, coach.id, nextId]);
 
     // Auto-start interview on mount
     useEffect(() => {
@@ -285,18 +297,19 @@ export default function InterviewChat({
         if (!text || isLoading) return;
 
         const userMessage: ChatMessage = {
-            id: `user-${Date.now()}`,
+            id: nextId('user'),
             role: 'user',
             content: text,
         };
 
-        const updatedMessages = [...messages, userMessage];
+        // Use messagesRef to avoid stale closure over messages state
+        const updatedMessages = [...messagesRef.current, userMessage];
         setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
         setUserMessageCount(prev => prev + 1);
 
-        const assistantId = `assistant-${Date.now()}`;
+        const assistantId = nextId('assistant');
         setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
         try {
@@ -357,12 +370,16 @@ export default function InterviewChat({
                 { id: assistantId, role: 'assistant' as const, content: fullText },
             ];
 
-            // Extract form data after each assistant response
-            extractFormData(finalMessages);
+            // Extract form data after each assistant response (await so data is ready before completion check)
+            await extractFormData(finalMessages);
 
             if (isComplete) {
+                // Filter out photo-related messages before passing to completion handler
+                const filteredMessages = finalMessages.filter(
+                    m => !m.content.startsWith('[Uploaded') && !m.content.startsWith('I\'ll skip the photos')
+                );
                 onInterviewComplete(
-                    finalMessages.map(m => ({ role: m.role, content: m.content }))
+                    filteredMessages.map(m => ({ role: m.role, content: m.content }))
                 );
             }
         } catch (error) {
@@ -377,7 +394,7 @@ export default function InterviewChat({
         } finally {
             setIsLoading(false);
         }
-    }, [input, isLoading, messages, coach.id, extractFormData, onInterviewComplete]);
+    }, [input, isLoading, coach.id, extractFormData, onInterviewComplete, nextId]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

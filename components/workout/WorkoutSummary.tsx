@@ -28,14 +28,18 @@ export function WorkoutSummary({
     onGoHome,
     onShare,
 }: WorkoutSummaryProps) {
-    // Format duration
+    // Format duration — include seconds for sub-minute durations
     const formatDuration = (seconds: number) => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
         if (hours > 0) {
             return `${hours}h ${minutes}m`;
         }
-        return `${minutes}m`;
+        if (minutes > 0) {
+            return secs > 0 ? `${minutes}m ${secs}s` : `${minutes}m`;
+        }
+        return `${secs}s`;
     };
 
     // Calculate stats
@@ -68,7 +72,7 @@ export function WorkoutSummary({
             color: 'text-green-400',
             bgColor: 'bg-green-500/10',
         },
-    ], [summary]);
+    ], [summary.totalDurationSeconds, summary.totalVolume, summary.volumeUnit, summary.totalSets, summary.totalReps]);
 
     return (
         <div className="min-h-screen bg-gray-950 px-4 py-6">

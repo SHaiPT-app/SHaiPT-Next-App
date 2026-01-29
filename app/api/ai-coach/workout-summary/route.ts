@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 
 Workout: "${sessionName}"
 Duration: ${durationMinutes} minutes
-Total Volume: ${totalVolume.toLocaleString()} ${weightUnit}
+Total Volume: ${totalVolume.toLocaleString('en-US')} ${weightUnit}
 Total Sets: ${totalSets}
 Total Reps: ${totalReps}${goalsContext}
 

@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
 
         // Create exercise logs if provided
         const exerciseLogs = [];
+        const failedExercises: string[] = [];
         if (exercises && Array.isArray(exercises)) {
             for (let i = 0; i < exercises.length; i++) {
                 const exercise = exercises[i];
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
                     .insert({
                         workout_log_id: workoutLog.id,
                         exercise_id: exercise.exercise_id,
-                        exercise_order: i,
+                        exercise_order: i + 1, // 1-based to match client-side convention
                         sets: [],
                     })
                     .select()
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
 
                 if (exerciseError) {
                     console.error('Failed to create exercise log:', exerciseError);
+                    failedExercises.push(exercise.exercise_id);
                 } else {
                     exerciseLogs.push(exerciseLog);
                 }
@@ -72,6 +74,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             workout_log: workoutLog,
             exercise_logs: exerciseLogs,
+            ...(failedExercises.length > 0 ? { warnings: { failed_exercises: failedExercises } } : {}),
         });
     } catch (error) {
         console.error('Error starting workout:', error);

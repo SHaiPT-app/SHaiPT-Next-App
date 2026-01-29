@@ -251,6 +251,36 @@ const MOCK_NUTRITION_PLAN: GeneratedNutritionPlanData = {
                 },
             ],
         },
+        day_3: {
+            breakfast: { name: 'Protein Pancakes', ingredients: ['1 scoop whey protein', '2 eggs', '1 banana', '40g oats'], instructions: 'Blend ingredients, cook on non-stick pan.', prep_time_minutes: 15, nutrition: { calories: 450, protein_g: 38, carbs_g: 48, fat_g: 12 } },
+            lunch: { name: 'Tuna Wrap', ingredients: ['150g canned tuna', '1 whole wheat wrap', 'Lettuce', 'Tomato', '1 tbsp light mayo'], instructions: 'Mix tuna with mayo, fill wrap with tuna and veggies.', prep_time_minutes: 10, nutrition: { calories: 480, protein_g: 42, carbs_g: 38, fat_g: 14 } },
+            dinner: { name: 'Chicken Pasta', ingredients: ['200g chicken breast', '100g whole wheat pasta', '100g marinara sauce', 'Spinach', 'Parmesan'], instructions: 'Cook pasta, grill chicken, combine with sauce and spinach.', prep_time_minutes: 25, nutrition: { calories: 620, protein_g: 52, carbs_g: 60, fat_g: 14 } },
+            snacks: [{ name: 'Cottage Cheese with Pineapple', ingredients: ['200g cottage cheese', '80g pineapple chunks'], instructions: 'Combine and enjoy.', prep_time_minutes: 2, nutrition: { calories: 200, protein_g: 24, carbs_g: 18, fat_g: 4 } }],
+        },
+        day_4: {
+            breakfast: { name: 'Smoothie Bowl', ingredients: ['1 scoop protein', '1 banana', '100g frozen berries', '150ml almond milk', '20g granola'], instructions: 'Blend protein, banana, berries and milk. Top with granola.', prep_time_minutes: 8, nutrition: { calories: 420, protein_g: 32, carbs_g: 55, fat_g: 8 } },
+            lunch: { name: 'Chicken Caesar Salad', ingredients: ['200g grilled chicken', 'Romaine lettuce', '30g parmesan', '2 tbsp Caesar dressing', 'Croutons'], instructions: 'Toss all ingredients together.', prep_time_minutes: 15, nutrition: { calories: 520, protein_g: 48, carbs_g: 20, fat_g: 28 } },
+            dinner: { name: 'Shrimp and Vegetable Rice', ingredients: ['200g shrimp', '150g basmati rice (cooked)', '100g mixed vegetables', '1 tbsp olive oil', 'Garlic and lemon'], instructions: 'Sauté shrimp with garlic, serve over rice with vegetables.', prep_time_minutes: 20, nutrition: { calories: 560, protein_g: 44, carbs_g: 58, fat_g: 14 } },
+            snacks: [{ name: 'Apple with Peanut Butter', ingredients: ['1 apple', '2 tbsp peanut butter'], instructions: 'Slice apple, dip in peanut butter.', prep_time_minutes: 2, nutrition: { calories: 280, protein_g: 8, carbs_g: 30, fat_g: 16 } }],
+        },
+        day_5: {
+            breakfast: { name: 'Greek Yogurt Parfait', ingredients: ['200g Greek yogurt', '30g granola', '80g mixed berries', '10g honey'], instructions: 'Layer yogurt, granola, and berries.', prep_time_minutes: 5, nutrition: { calories: 380, protein_g: 28, carbs_g: 48, fat_g: 8 } },
+            lunch: { name: 'Grilled Chicken Sandwich', ingredients: ['200g chicken breast', '2 slices sourdough', 'Lettuce', 'Tomato', '1 tbsp mustard'], instructions: 'Grill chicken, assemble sandwich with toppings.', prep_time_minutes: 15, nutrition: { calories: 520, protein_g: 48, carbs_g: 40, fat_g: 14 } },
+            dinner: { name: 'Cod with Roasted Vegetables', ingredients: ['200g cod fillet', '200g mixed roast vegetables', '1 tbsp olive oil', 'Herbs'], instructions: 'Bake cod and vegetables at 200C for 20 minutes.', prep_time_minutes: 25, nutrition: { calories: 480, protein_g: 42, carbs_g: 30, fat_g: 16 } },
+            snacks: [{ name: 'Protein Bar', ingredients: ['1 protein bar (store-bought)'], instructions: 'Unwrap and eat.', prep_time_minutes: 1, nutrition: { calories: 220, protein_g: 20, carbs_g: 24, fat_g: 8 } }],
+        },
+        day_6: {
+            breakfast: { name: 'Omelette with Toast', ingredients: ['3 eggs', '50g mushrooms', '30g cheese', '1 slice whole grain toast'], instructions: 'Make omelette with mushrooms and cheese, serve with toast.', prep_time_minutes: 12, nutrition: { calories: 460, protein_g: 32, carbs_g: 20, fat_g: 28 } },
+            lunch: { name: 'Poke Bowl', ingredients: ['150g salmon (raw or cooked)', '150g sushi rice', 'Edamame', 'Cucumber', 'Avocado', 'Soy sauce'], instructions: 'Arrange all ingredients over rice.', prep_time_minutes: 15, nutrition: { calories: 580, protein_g: 40, carbs_g: 55, fat_g: 20 } },
+            dinner: { name: 'Turkey Meatballs with Pasta', ingredients: ['200g ground turkey', '100g whole wheat spaghetti', '100g marinara sauce', 'Herbs'], instructions: 'Form meatballs, bake, serve with pasta and sauce.', prep_time_minutes: 30, nutrition: { calories: 600, protein_g: 48, carbs_g: 60, fat_g: 14 } },
+            snacks: [{ name: 'Hummus and Veggies', ingredients: ['60g hummus', 'Carrot sticks', 'Cucumber slices', 'Bell pepper strips'], instructions: 'Dip vegetables in hummus.', prep_time_minutes: 3, nutrition: { calories: 180, protein_g: 6, carbs_g: 18, fat_g: 10 } }],
+        },
+        day_7: {
+            breakfast: { name: 'French Toast', ingredients: ['2 slices whole grain bread', '2 eggs', '50ml milk', 'Cinnamon', '80g berries', '10g maple syrup'], instructions: 'Dip bread in egg mixture, cook on pan, top with berries and syrup.', prep_time_minutes: 15, nutrition: { calories: 440, protein_g: 22, carbs_g: 52, fat_g: 16 } },
+            lunch: { name: 'Chicken Burrito Bowl', ingredients: ['200g chicken breast', '100g brown rice', 'Black beans', 'Corn', 'Salsa', 'Lettuce'], instructions: 'Grill chicken, assemble bowl with all toppings.', prep_time_minutes: 20, nutrition: { calories: 580, protein_g: 50, carbs_g: 58, fat_g: 12 } },
+            dinner: { name: 'Grilled Steak with Potatoes', ingredients: ['200g sirloin steak', '200g roasted potatoes', '100g green beans', '1 tbsp olive oil'], instructions: 'Grill steak to preference, roast potatoes, steam green beans.', prep_time_minutes: 30, nutrition: { calories: 640, protein_g: 50, carbs_g: 48, fat_g: 24 } },
+            snacks: [{ name: 'Mixed Nuts', ingredients: ['40g mixed nuts (almonds, cashews, walnuts)'], instructions: 'Portion and enjoy.', prep_time_minutes: 1, nutrition: { calories: 240, protein_g: 8, carbs_g: 8, fat_g: 22 } }],
+        },
     },
     shopping_list: {
         proteins: ['Chicken breast (400g)', 'Salmon fillets (360g)', 'Turkey breast (360g)', 'Lean beef (400g)', 'Eggs (1 dozen)', 'Whey protein powder', 'Greek yogurt (400g)'],
@@ -296,21 +326,15 @@ export async function POST(req: NextRequest) {
         const response = result.response;
         let text = response.text();
 
-        // Clean markdown fences
-        if (text.includes('```json')) {
-            text = text.split('```json')[1].split('```')[0];
-        } else if (text.includes('```')) {
-            text = text.split('```')[1].split('```')[0];
-        }
+        // Clean markdown fences (consistent with other API routes)
+        text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
 
-        const plan = JSON.parse(text.trim()) as GeneratedNutritionPlanData;
+        const plan = JSON.parse(text) as GeneratedNutritionPlanData;
 
         return NextResponse.json({ plan });
     } catch (error) {
         console.error('Nutrition plan generation error:', error);
-        return NextResponse.json(
-            { error: 'Failed to generate nutrition plan' },
-            { status: 500 }
-        );
+        // Fallback to mock plan instead of returning an error (consistent with generate-plan API)
+        return NextResponse.json({ plan: MOCK_NUTRITION_PLAN });
     }
 }

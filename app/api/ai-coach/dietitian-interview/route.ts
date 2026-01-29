@@ -160,39 +160,35 @@ export async function POST(req: NextRequest) {
             ],
         });
 
-        let fullResponse = '';
         try {
             const result = await chat.sendMessageStream(lastMessage.content);
-            const encoder = new TextEncoder();
 
-            const stream = new ReadableStream({
-                async start(controller) {
-                    try {
-                        for await (const chunk of result.stream) {
-                            const text = chunk.text();
-                            if (text) {
-                                fullResponse += text;
-                                // Strip the [INTERVIEW_COMPLETE] marker from streamed output
-                                const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
-                                if (cleanText) {
-                                    controller.enqueue(encoder.encode(cleanText));
-                                }
-                            }
-                        }
-                        controller.close();
-                    } catch (streamError: unknown) {
-                        const sErr = streamError as { status?: number; message?: string };
-                        if (sErr?.status === 429 || sErr?.message?.includes('429')) {
-                            controller.enqueue(encoder.encode('I\'m currently rate-limited. Please wait a moment and try again.'));
-                        } else {
-                            controller.enqueue(encoder.encode('Sorry, I encountered an error. Please try again.'));
-                        }
-                        controller.close();
+            // Collect full response first so we can check for [INTERVIEW_COMPLETE]
+            let fullResponse = '';
+            const chunks: string[] = [];
+            for await (const chunk of result.stream) {
+                const text = chunk.text();
+                if (text) {
+                    fullResponse += text;
+                    const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
+                    if (cleanText) {
+                        chunks.push(cleanText);
                     }
-                },
-            });
+                }
+            }
 
             const isComplete = fullResponse.includes('[INTERVIEW_COMPLETE]');
+
+            // Now stream the collected chunks to the client
+            const encoder = new TextEncoder();
+            const stream = new ReadableStream({
+                async start(controller) {
+                    for (const chunk of chunks) {
+                        controller.enqueue(encoder.encode(chunk));
+                    }
+                    controller.close();
+                },
+            });
 
             return new Response(stream, {
                 headers: {

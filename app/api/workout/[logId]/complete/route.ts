@@ -55,9 +55,10 @@ export async function POST(
         if (exerciseLogs) {
             for (const log of exerciseLogs) {
                 const sets = log.sets || [];
-                totalSets += sets.length;
                 for (const set of sets) {
+                    // Bug 37: Filter out warmup sets from totalSets count too
                     if (set.set_type !== 'warmup') {
+                        totalSets++;
                         totalReps += set.reps || 0;
                         totalVolume += (set.weight || 0) * (set.reps || 0);
                     }
@@ -73,6 +74,28 @@ export async function POST(
                 total_rest_seconds: totalRest,
             })
             .eq('id', logId);
+
+        // Bug 26: Calculate actual completion percentage based on completed vs planned exercises
+        let completionPercentage = 100;
+        if (workoutLog.session_id) {
+            const { data: sessionData } = await supabase
+                .from('workout_sessions')
+                .select('exercises')
+                .eq('id', workoutLog.session_id)
+                .single();
+
+            if (sessionData?.exercises && Array.isArray(sessionData.exercises)) {
+                const plannedExerciseCount = sessionData.exercises.length;
+                const completedExerciseCount = exerciseLogs?.length || 0;
+                if (plannedExerciseCount > 0) {
+                    completionPercentage = Math.round(
+                        (completedExerciseCount / plannedExerciseCount) * 100
+                    );
+                    // Cap at 100 in case extra exercises were added
+                    completionPercentage = Math.min(completionPercentage, 100);
+                }
+            }
+        }
 
         // Update consistency log if user has an active challenge
         if (workoutLog.user_id) {
@@ -92,7 +115,7 @@ export async function POST(
                         date: workoutLog.date,
                         completed: true,
                         workout_log_id: logId,
-                        completion_percentage: 100,
+                        completion_percentage: completionPercentage,
                     }, { onConflict: 'user_id,date' });
             }
         }

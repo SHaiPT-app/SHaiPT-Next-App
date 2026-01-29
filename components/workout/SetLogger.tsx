@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Minus, Check, ChevronDown, Zap } from 'lucide-react';
 import type { EnhancedLoggedSet, SessionSet, IntensifierType, SetType } from '@/lib/types';
@@ -39,6 +39,25 @@ export function SetLogger({
     });
 
     const [rpe, setRpe] = useState<number | null>(null);
+
+    // Reset state when set number changes (Bug 18 fix)
+    const prevSetNumberRef = useRef(setNumber);
+    useEffect(() => {
+        if (prevSetNumberRef.current !== setNumber) {
+            prevSetNumberRef.current = setNumber;
+            // Reset to previous set values or target
+            if (previousSet) {
+                setWeight(previousSet.weight);
+                setReps(previousSet.reps);
+            } else if (targetSet) {
+                setWeight(parseFloat(targetSet.weight ?? '0') || 0);
+                const parsed = parseInt(targetSet.reps ?? '10');
+                setReps(isNaN(parsed) ? 10 : parsed);
+            }
+            setRpe(null);
+            setShowRpeSelector(false);
+        }
+    }, [setNumber, previousSet, targetSet]);
     const [setType, setSetType] = useState<SetType>('working');
     const [showRpeSelector, setShowRpeSelector] = useState(false);
     const [showIntensifierMenu, setShowIntensifierMenu] = useState(false);
@@ -235,7 +254,7 @@ export function SetLogger({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleSubmit}
-                disabled={weight <= 0 || reps <= 0}
+                disabled={weight < 0 || reps <= 0}
                 className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium
                          flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
                          shadow-lg shadow-cyan-500/20"
