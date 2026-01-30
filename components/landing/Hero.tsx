@@ -47,7 +47,7 @@ export default function Hero() {
 
       {/* Navbar */}
       <motion.nav
-        initial={{ opacity: 0, y: -20 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
         style={{
@@ -132,10 +132,11 @@ export default function Hero() {
         </div>
       </motion.nav>
 
-      {/* Hero Content */}
+      {/* Hero Content — uses CSS animation for instant SSR visibility,
+           Framer Motion takes over after hydration */}
       <motion.div
         variants={staggerContainer}
-        initial="hidden"
+        initial={false}
         animate="visible"
         style={{
           flex: 1,
