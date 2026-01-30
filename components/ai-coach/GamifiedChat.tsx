@@ -436,48 +436,63 @@ export default function GamifiedChat({
 
     return (
         <Flex
-            direction="column"
             h="100%"
+            w="100%"
             overflow="hidden"
-            position="relative"
+            alignItems="center"
+            justifyContent="center"
+            bg="#0a0a12"
         >
-            {/* Background image */}
-            <Box
-                position="absolute"
-                inset="0"
-                zIndex={0}
-                style={{
-                    backgroundImage: `url(${coach.chatBgUrl})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                }}
+            {/* Portrait frame */}
+            <Flex
+                direction="column"
+                position="relative"
+                h="100%"
+                w="100%"
+                maxW="480px"
+                overflow="hidden"
             >
+                {/* Background image — fully visible, no overlay */}
                 <Box
                     position="absolute"
                     inset="0"
-                    bg="rgba(0, 0, 0, 0.75)"
+                    zIndex={0}
+                    style={{
+                        backgroundImage: `url(${coach.chatBgUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center top',
+                    }}
                 />
-            </Box>
 
-            {/* Progress bar */}
-            <Box zIndex={1} flexShrink={0}>
-                <ProgressBar completedSteps={completedSteps} activeStep={activeStep} />
-            </Box>
-
-            {/* TOP: Coach message card */}
-            <Box zIndex={1} px="0.75rem" pt="0.5rem" flexShrink={0}>
-                <Box
-                    bg="rgba(255, 255, 255, 0.95)"
-                    borderRadius="16px"
-                    p="1rem"
-                    boxShadow="0 4px 20px rgba(0,0,0,0.3)"
-                    maxHeight="45vh"
-                    overflowY="auto"
+                {/* Content layer */}
+                <Flex
+                    direction="column"
+                    position="relative"
+                    zIndex={1}
+                    h="100%"
+                    justifyContent="space-between"
+                    px="10%"
+                    pt="2.5%"
+                    pb="2.5%"
                 >
+                    {/* ─── TOP: Progress + Coach message ─── */}
+                    <Box>
+                        <Box mb="0.35rem">
+                            <ProgressBar completedSteps={completedSteps} activeStep={activeStep} />
+                        </Box>
+                        <Box
+                            bg="rgba(255, 255, 255, 0.88)"
+                            borderRadius="14px"
+                            p="0.85rem"
+                            maxHeight="30vh"
+                            overflowY="auto"
+                            backdropFilter="blur(6px)"
+                            style={{ WebkitBackdropFilter: 'blur(6px)' }}
+                        >
                     <Flex alignItems="center" gap="0.5rem" mb="0.5rem">
                         <Box
-                            w="36px"
-                            h="36px"
+                            w="32px"
+                            h="32px"
                             borderRadius="50%"
                             overflow="hidden"
                             border="2px solid var(--neon-orange)"
@@ -538,105 +553,99 @@ export default function GamifiedChat({
                             <Box as="span" w="6px" h="6px" borderRadius="50%" bg="var(--neon-orange)" animation="pulse 1.4s ease-in-out 0.4s infinite" />
                         </Flex>
                     ) : null}
-                </Box>
-            </Box>
-
-            {/* MIDDLE: Spacer (background image visible) */}
-            <Box flex={1} zIndex={0} />
-
-            {/* Photo upload widget (shown between middle and bottom) */}
-            {showPhotoUpload && (
-                <Box zIndex={1} px="0.75rem" pb="0.5rem">
-                    <Box
-                        bg="rgba(255, 255, 255, 0.95)"
-                        borderRadius="16px"
-                        p="0.75rem"
-                        boxShadow="0 4px 20px rgba(0,0,0,0.3)"
-                    >
-                        <IntakePhotoUpload
-                            onPhotosSubmitted={handlePhotosSubmitted}
-                            onSkip={handlePhotoSkip}
-                            isUploading={isUploadingPhotos}
-                        />
-                    </Box>
-                </Box>
-            )}
-
-            {/* BOTTOM: User input card */}
-            <Box zIndex={1} px="0.75rem" pb="0.75rem" flexShrink={0}>
-                <Box
-                    bg="rgba(255, 255, 255, 0.95)"
-                    borderRadius="16px"
-                    p="0.75rem"
-                    boxShadow="0 -4px 20px rgba(0,0,0,0.3)"
-                >
-                    {/* Quick-reply chips */}
-                    {currentChips && !showPhotoUpload && (
-                        <Box mb="0.5rem">
-                            <QuickReplyChips
-                                options={currentChips.options}
-                                selected={chipSelection}
-                                onSelect={setChipSelection}
-                                multiSelect={currentChips.multi}
-                                maxSelections={3}
-                                onSubmit={handleChipSubmit}
-                            />
                         </Box>
-                    )}
+                    </Box>
 
-                    {/* Text input */}
-                    <form
-                        onSubmit={handleSubmit}
-                        style={{ display: 'flex', gap: '0.5rem' }}
-                    >
-                        <input
-                            ref={inputRef}
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            placeholder={
-                                showPhotoUpload
-                                    ? 'Upload photos or skip to continue...'
-                                    : currentChips
-                                        ? 'Or type your answer...'
-                                        : 'Type your answer...'
-                            }
-                            disabled={isLoading || showPhotoUpload || (!!currentChips && !currentChips.multi)}
-                            style={{
-                                flex: 1,
-                                padding: '0.65rem 0.75rem',
-                                fontSize: '0.9rem',
-                                background: '#f5f5f5',
-                                border: '1px solid #e0e0e0',
-                                borderRadius: '10px',
-                                color: '#1a1a1a',
-                                outline: 'none',
-                                opacity: (showPhotoUpload || (currentChips && !currentChips.multi)) ? 0.5 : 1,
-                            }}
-                        />
-                        <button
-                            type="submit"
-                            disabled={isLoading || !input.trim() || showPhotoUpload}
-                            style={{
-                                padding: '0.65rem',
-                                background: isLoading || !input.trim() || showPhotoUpload
-                                    ? 'rgba(255, 102, 0, 0.3)'
-                                    : '#FF6600',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '10px',
-                                cursor: isLoading || !input.trim() || showPhotoUpload ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
+                    {/* ─── BOTTOM: Photo upload + Input ─── */}
+                    <Box>
+                        {showPhotoUpload && (
+                            <Box mb="0.5rem">
+                                <Box
+                                    bg="rgba(255, 255, 255, 0.88)"
+                                    borderRadius="14px"
+                                    p="0.75rem"
+                                    backdropFilter="blur(6px)"
+                                    style={{ WebkitBackdropFilter: 'blur(6px)' }}
+                                >
+                                    <IntakePhotoUpload
+                                        onPhotosSubmitted={handlePhotosSubmitted}
+                                        onSkip={handlePhotoSkip}
+                                        isUploading={isUploadingPhotos}
+                                    />
+                                </Box>
+                            </Box>
+                        )}
+
+                        <Box
+                            bg="rgba(255, 255, 255, 0.88)"
+                            borderRadius="14px"
+                            p="0.75rem"
+                            backdropFilter="blur(6px)"
+                            style={{ WebkitBackdropFilter: 'blur(6px)' }}
                         >
-                            <Send size={18} />
-                        </button>
-                    </form>
-                </Box>
-            </Box>
+                            {currentChips && !showPhotoUpload && (
+                                <Box mb="0.5rem">
+                                    <QuickReplyChips
+                                        options={currentChips.options}
+                                        selected={chipSelection}
+                                        onSelect={setChipSelection}
+                                        multiSelect={currentChips.multi}
+                                        maxSelections={3}
+                                        onSubmit={handleChipSubmit}
+                                    />
+                                </Box>
+                            )}
 
-            <div ref={messagesEndRef} />
+                            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
+                                <input
+                                    ref={inputRef}
+                                    value={input}
+                                    onChange={e => setInput(e.target.value)}
+                                    placeholder={
+                                        showPhotoUpload
+                                            ? 'Upload photos or skip to continue...'
+                                            : currentChips
+                                                ? 'Or type your answer...'
+                                                : 'Type your answer...'
+                                    }
+                                    disabled={isLoading || showPhotoUpload || (!!currentChips && !currentChips.multi)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.6rem 0.7rem',
+                                        fontSize: '0.85rem',
+                                        background: '#f5f5f5',
+                                        border: '1px solid #e0e0e0',
+                                        borderRadius: '10px',
+                                        color: '#1a1a1a',
+                                        outline: 'none',
+                                        opacity: (showPhotoUpload || (currentChips && !currentChips.multi)) ? 0.5 : 1,
+                                    }}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={isLoading || !input.trim() || showPhotoUpload}
+                                    style={{
+                                        padding: '0.6rem',
+                                        background: isLoading || !input.trim() || showPhotoUpload
+                                            ? 'rgba(255, 102, 0, 0.3)'
+                                            : '#FF6600',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        cursor: isLoading || !input.trim() || showPhotoUpload ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <Send size={18} />
+                                </button>
+                            </form>
+                        </Box>
+                    </Box>
+                </Flex>
+            </Flex>
+            <div ref={messagesEndRef} style={{ display: 'none' }} />
         </Flex>
     );
 }
