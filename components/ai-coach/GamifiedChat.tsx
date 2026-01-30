@@ -442,17 +442,17 @@ export default function GamifiedChat({
             alignItems="center"
             justifyContent="center"
             bg="#0a0a12"
+            position="relative"
         >
-            {/* Portrait frame */}
-            <Flex
-                direction="column"
+            {/* Portrait frame — locked to available height */}
+            <Box
                 position="relative"
                 h="100%"
                 w="100%"
                 maxW="480px"
                 overflow="hidden"
             >
-                {/* Background image — fully visible, no overlay */}
+                {/* Background image — fills frame, always visible */}
                 <Box
                     position="absolute"
                     inset="0"
@@ -464,12 +464,12 @@ export default function GamifiedChat({
                     }}
                 />
 
-                {/* Content layer */}
+                {/* Content layer — absolute so it never pushes frame height */}
                 <Flex
                     direction="column"
-                    position="relative"
+                    position="absolute"
+                    inset="0"
                     zIndex={1}
-                    h="100%"
                     justifyContent="space-between"
                     px="10%"
                     pt="2.5%"
@@ -644,7 +644,7 @@ export default function GamifiedChat({
                         </Box>
                     </Box>
                 </Flex>
-            </Flex>
+            </Box>
             <div ref={messagesEndRef} style={{ display: 'none' }} />
         </Flex>
     );

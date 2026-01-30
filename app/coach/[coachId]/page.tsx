@@ -623,11 +623,13 @@ export default function CoachInterviewPage() {
 
     return (
         <Box
-            minH="100vh"
+            h="100dvh"
+            maxH="100dvh"
             bg="var(--background)"
             color="var(--foreground)"
             display="flex"
             flexDirection="column"
+            overflow="hidden"
         >
             {/* Top Bar */}
             <Flex
