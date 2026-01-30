@@ -755,6 +755,251 @@ export interface CoachInterview {
 }
 
 // ============================================
+// INTAKE FORM V2 (STRUCTURED) TYPES
+// ============================================
+
+export type TrainingLocationType =
+    | 'commercial_gym'
+    | 'home_gym'
+    | 'outdoor'
+    | 'calisthenics_park'
+    | 'hotel_travel';
+
+export interface IntakeFormDataV2 {
+    // Basic info (structured)
+    first_name: string;
+    last_name: string;
+    age: number | null;
+    weight_value: number | null;
+    weight_unit: 'kg' | 'lbs';
+    height_value: number | null;
+    height_unit: 'metric' | 'imperial'; // metric = cm, imperial = ft/in
+    height_feet: number | null;
+    height_inches: number | null;
+
+    // Athletic history
+    athletic_history: string; // 'never' | '<1yr' | '1-3yr' | '3-5yr' | '5-10yr' | '10+yr'
+
+    // Fitness goals (array, ordered by priority)
+    fitness_goals: string[];
+
+    // Training schedule
+    training_days: number | null; // 1-7
+    session_duration_minutes: number | null;
+    preferred_time_hour: number | null; // 1-12
+    preferred_time_minute: number | null; // 0-59
+    preferred_time_ampm: 'AM' | 'PM';
+
+    // Equipment & location
+    training_location: TrainingLocationType | '';
+    equipment: string[];
+
+    // Medical
+    injuries: string;
+    medical_considerations: string;
+
+    // Self-assessment
+    fitness_level: string; // 'beginner' | 'intermediate' | 'advanced'
+}
+
+export const EMPTY_INTAKE_FORM_V2: IntakeFormDataV2 = {
+    first_name: '',
+    last_name: '',
+    age: null,
+    weight_value: null,
+    weight_unit: 'lbs',
+    height_value: null,
+    height_unit: 'imperial',
+    height_feet: null,
+    height_inches: null,
+    athletic_history: '',
+    fitness_goals: [],
+    training_days: null,
+    session_duration_minutes: null,
+    preferred_time_hour: null,
+    preferred_time_minute: null,
+    preferred_time_ampm: 'AM',
+    training_location: '',
+    equipment: [],
+    injuries: '',
+    medical_considerations: '',
+    fitness_level: '',
+};
+
+/** Convert V2 structured form data to V1 flat strings for API compatibility */
+export function intakeV2toV1(v2: IntakeFormDataV2): IntakeFormData {
+    const name = [v2.first_name, v2.last_name].filter(Boolean).join(' ');
+
+    let height = '';
+    if (v2.height_unit === 'imperial' && v2.height_feet != null) {
+        height = `${v2.height_feet}'${v2.height_inches ?? 0}"`;
+    } else if (v2.height_unit === 'metric' && v2.height_value != null) {
+        height = `${v2.height_value}cm`;
+    }
+
+    let weight = '';
+    if (v2.weight_value != null) {
+        weight = `${v2.weight_value} ${v2.weight_unit}`;
+    }
+
+    let preferred_time = '';
+    if (v2.preferred_time_hour != null) {
+        const min = v2.preferred_time_minute ?? 0;
+        preferred_time = `${v2.preferred_time_hour}:${min.toString().padStart(2, '0')} ${v2.preferred_time_ampm}`;
+    }
+
+    const HISTORY_LABELS: Record<string, string> = {
+        never: 'Never trained',
+        '<1yr': 'Less than 1 year',
+        '1-3yr': '1-3 years',
+        '3-5yr': '3-5 years',
+        '5-10yr': '5-10 years',
+        '10+yr': '10+ years',
+    };
+
+    const LOCATION_LABELS: Record<string, string> = {
+        commercial_gym: 'Commercial Gym',
+        home_gym: 'Home Gym',
+        outdoor: 'Outdoor / Park',
+        calisthenics_park: 'Calisthenics Park',
+        hotel_travel: 'Hotel / Travel',
+    };
+
+    return {
+        name,
+        age: v2.age != null ? String(v2.age) : '',
+        height,
+        weight,
+        sport_history: HISTORY_LABELS[v2.athletic_history] ?? v2.athletic_history,
+        training_duration: v2.athletic_history ? (HISTORY_LABELS[v2.athletic_history] ?? v2.athletic_history) : '',
+        training_style: '',
+        fitness_goals: v2.fitness_goals.join(', '),
+        training_days_per_week: v2.training_days != null ? String(v2.training_days) : '',
+        session_duration: v2.session_duration_minutes != null ? `${v2.session_duration_minutes} minutes` : '',
+        preferred_time,
+        available_equipment: v2.equipment.join(', '),
+        training_location: v2.training_location ? (LOCATION_LABELS[v2.training_location] ?? v2.training_location) : '',
+        injuries: v2.injuries,
+        medical_considerations: v2.medical_considerations,
+        fitness_level: v2.fitness_level,
+    };
+}
+
+/** Convert V1 flat strings to V2 structured form data (best-effort parsing) */
+export function intakeV1toV2(v1: IntakeFormData): IntakeFormDataV2 {
+    const nameParts = v1.name.trim().split(/\s+/);
+    const first_name = nameParts[0] || '';
+    const last_name = nameParts.slice(1).join(' ');
+
+    const ageNum = parseInt(v1.age, 10);
+    const age = !isNaN(ageNum) ? ageNum : null;
+
+    // Parse weight
+    let weight_value: number | null = null;
+    let weight_unit: 'kg' | 'lbs' = 'lbs';
+    const wMatch = v1.weight.match(/(\d+\.?\d*)\s*(kg|lbs?|pounds?)?/i);
+    if (wMatch) {
+        weight_value = parseFloat(wMatch[1]);
+        if (wMatch[2] && /kg/i.test(wMatch[2])) weight_unit = 'kg';
+    }
+
+    // Parse height
+    let height_value: number | null = null;
+    let height_unit: 'metric' | 'imperial' = 'imperial';
+    let height_feet: number | null = null;
+    let height_inches: number | null = null;
+    const ftMatch = v1.height.match(/(\d+)['\s]+(ft\s*)?(\d+)?/);
+    const cmMatch = v1.height.match(/(\d+\.?\d*)\s*cm/i);
+    if (ftMatch) {
+        height_unit = 'imperial';
+        height_feet = parseInt(ftMatch[1], 10);
+        height_inches = parseInt(ftMatch[3] || '0', 10);
+    } else if (cmMatch) {
+        height_unit = 'metric';
+        height_value = parseFloat(cmMatch[1]);
+    }
+
+    // Parse fitness goals
+    const fitness_goals = v1.fitness_goals
+        ? v1.fitness_goals.split(/[,;]/).map(g => g.trim()).filter(Boolean)
+        : [];
+
+    // Parse training days
+    const daysMatch = v1.training_days_per_week.match(/(\d)/);
+    const training_days = daysMatch ? parseInt(daysMatch[1], 10) : null;
+
+    // Parse session duration
+    const durMatch = v1.session_duration.match(/(\d+)/);
+    const session_duration_minutes = durMatch ? parseInt(durMatch[1], 10) : null;
+
+    // Parse preferred time
+    let preferred_time_hour: number | null = null;
+    let preferred_time_minute: number | null = null;
+    let preferred_time_ampm: 'AM' | 'PM' = 'AM';
+    const timeMatch = v1.preferred_time.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+    if (timeMatch) {
+        preferred_time_hour = parseInt(timeMatch[1], 10);
+        preferred_time_minute = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+        if (timeMatch[3]) preferred_time_ampm = timeMatch[3].toUpperCase() as 'AM' | 'PM';
+    }
+
+    // Parse training location
+    let training_location: TrainingLocationType | '' = '';
+    const loc = v1.training_location.toLowerCase();
+    if (loc.includes('commercial') || loc.includes('gym')) training_location = 'commercial_gym';
+    else if (loc.includes('home')) training_location = 'home_gym';
+    else if (loc.includes('outdoor') || loc.includes('park')) training_location = 'outdoor';
+    else if (loc.includes('calisthenics')) training_location = 'calisthenics_park';
+    else if (loc.includes('hotel') || loc.includes('travel')) training_location = 'hotel_travel';
+
+    // Parse equipment
+    const equipment = v1.available_equipment
+        ? v1.available_equipment.split(/[,;]/).map(e => e.trim()).filter(Boolean)
+        : [];
+
+    // Parse athletic history
+    let athletic_history = '';
+    const hist = (v1.sport_history + ' ' + v1.training_duration).toLowerCase();
+    if (hist.includes('never')) athletic_history = 'never';
+    else if (hist.includes('10+') || hist.includes('10 ')) athletic_history = '10+yr';
+    else if (hist.includes('5-10') || hist.includes('5 to 10')) athletic_history = '5-10yr';
+    else if (hist.includes('3-5') || hist.includes('3 to 5')) athletic_history = '3-5yr';
+    else if (hist.includes('1-3') || hist.includes('1 to 3')) athletic_history = '1-3yr';
+    else if (hist.includes('<1') || hist.includes('less than')) athletic_history = '<1yr';
+
+    // Parse fitness level
+    let fitness_level = '';
+    const fl = v1.fitness_level.toLowerCase();
+    if (fl.includes('beginner')) fitness_level = 'beginner';
+    else if (fl.includes('intermediate')) fitness_level = 'intermediate';
+    else if (fl.includes('advanced')) fitness_level = 'advanced';
+
+    return {
+        first_name,
+        last_name,
+        age,
+        weight_value,
+        weight_unit,
+        height_value,
+        height_unit,
+        height_feet,
+        height_inches,
+        athletic_history,
+        fitness_goals,
+        training_days,
+        session_duration_minutes,
+        preferred_time_hour,
+        preferred_time_minute,
+        preferred_time_ampm,
+        training_location,
+        equipment,
+        injuries: v1.injuries,
+        medical_considerations: v1.medical_considerations,
+        fitness_level,
+    };
+}
+
+// ============================================
 // DIETITIAN INTERVIEW / INTAKE TYPES
 // ============================================
 

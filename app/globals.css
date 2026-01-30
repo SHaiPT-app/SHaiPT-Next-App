@@ -395,6 +395,157 @@ button, a, input, select, textarea {
   }
 }
 
+/* ─── Coach Interview UI Utilities ────────────────────────────────────── */
+
+.coach-handwriting {
+  font-family: var(--font-caveat), cursive;
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+.segmented-control {
+  display: flex;
+  position: relative;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.segmented-control-tab {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  z-index: 1;
+  color: #888;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  transition: color 0.2s;
+  font-family: var(--font-orbitron);
+}
+
+.segmented-control-tab[data-active="true"] {
+  color: #0B0B15;
+}
+
+.segmented-control-indicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 8px;
+  background: var(--neon-orange);
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interview-progress {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0.5rem 1rem;
+}
+
+.interview-progress-step {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.3s;
+}
+
+.interview-progress-step[data-complete="true"] {
+  background: var(--neon-orange);
+}
+
+.interview-progress-step[data-active="true"] {
+  background: rgba(255, 102, 0, 0.5);
+}
+
+.quick-reply-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--foreground);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.quick-reply-chip:hover {
+  background: rgba(255, 102, 0, 0.1);
+  border-color: rgba(255, 102, 0, 0.3);
+}
+
+.quick-reply-chip[data-selected="true"] {
+  background: rgba(255, 102, 0, 0.15);
+  border-color: var(--neon-orange);
+  color: var(--neon-orange);
+}
+
+.quick-reply-chip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--neon-orange);
+  color: #0B0B15;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.field-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #888;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.field-tooltip-content {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: #2A2A35;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: normal;
+  width: max-content;
+  max-width: 220px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+@keyframes typewriter-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 /* ─── Small Screen Adjustments ───────────────────────────────────────── */
 
 @media (max-width: 480px) {

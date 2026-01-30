@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Orbitron } from "next/font/google";
+import { Geist, Geist_Mono, Orbitron, Caveat } from "next/font/google";
 import { Provider } from "@/components/ui/provider";
 import "./globals.css";
 
@@ -17,6 +17,12 @@ const orbitron = Orbitron({
   variable: "--font-orbitron",
   subsets: ["latin"],
   weight: ['400', '500', '600', '700', '800', '900'],
+});
+
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -87,7 +93,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#15151F" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${caveat.variable}`}>
         <Provider defaultTheme="dark">{children}</Provider>
       </body>
     </html>

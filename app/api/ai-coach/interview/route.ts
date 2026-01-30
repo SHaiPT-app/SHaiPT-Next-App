@@ -55,8 +55,12 @@ const INTERVIEW_QUESTIONS = [
     'current fitness level self-assessment',
 ];
 
-function buildInterviewSystemPrompt(coachId: string): string {
+function buildInterviewSystemPrompt(coachId: string, prefilledFields?: string[]): string {
     const persona = COACH_PERSONAS[coachId] || COACH_PERSONAS['everyday-fitness'];
+
+    const skipNote = prefilledFields && prefilledFields.length > 0
+        ? `\n\nIMPORTANT: The client has already provided the following information via the intake form. Do NOT ask about these topics again, skip directly to uncovered topics:\n- ${prefilledFields.join('\n- ')}`
+        : '';
 
     return `${persona.personality}
 
@@ -64,6 +68,7 @@ You are conducting an intake interview to learn about a new client before buildi
 
 You need to gather the following information during the interview (in roughly this order):
 ${INTERVIEW_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join('\n')}
+${skipNote}
 
 IMPORTANT RULES:
 - Ask about 1-2 topics per message. Do NOT dump all questions at once.
@@ -74,6 +79,7 @@ IMPORTANT RULES:
 - Never use emojis.
 - If the user provides information about multiple topics at once, acknowledge all of it and move on to the remaining topics.
 - If you detect the user has already provided certain information in previous messages, do not ask again.
+- After covering a topic, include a step marker tag in your response. Valid markers are: [STEP:basic_info], [STEP:athletic_history], [STEP:fitness_goals], [STEP:training_schedule], [STEP:equipment_location], [STEP:medical], [STEP:fitness_level], [STEP:photo_upload]. These will be stripped before showing to the user.
 
 Start by introducing yourself in character and asking for their basic info (name, age, height, weight).`;
 }
@@ -132,7 +138,7 @@ function getMockFollowupResponse(messageCount: number): string {
 
 export async function POST(req: NextRequest) {
     try {
-        const { messages, coachId, action } = await req.json();
+        const { messages, coachId, action, prefilledFields } = await req.json();
 
         // Handle form data extraction
         if (action === 'extract_form_data') {
@@ -186,7 +192,7 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        const systemPrompt = buildInterviewSystemPrompt(coachId);
+        const systemPrompt = buildInterviewSystemPrompt(coachId, prefilledFields);
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
@@ -218,6 +224,7 @@ export async function POST(req: NextRequest) {
                 const text = chunk.text();
                 if (text) {
                     fullResponse += text;
+                    // Keep [STEP:*] markers in the stream (client will strip them)
                     const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
                     if (cleanText) {
                         chunks.push(cleanText);
