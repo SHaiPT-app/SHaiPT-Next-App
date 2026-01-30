@@ -14,13 +14,19 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.push('/home');
+    // Defer session check so it never blocks initial paint.
+    // Safari ITP may block cross-origin Supabase requests — fail silently.
+    const timeout = setTimeout(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          router.push('/home');
+        }
+      } catch {
+        // Safari ITP or network failure — landing page works fine without auth.
       }
-    };
-    checkSession();
+    }, 100);
+    return () => clearTimeout(timeout);
   }, [router]);
 
   return (
