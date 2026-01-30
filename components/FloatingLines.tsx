@@ -78,13 +78,25 @@ vec3 background_color(vec2 uv) {
   return col * 0.5;
 }
 
+vec3 safeGetGradient(int i) {
+  // Unrolled array access — mobile GLSL ES 1.00 requires constant indices
+  if (i <= 0) return lineGradient[0];
+  if (i == 1) return lineGradient[1];
+  if (i == 2) return lineGradient[2];
+  if (i == 3) return lineGradient[3];
+  if (i == 4) return lineGradient[4];
+  if (i == 5) return lineGradient[5];
+  if (i == 6) return lineGradient[6];
+  return lineGradient[7];
+}
+
 vec3 getLineColor(float t, vec3 baseColor) {
   if (lineGradientCount <= 0) {
     return baseColor;
   }
 
   vec3 gradientColor;
-  
+
   if (lineGradientCount == 1) {
     gradientColor = lineGradient[0];
   } else {
@@ -94,12 +106,12 @@ vec3 getLineColor(float t, vec3 baseColor) {
     float f = fract(scaled);
     int idx2 = min(idx + 1, lineGradientCount - 1);
 
-    vec3 c1 = lineGradient[idx];
-    vec3 c2 = lineGradient[idx2];
-    
+    vec3 c1 = safeGetGradient(idx);
+    vec3 c2 = safeGetGradient(idx2);
+
     gradientColor = mix(c1, c2, f);
   }
-  
+
   return gradientColor * 0.5;
 }
 
@@ -305,12 +317,27 @@ export default function FloatingLines({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Check WebGL availability before attempting to create renderer
+    const testCanvas = document.createElement('canvas');
+    const gl = testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl');
+    if (!gl) {
+      console.warn('FloatingLines: WebGL not available, skipping render.');
+      return;
+    }
+
+    let renderer: WebGLRenderer;
+    try {
+      renderer = new WebGLRenderer({ antialias: true, alpha: false });
+    } catch (e) {
+      console.warn('FloatingLines: WebGL renderer creation failed:', e);
+      return;
+    }
+
     const scene = new Scene();
 
     const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     camera.position.z = 1;
 
-    const renderer = new WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
@@ -439,7 +466,10 @@ export default function FloatingLines({
     }
 
     let raf = 0;
+    let shaderFailed = false;
     const renderLoop = () => {
+      if (shaderFailed) return;
+
       uniforms.iTime.value = clock.getElapsedTime();
 
       if (interactive) {
@@ -455,7 +485,13 @@ export default function FloatingLines({
         uniforms.parallaxOffset.value.copy(currentParallaxRef.current);
       }
 
-      renderer.render(scene, camera);
+      try {
+        renderer.render(scene, camera);
+      } catch (e) {
+        console.warn('FloatingLines: Render failed, stopping animation:', e);
+        shaderFailed = true;
+        return;
+      }
       raf = requestAnimationFrame(renderLoop);
     };
     renderLoop();
