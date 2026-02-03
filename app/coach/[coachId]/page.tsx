@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Box, Text, Flex } from '@chakra-ui/react';
-import { ArrowLeft, Save, Dumbbell, UtensilsCrossed, MessageCircle, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Save, Dumbbell, UtensilsCrossed, MessageCircle, ClipboardList, ShieldCheck } from 'lucide-react';
 import { coaches } from '@/data/coaches';
 import GamifiedChat from '@/components/ai-coach/GamifiedChat';
 import IntakeFormV2 from '@/components/ai-coach/IntakeFormV2';
@@ -51,6 +51,7 @@ const EMPTY_DIET_FORM: DietIntakeFormData = {
 };
 
 type FlowStage =
+    | 'waiver'
     | 'interview'
     | 'split_selection'
     | 'generating'
@@ -84,8 +85,12 @@ export default function CoachInterviewPage() {
     // Tab state
     const [activeTab, setActiveTab] = useState('chat');
 
+    // Waiver state
+    const [waiverAccepted, setWaiverAccepted] = useState(false);
+    const [waiverLoading, setWaiverLoading] = useState(true);
+
     // Plan generation flow state
-    const [flowStage, setFlowStage] = useState<FlowStage>('interview');
+    const [flowStage, setFlowStage] = useState<FlowStage>('waiver');
     const [interviewMessages, setInterviewMessages] = useState<{ role: string; content: string }[]>([]);
     const [splitOptions, setSplitOptions] = useState<SplitOption[]>([]);
     const [selectedSplit, setSelectedSplit] = useState<string | null>(null);
@@ -116,6 +121,34 @@ export default function CoachInterviewPage() {
             }
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Check if terms already accepted
+    useEffect(() => {
+        async function checkWaiver() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    setWaiverLoading(false);
+                    return;
+                }
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('terms_accepted_at')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile?.terms_accepted_at) {
+                    setWaiverAccepted(true);
+                    setFlowStage('interview');
+                }
+            } catch {
+                // No profile or column doesn't exist yet — show waiver
+            } finally {
+                setWaiverLoading(false);
+            }
+        }
+        checkWaiver();
     }, []);
 
     // Redirect if invalid coach
@@ -154,6 +187,28 @@ export default function CoachInterviewPage() {
         loadPreviousData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [coachId]);
+
+    // Waiver acceptance handler
+    const handleAcceptWaiver = useCallback(async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const now = new Date().toISOString();
+            await supabase
+                .from('profiles')
+                .update({ terms_accepted_at: now })
+                .eq('id', user.id);
+
+            setWaiverAccepted(true);
+            setFlowStage('interview');
+        } catch (error) {
+            console.error('Failed to save waiver acceptance:', error);
+            // Still proceed — the waiver was shown and accepted in-session
+            setWaiverAccepted(true);
+            setFlowStage('interview');
+        }
+    }, []);
 
     // V1 update handler (from chat extraction)
     const handleFormDataUpdate = useCallback((data: Partial<IntakeFormData>) => {
@@ -605,6 +660,8 @@ export default function CoachInterviewPage() {
 
     const getHeaderTitle = () => {
         switch (flowStage) {
+            case 'waiver':
+                return 'Health Disclaimer';
             case 'plan_review':
                 return 'Your Training Plan';
             case 'dietitian_interview':
@@ -619,7 +676,7 @@ export default function CoachInterviewPage() {
     };
 
     // Whether we should show the tabbed interview UI
-    const showInterviewTabs = flowStage === 'interview' && !isDietitianPhase;
+    const showInterviewTabs = flowStage === 'interview' && !isDietitianPhase && waiverAccepted;
 
     return (
         <Box
@@ -726,6 +783,162 @@ export default function CoachInterviewPage() {
 
             {/* Main Content */}
             <Box flex={1} overflow="hidden" display="flex" flexDirection="column">
+                {/* Waiver Screen */}
+                {flowStage === 'waiver' && !waiverLoading && (
+                    <Box
+                        flex={1}
+                        overflow="auto"
+                        display="flex"
+                        flexDirection="column"
+                        alignItems="center"
+                        px="1rem"
+                        py="2rem"
+                    >
+                        <Box
+                            maxW="600px"
+                            w="100%"
+                            p="2rem"
+                            borderRadius="16px"
+                            bg="rgba(21, 21, 31, 0.8)"
+                            border="1px solid rgba(255, 255, 255, 0.1)"
+                            backdropFilter="blur(16px)"
+                            style={{ WebkitBackdropFilter: 'blur(16px)' }}
+                        >
+                            <Flex alignItems="center" gap="0.75rem" mb="1.5rem">
+                                <Box
+                                    p="0.5rem"
+                                    borderRadius="10px"
+                                    bg="rgba(255, 102, 0, 0.15)"
+                                    border="1px solid rgba(255, 102, 0, 0.3)"
+                                >
+                                    <ShieldCheck size={24} color="#FF6600" />
+                                </Box>
+                                <Text
+                                    fontFamily="var(--font-orbitron)"
+                                    fontSize="1.1rem"
+                                    fontWeight="700"
+                                    color="#fff"
+                                >
+                                    Health Disclaimer & Liability Waiver
+                                </Text>
+                            </Flex>
+
+                            <Box
+                                p="1.25rem"
+                                borderRadius="12px"
+                                bg="rgba(255, 255, 255, 0.03)"
+                                border="1px solid rgba(255, 255, 255, 0.06)"
+                                mb="1.5rem"
+                                maxH="350px"
+                                overflowY="auto"
+                            >
+                                <Text fontSize="0.85rem" color="rgba(255,255,255,0.75)" lineHeight="1.7" mb="1rem">
+                                    SHaiPT uses artificial intelligence to generate personalized fitness training programs and
+                                    nutrition guidance. By proceeding, you acknowledge and agree to the following:
+                                </Text>
+
+                                <Box as="ul" pl="1.25rem" mb="1rem">
+                                    <Box as="li" mb="0.5rem">
+                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
+                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">Not medical advice.</Text>{' '}
+                                            All content generated by SHaiPT, including workout plans, nutrition plans, and AI coach
+                                            responses, is for general informational and fitness purposes only. It is not a substitute
+                                            for professional medical advice, diagnosis, or treatment.
+                                        </Text>
+                                    </Box>
+                                    <Box as="li" mb="0.5rem">
+                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
+                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">Consult your doctor.</Text>{' '}
+                                            You should consult a qualified healthcare provider before starting any new exercise or
+                                            nutrition program, especially if you have pre-existing medical conditions, injuries, or
+                                            health concerns.
+                                        </Text>
+                                    </Box>
+                                    <Box as="li" mb="0.5rem">
+                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
+                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">Exercise at your own risk.</Text>{' '}
+                                            Physical exercise carries inherent risks of injury. You assume full responsibility for
+                                            any injuries or health issues that may arise from following AI-generated fitness
+                                            recommendations.
+                                        </Text>
+                                    </Box>
+                                    <Box as="li" mb="0.5rem">
+                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
+                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">AI limitations.</Text>{' '}
+                                            The AI coach and AI dietitian are not licensed professionals. Their guidance is based on
+                                            general fitness and nutrition principles and may not account for your unique medical
+                                            circumstances.
+                                        </Text>
+                                    </Box>
+                                    <Box as="li">
+                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
+                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">Form analysis disclaimer.</Text>{' '}
+                                            The computer vision form checker is for guidance only. Always prioritize safe form and
+                                            physical comfort over AI feedback.
+                                        </Text>
+                                    </Box>
+                                </Box>
+                            </Box>
+
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '0.75rem',
+                                    cursor: 'pointer',
+                                    marginBottom: '1.5rem',
+                                    padding: '0.75rem',
+                                    borderRadius: '10px',
+                                    background: waiverAccepted ? 'rgba(255, 102, 0, 0.08)' : 'transparent',
+                                    border: waiverAccepted ? '1px solid rgba(255, 102, 0, 0.25)' : '1px solid rgba(255, 255, 255, 0.1)',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={waiverAccepted}
+                                    onChange={(e) => setWaiverAccepted(e.target.checked)}
+                                    style={{
+                                        width: '20px',
+                                        height: '20px',
+                                        marginTop: '2px',
+                                        accentColor: '#FF6600',
+                                        cursor: 'pointer',
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <Text fontSize="0.85rem" color="rgba(255,255,255,0.85)" lineHeight="1.6">
+                                    I understand that SHaiPT provides AI-generated fitness and nutrition advice, not medical
+                                    advice. I accept responsibility for my health decisions and will consult a healthcare
+                                    professional for medical concerns.
+                                </Text>
+                            </label>
+
+                            <button
+                                onClick={handleAcceptWaiver}
+                                disabled={!waiverAccepted}
+                                data-testid="accept-waiver-btn"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.85rem',
+                                    background: waiverAccepted ? '#FF6600' : 'rgba(255, 102, 0, 0.3)',
+                                    color: waiverAccepted ? '#0B0B15' : 'rgba(255, 255, 255, 0.4)',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '700',
+                                    fontFamily: 'var(--font-orbitron)',
+                                    cursor: waiverAccepted ? 'pointer' : 'not-allowed',
+                                    opacity: waiverAccepted ? 1 : 0.6,
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                Accept & Continue to Interview
+                            </button>
+                        </Box>
+                    </Box>
+                )}
+
                 {/* Interview phase: tabbed Chat/Form */}
                 {showInterviewTabs && (
                     <Box flex={1} overflow="hidden" display={flowStage === 'interview' ? 'flex' : 'none'} flexDirection="column">

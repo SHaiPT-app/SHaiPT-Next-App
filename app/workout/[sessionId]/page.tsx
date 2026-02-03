@@ -766,6 +766,8 @@ export default function WorkoutExecutionPage() {
 
     // Pose detection
     const [showPoseDetection, setShowPoseDetection] = useState(false);
+    const [showCameraWarning, setShowCameraWarning] = useState(false);
+    const cameraWarningShownRef = useRef(false);
 
     const weightUnit = profile?.preferred_weight_unit || 'lbs';
 
@@ -1249,7 +1251,15 @@ export default function WorkoutExecutionPage() {
                     <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
                         <button
                             data-testid="pose-toggle-btn"
-                            onClick={() => setShowPoseDetection(prev => !prev)}
+                            onClick={() => {
+                                if (!showPoseDetection && !cameraWarningShownRef.current) {
+                                    setShowCameraWarning(true);
+                                    cameraWarningShownRef.current = true;
+                                    setShowPoseDetection(true);
+                                } else {
+                                    setShowPoseDetection(prev => !prev);
+                                }
+                            }}
                             style={{
                                 background: showPoseDetection
                                     ? 'rgba(255, 102, 0, 0.15)'
@@ -1273,6 +1283,58 @@ export default function WorkoutExecutionPage() {
                             {showPoseDetection ? 'Hide Form Check' : 'Form Check'}
                         </button>
                     </div>
+
+                    {/* Camera Warning Banner */}
+                    <AnimatePresence>
+                        {showCameraWarning && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.3 }}
+                                data-testid="camera-warning"
+                                style={{
+                                    margin: '0 0 0.75rem 0',
+                                    padding: '0.75rem 1rem',
+                                    background: 'rgba(255, 170, 0, 0.1)',
+                                    border: '1px solid rgba(255, 170, 0, 0.35)',
+                                    borderRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '0.75rem',
+                                }}
+                            >
+                                <span style={{ color: '#FFAA00', fontSize: '1.1rem', flexShrink: 0, marginTop: '1px' }}>&#9888;</span>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{
+                                        color: 'rgba(255, 255, 255, 0.9)',
+                                        fontSize: '0.8rem',
+                                        lineHeight: '1.5',
+                                        margin: 0,
+                                    }}>
+                                        Computer Vision is for guidance only. Always prioritize safe form and physical
+                                        comfort over AI feedback.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowCameraWarning(false)}
+                                    data-testid="dismiss-camera-warning"
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'rgba(255, 255, 255, 0.5)',
+                                        cursor: 'pointer',
+                                        fontSize: '1rem',
+                                        padding: '0',
+                                        lineHeight: 1,
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    &times;
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     {/* Pose Detection Overlay */}
                     {showPoseDetection && (

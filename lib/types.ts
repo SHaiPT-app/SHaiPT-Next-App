@@ -49,6 +49,9 @@ export interface Profile {
     weight?: number;
     experience?: string;
 
+    // Legal / liability
+    terms_accepted_at?: string; // timestamptz, nullable — when user accepted health disclaimer & liability waiver
+
     // Timestamps
     created_at?: string; // timestamptz, default now()
     updated_at?: string; // timestamptz, default now()
