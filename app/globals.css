@@ -471,10 +471,10 @@ button, a, input, select, textarea {
   padding: 0.45rem 0.85rem;
   border-radius: 20px;
   font-size: 0.8rem;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--foreground);
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
@@ -482,14 +482,15 @@ button, a, input, select, textarea {
 }
 
 .quick-reply-chip:hover {
-  background: rgba(255, 102, 0, 0.1);
-  border-color: rgba(255, 102, 0, 0.3);
+  background: rgba(255, 102, 0, 0.12);
+  border-color: rgba(255, 102, 0, 0.4);
+  color: #CC5200;
 }
 
 .quick-reply-chip[data-selected="true"] {
   background: rgba(255, 102, 0, 0.15);
   border-color: var(--neon-orange);
-  color: var(--neon-orange);
+  color: #CC5200;
 }
 
 .quick-reply-chip-badge {
@@ -544,6 +545,39 @@ button, a, input, select, textarea {
 @keyframes typewriter-cursor {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+@keyframes chipsFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes thinkingBounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
+}
+
+.thinking-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.thinking-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--neon-orange);
+  display: inline-block;
+  animation: thinkingBounce 1.4s ease-in-out infinite;
+}
+
+.thinking-dots span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0.32s;
 }
 
 /* ─── Small Screen Adjustments ───────────────────────────────────────── */

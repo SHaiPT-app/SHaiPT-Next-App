@@ -524,8 +524,8 @@ export default function GamifiedChat({
                             >
                                 {coach.displayName}
                             </Text>
-                            <Text fontSize="0.65rem" color={isLoading ? 'var(--neon-orange)' : '#888'}>
-                                {isLoading ? 'Typing...' : 'AI Coach'}
+                            <Text fontSize="0.7rem" fontWeight={isLoading ? '600' : '400'} color={isLoading ? 'var(--neon-orange)' : '#888'}>
+                                {isLoading ? 'Thinking...' : 'AI Coach'}
                             </Text>
                         </Box>
                     </Flex>
@@ -547,10 +547,20 @@ export default function GamifiedChat({
                             )}
                         </Text>
                     ) : isLoading ? (
-                        <Flex gap="0.2rem" py="0.5rem">
-                            <Box as="span" w="6px" h="6px" borderRadius="50%" bg="var(--neon-orange)" animation="pulse 1.4s ease-in-out infinite" />
-                            <Box as="span" w="6px" h="6px" borderRadius="50%" bg="var(--neon-orange)" animation="pulse 1.4s ease-in-out 0.2s infinite" />
-                            <Box as="span" w="6px" h="6px" borderRadius="50%" bg="var(--neon-orange)" animation="pulse 1.4s ease-in-out 0.4s infinite" />
+                        <Flex alignItems="center" gap="0.4rem" py="0.5rem">
+                            <Text
+                                className="coach-handwriting"
+                                color="#1a1a1a"
+                                fontSize="1rem"
+                                fontWeight="600"
+                            >
+                                Coach is thinking
+                            </Text>
+                            <span className="thinking-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </span>
                         </Flex>
                     ) : null}
                         </Box>
@@ -583,8 +593,13 @@ export default function GamifiedChat({
                             backdropFilter="blur(6px)"
                             style={{ WebkitBackdropFilter: 'blur(6px)' }}
                         >
-                            {currentChips && !showPhotoUpload && (
-                                <Box mb="0.5rem">
+                            {currentChips && !showPhotoUpload && !isTypewriting && !isLoading && (
+                                <Box
+                                    mb="0.5rem"
+                                    style={{
+                                        animation: 'chipsFadeIn 0.3s ease-out',
+                                    }}
+                                >
                                     <QuickReplyChips
                                         options={currentChips.options}
                                         selected={chipSelection}

@@ -289,8 +289,8 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                     >
                                         AI Coach
                                     </Heading>
-                                    <Text fontSize="0.7rem" color="gray.500">
-                                        {isLoading ? 'Typing...' : 'Online'}
+                                    <Text fontSize="0.7rem" fontWeight={isLoading ? '600' : '400'} color={isLoading ? 'var(--primary)' : 'gray.500'}>
+                                        {isLoading ? 'Thinking...' : 'Online'}
                                     </Text>
                                 </Box>
                             </Flex>
@@ -525,12 +525,17 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                                                     >
                                                         {message.content || (isLoading && message.role === 'assistant' ? '' : '')}
                                                     </Text>
-                                                    {/* Loading dots for empty assistant message */}
+                                                    {/* Thinking indicator for empty assistant message */}
                                                     {message.role === 'assistant' && !message.content && isLoading && (
-                                                        <Flex gap="0.2rem" alignItems="center" py="0.25rem">
-                                                            <Box as="span" w="5px" h="5px" borderRadius="50%" bg="var(--primary)" display="inline-block" animation="pulse 1.4s ease-in-out infinite" />
-                                                            <Box as="span" w="5px" h="5px" borderRadius="50%" bg="var(--primary)" display="inline-block" animation="pulse 1.4s ease-in-out 0.2s infinite" />
-                                                            <Box as="span" w="5px" h="5px" borderRadius="50%" bg="var(--primary)" display="inline-block" animation="pulse 1.4s ease-in-out 0.4s infinite" />
+                                                        <Flex alignItems="center" gap="0.35rem" py="0.25rem">
+                                                            <Text fontSize="0.8rem" color="var(--primary)" fontWeight="500">
+                                                                AI Coach is thinking
+                                                            </Text>
+                                                            <span className="thinking-dots">
+                                                                <span></span>
+                                                                <span></span>
+                                                                <span></span>
+                                                            </span>
                                                         </Flex>
                                                     )}
                                                 </Box>
