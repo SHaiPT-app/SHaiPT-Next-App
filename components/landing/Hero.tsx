@@ -179,6 +179,24 @@ export default function Hero() {
           AI-Powered Personal Training
         </motion.div>
 
+        <motion.p
+          variants={fadeInUp}
+          style={{
+            fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)',
+            fontWeight: '700',
+            color: 'rgba(255, 255, 255, 0.85)',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            marginBottom: '0.75rem',
+            fontFamily: 'var(--font-orbitron)',
+          }}
+        >
+          Don&apos;t Just Train.{' '}
+          <span style={{ color: '#FF6600', textShadow: '0 0 20px rgba(255, 102, 0, 0.4)' }}>
+            Get SHaiPT
+          </span>
+        </motion.p>
+
         <motion.h1
           variants={fadeInUp}
           style={{

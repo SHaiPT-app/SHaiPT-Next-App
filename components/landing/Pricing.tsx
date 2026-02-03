@@ -38,7 +38,7 @@ const tiers: PricingTier[] = [
     name: 'Pro',
     price: '$19.99',
     period: '/month',
-    description: 'Full suite with form analysis and nutrition coaching.',
+    description: 'Start as a Pro for free, because you are a Pro, if you are consistent.',
     features: [
       'Everything in Starter',
       'Real-time form analysis',

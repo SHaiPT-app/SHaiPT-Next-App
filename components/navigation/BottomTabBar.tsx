@@ -50,8 +50,16 @@ export function BottomTabBar() {
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-            {/* Backdrop blur effect */}
-            <div className="absolute inset-0 bg-gray-900/90 backdrop-blur-lg border-t border-gray-800" />
+            {/* Glassmorphism backdrop */}
+            <div
+                className="absolute inset-0 backdrop-blur-2xl border-t"
+                style={{
+                    background: 'rgba(21, 21, 31, 0.55)',
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.2)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                }}
+            />
 
             <div className="relative flex items-end justify-around px-2 pb-safe">
                 {tabs.map((tab) => {
@@ -67,14 +75,15 @@ export function BottomTabBar() {
                             >
                                 <motion.div
                                     whileTap={{ scale: 0.95 }}
-                                    className={`
-                                        w-14 h-14 rounded-full flex items-center justify-center
-                                        shadow-lg shadow-cyan-500/30
-                                        ${workout.isActive
-                                            ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                                            : 'bg-gradient-to-r from-cyan-500 to-blue-500'
-                                        }
-                                    `}
+                                    className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+                                    style={{
+                                        background: workout.isActive
+                                            ? 'linear-gradient(135deg, #10b981, #059669)'
+                                            : 'linear-gradient(135deg, #FF6600, #CC5200)',
+                                        boxShadow: workout.isActive
+                                            ? '0 4px 20px rgba(16, 185, 129, 0.4)'
+                                            : '0 4px 20px rgba(255, 102, 0, 0.4)',
+                                    }}
                                 >
                                     {workout.isActive ? (
                                         <Dumbbell className="w-6 h-6 text-white" />
@@ -101,13 +110,14 @@ export function BottomTabBar() {
                             >
                                 <Icon
                                     className={`w-6 h-6 transition-colors ${
-                                        active ? 'text-cyan-400' : 'text-gray-500'
+                                        active ? 'text-orange-400' : 'text-gray-500'
                                     }`}
                                 />
                                 {active && (
                                     <motion.div
                                         layoutId="activeTab"
-                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cyan-400"
+                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full"
+                                        style={{ background: '#FF6600', boxShadow: '0 0 6px rgba(255, 102, 0, 0.5)' }}
                                         initial={false}
                                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                                     />
@@ -115,7 +125,7 @@ export function BottomTabBar() {
                             </motion.div>
                             <span
                                 className={`text-xs mt-1 transition-colors ${
-                                    active ? 'text-cyan-400' : 'text-gray-500'
+                                    active ? 'text-orange-400' : 'text-gray-500'
                                 }`}
                             >
                                 {tab.label}

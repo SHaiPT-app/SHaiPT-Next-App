@@ -64,14 +64,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 position: 'sticky',
                 top: 0,
                 zIndex: 999,
-                background: 'rgba(21, 21, 31, 0.95)',
-                backdropFilter: 'blur(10px)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                background: 'rgba(21, 21, 31, 0.6)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                 padding: '1.5rem 1rem',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                minHeight: '80px'
+                minHeight: '80px',
+                boxShadow: '0 4px 30px rgba(0, 0, 0, 0.15)',
             }}>
                 {/* PillNav centered */}
                 <PillNav
@@ -83,9 +85,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         { label: 'AI Coach', href: '/ai' }
                     ]}
                     activeHref={pathname}
-                    baseColor="#F25F29"
-                    pillColor="#F25F29"
-                    hoveredPillTextColor="#000"
+                    baseColor="rgba(255, 255, 255, 0.08)"
+                    pillColor="rgba(255, 102, 0, 0.85)"
+                    hoveredPillTextColor="#fff"
                     pillTextColor="#fff"
                     initialLoadAnimation={false}
                 />
