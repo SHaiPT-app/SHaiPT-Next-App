@@ -426,6 +426,7 @@ export default function CoachInterviewPage() {
                                 .toLowerCase()
                                 .replace(/[^a-z0-9]+/g, '_')
                                 .substring(0, 50)}_d${session.day_number}_e${exIndex}`,
+                            exercise_name: ex.exercise_name,
                             sets: ex.sets.map(s => ({
                                 reps: s.reps,
                                 weight: s.weight || '',

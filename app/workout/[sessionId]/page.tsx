@@ -7,6 +7,7 @@ import { db } from '@/lib/supabaseDb';
 import { fadeInUp, staggerContainer } from '@/lib/animations';
 import type {
     WorkoutSession,
+    SessionExercise,
     Exercise,
     ExerciseLog,
     LoggedSet,
@@ -17,6 +18,24 @@ import type {
 import PlanAdaptationReview from '@/components/PlanAdaptationReview';
 
 const PoseDetectionOverlay = lazy(() => import('@/components/PoseDetectionOverlay'));
+
+/** Build a fallback Exercise object from JSONB SessionExercise when exercises table lookup fails */
+function buildFallbackExercise(se: SessionExercise): Exercise {
+    // Extract readable name: prefer exercise_name, else parse from exercise_id
+    const name = se.exercise_name
+        || se.exercise_id
+            .replace(/_d\d+_e\d+$/, '') // strip _d1_e0 suffix
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase()); // Title Case
+
+    return {
+        exercise_id: se.exercise_id,
+        name,
+        body_parts: [],
+        target_muscles: [],
+        equipments: [],
+    };
+}
 
 // ============================================
 // REST TIMER COMPONENT
@@ -826,11 +845,19 @@ export default function WorkoutExecutionPage() {
             setWorkoutLogId(log.id);
             setStartedAt(now);
 
-            // Load first exercise
+            // Load first exercise (fall back to JSONB data if exercises table lookup fails)
             const firstExercise = workoutSession.exercises[0];
             if (firstExercise) {
-                const exerciseDetails = await db.exercises.getById(firstExercise.exercise_id);
-                setCurrentExercise(exerciseDetails);
+                try {
+                    const exerciseDetails = await db.exercises.getById(firstExercise.exercise_id);
+                    if (exerciseDetails) {
+                        setCurrentExercise(exerciseDetails);
+                    } else {
+                        setCurrentExercise(buildFallbackExercise(firstExercise));
+                    }
+                } catch {
+                    setCurrentExercise(buildFallbackExercise(firstExercise));
+                }
             }
 
             setPageState('active');
@@ -841,12 +868,18 @@ export default function WorkoutExecutionPage() {
         }
     }, [sessionId]);
 
-    const loadExerciseDetails = useCallback(async (exerciseId: string) => {
+    const loadExerciseDetails = useCallback(async (exerciseId: string, sessionExercise?: SessionExercise) => {
         try {
             const exercise = await db.exercises.getById(exerciseId);
-            setCurrentExercise(exercise);
-        } catch (err) {
-            console.error('Error loading exercise details:', err);
+            if (exercise) {
+                setCurrentExercise(exercise);
+            } else if (sessionExercise) {
+                setCurrentExercise(buildFallbackExercise(sessionExercise));
+            }
+        } catch {
+            if (sessionExercise) {
+                setCurrentExercise(buildFallbackExercise(sessionExercise));
+            }
         }
     }, []);
 
@@ -861,7 +894,7 @@ export default function WorkoutExecutionPage() {
         if (session && pageState === 'active') {
             const exercise = session.exercises[currentExerciseIndex];
             if (exercise) {
-                loadExerciseDetails(exercise.exercise_id);
+                loadExerciseDetails(exercise.exercise_id, exercise);
             }
         }
     }, [currentExerciseIndex, session, pageState, loadExerciseDetails]);

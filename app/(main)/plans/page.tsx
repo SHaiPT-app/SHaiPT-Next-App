@@ -246,20 +246,41 @@ export default function PlansViewerPage() {
                 }));
                 setPlanSessions(resolved);
 
-                // Cache exercise details
-                const exerciseIds = new Set<string>();
+                // Cache exercise details (with fallback for AI-generated exercise IDs)
+                const exerciseMap = new Map<string, SessionExercise>();
                 sessionDetails.forEach(s => {
                     if (s) {
-                        s.exercises.forEach(ex => exerciseIds.add(ex.exercise_id));
+                        s.exercises.forEach(ex => exerciseMap.set(ex.exercise_id, ex));
                     }
                 });
 
                 const exerciseDetails = await Promise.all(
-                    [...exerciseIds].map(id => db.exercises.getById(id))
+                    [...exerciseMap.keys()].map(async (id) => {
+                        try {
+                            const ex = await db.exercises.getById(id);
+                            return ex;
+                        } catch {
+                            return null;
+                        }
+                    })
                 );
                 const cache: Record<string, Exercise> = {};
                 exerciseDetails.forEach(ex => {
                     if (ex) cache[ex.exercise_id] = ex;
+                });
+                // Build fallback entries for exercises not found in the database
+                exerciseMap.forEach((se, id) => {
+                    if (!cache[id]) {
+                        const name = se.exercise_name
+                            || id.replace(/_d\d+_e\d+$/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                        cache[id] = {
+                            exercise_id: id,
+                            name,
+                            body_parts: [],
+                            target_muscles: [],
+                            equipments: [],
+                        };
+                    }
                 });
                 setExerciseCache(cache);
             }

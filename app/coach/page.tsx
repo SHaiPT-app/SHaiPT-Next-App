@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { coaches } from '@/data/coaches';
 import type { CoachPersona } from '@/data/coaches';
 
@@ -168,20 +168,22 @@ export default function CoachSelectionPage() {
                             onClick={() => router.push('/home')}
                             aria-label="Back to Home"
                             style={{
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                background: 'rgba(255, 102, 0, 0.15)',
+                                border: '1px solid rgba(255, 102, 0, 0.3)',
                                 borderRadius: '8px',
-                                width: '40px',
-                                height: '40px',
+                                padding: '0.5rem 0.85rem',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'var(--foreground)',
+                                gap: '0.4rem',
+                                color: '#FF6600',
                                 cursor: 'pointer',
                                 flexShrink: 0,
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
                             }}
                         >
-                            <Home size={20} />
+                            <ArrowLeft size={18} />
+                            Home
                         </button>
                         <h1
                             style={{

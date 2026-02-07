@@ -98,6 +98,7 @@ export interface SessionSet {
 // Individual exercise in a workout session (JSONB structure)
 export interface SessionExercise {
     exercise_id: string; // Reference to exercises table
+    exercise_name?: string; // Human-readable name (fallback when exercises table lookup fails)
     sets: SessionSet[]; // List of specific sets
     notes?: string; // Optional exercise-specific notes
 }
