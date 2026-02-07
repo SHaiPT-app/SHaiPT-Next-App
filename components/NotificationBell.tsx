@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, Check, UserPlus, Dumbbell, MessageSquare, Trophy, Heart, AtSign } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import type { Notification, NotificationType } from '@/lib/types';
 
 interface NotificationBellProps {
@@ -38,9 +39,20 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
     const [loading, setLoading] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    const getAuthHeaders = useCallback(async (): Promise<Record<string, string>> => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+                return { Authorization: `Bearer ${session.access_token}` };
+            }
+        } catch { /* ignore */ }
+        return {};
+    }, []);
+
     const fetchCount = useCallback(async () => {
         try {
-            const res = await fetch(`/api/notifications?userId=${userId}&countOnly=true`);
+            const headers = await getAuthHeaders();
+            const res = await fetch(`/api/notifications?userId=${userId}&countOnly=true`, { headers });
             if (res.ok) {
                 const { count } = await res.json();
                 setUnreadCount(count);
@@ -48,12 +60,13 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
         } catch {
             // Silently fail
         }
-    }, [userId]);
+    }, [userId, getAuthHeaders]);
 
     const fetchNotifications = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/notifications?userId=${userId}`);
+            const headers = await getAuthHeaders();
+            const res = await fetch(`/api/notifications?userId=${userId}`, { headers });
             if (res.ok) {
                 const { notifications: data } = await res.json();
                 setNotifications(data || []);
@@ -63,7 +76,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
         } finally {
             setLoading(false);
         }
-    }, [userId]);
+    }, [userId, getAuthHeaders]);
 
     // Poll for unread count
     useEffect(() => {
@@ -94,9 +107,10 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
 
     const handleMarkAllRead = async () => {
         try {
+            const authHeaders = await getAuthHeaders();
             await fetch('/api/notifications', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...authHeaders },
                 body: JSON.stringify({ userId, markAll: true }),
             });
             setUnreadCount(0);
@@ -108,9 +122,10 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
 
     const handleMarkOneRead = async (notificationId: string) => {
         try {
+            const authHeaders = await getAuthHeaders();
             await fetch('/api/notifications', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...authHeaders },
                 body: JSON.stringify({ notificationId }),
             });
             setNotifications(prev =>

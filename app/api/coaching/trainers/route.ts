@@ -12,9 +12,19 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
         }
 
-        const supabaseAdmin = createClient(supabaseUrl, serviceKey || anonKey!, {
-            auth: { autoRefreshToken: false, persistSession: false }
-        });
+        let supabaseAdmin;
+        if (serviceKey) {
+            supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+                auth: { autoRefreshToken: false, persistSession: false }
+            });
+        } else {
+            const authHeader = req.headers.get('Authorization');
+            const token = authHeader?.replace('Bearer ', '');
+            supabaseAdmin = createClient(supabaseUrl, anonKey!, {
+                global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
+                auth: { autoRefreshToken: false, persistSession: false }
+            });
+        }
 
         const { searchParams } = new URL(req.url);
         const userId = searchParams.get('userId');

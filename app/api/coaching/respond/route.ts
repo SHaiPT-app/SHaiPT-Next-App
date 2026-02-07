@@ -15,18 +15,30 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `action must be one of: ${validActions.join(', ')}` }, { status: 400 });
         }
 
-        // Create service-role client lazily inside handler
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-        if (!supabaseUrl || !serviceKey) {
-            console.error('Missing env vars:', { supabaseUrl: !!supabaseUrl, serviceKey: !!serviceKey });
+        if (!supabaseUrl || (!serviceKey && !anonKey)) {
             return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
         }
 
-        const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-            auth: { autoRefreshToken: false, persistSession: false }
-        });
+        let supabaseAdmin;
+        if (serviceKey) {
+            supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+                auth: { autoRefreshToken: false, persistSession: false }
+            });
+        } else {
+            const authHeader = req.headers.get('Authorization');
+            if (!authHeader) {
+                return NextResponse.json({ error: 'Authorization required' }, { status: 401 });
+            }
+            const token = authHeader.replace('Bearer ', '');
+            supabaseAdmin = createClient(supabaseUrl, anonKey!, {
+                global: { headers: { Authorization: `Bearer ${token}` } },
+                auth: { autoRefreshToken: false, persistSession: false }
+            });
+        }
 
         const statusMap: Record<string, CoachingStatus> = {
             accept: 'active',
@@ -54,8 +66,6 @@ export async function POST(req: NextRequest) {
             console.error('Coaching respond error:', error);
             throw error;
         }
-
-        // DB trigger notify_coaching_accepted auto-fires on UPDATE
 
         return NextResponse.json({ relationship });
     } catch (error: any) {

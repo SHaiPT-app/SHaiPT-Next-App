@@ -25,30 +25,21 @@ export default function CoachRequestModal({ trainer, athleteId, onClose, onSucce
         setError(null);
 
         try {
-            // Fetch intake data from coach_interviews if available
-            let intakeData = null;
-            try {
-                const { data: interview } = await supabase
-                    .from('coach_interviews')
-                    .select('intake_data')
-                    .eq('user_id', athleteId)
-                    .order('updated_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-                if (interview?.intake_data) {
-                    intakeData = interview.intake_data;
-                }
-            } catch {
-                // No intake data — that's fine
+            // Get auth token for server-side authentication
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                throw new Error('Not authenticated. Please log in again.');
             }
 
             const res = await fetch('/api/coaching/request', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                },
                 body: JSON.stringify({
                     athleteId,
                     coachId: trainer.id,
-                    intakeData,
                 }),
             });
 

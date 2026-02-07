@@ -167,7 +167,12 @@ export default function CoachSelectionPage() {
         if (!currentUserId) return;
         setTrainersLoading(true);
         try {
-            const res = await fetch(`/api/coaching/trainers?userId=${currentUserId}`);
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: Record<string, string> = {};
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`;
+            }
+            const res = await fetch(`/api/coaching/trainers?userId=${currentUserId}`, { headers });
             if (res.ok) {
                 const { trainers: data } = await res.json();
                 setTrainers(data || []);

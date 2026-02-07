@@ -3,24 +3,38 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
     try {
-        const { athleteId, coachId, intakeData } = await req.json();
+        const { athleteId, coachId } = await req.json();
 
         if (!athleteId || !coachId) {
             return NextResponse.json({ error: 'athleteId and coachId are required' }, { status: 400 });
         }
 
-        // Create service-role client lazily inside handler to ensure env vars are available
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-        if (!supabaseUrl || !serviceKey) {
-            console.error('Missing env vars:', { supabaseUrl: !!supabaseUrl, serviceKey: !!serviceKey });
+        if (!supabaseUrl || (!serviceKey && !anonKey)) {
             return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
         }
 
-        const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-            auth: { autoRefreshToken: false, persistSession: false }
-        });
+        // Prefer service-role key (bypasses RLS), fall back to user's auth token + anon key
+        // When using anon key, the SECURITY DEFINER trigger functions handle cross-user notification inserts
+        let supabaseAdmin;
+        if (serviceKey) {
+            supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+                auth: { autoRefreshToken: false, persistSession: false }
+            });
+        } else {
+            const authHeader = req.headers.get('Authorization');
+            if (!authHeader) {
+                return NextResponse.json({ error: 'Authorization required' }, { status: 401 });
+            }
+            const token = authHeader.replace('Bearer ', '');
+            supabaseAdmin = createClient(supabaseUrl, anonKey!, {
+                global: { headers: { Authorization: `Bearer ${token}` } },
+                auth: { autoRefreshToken: false, persistSession: false }
+            });
+        }
 
         // Validate coach exists and is a trainer
         const { data: coach, error: coachErr } = await supabaseAdmin
@@ -53,9 +67,9 @@ export async function POST(req: NextRequest) {
             }, { status: 409 });
         }
 
-        // Create the coaching relationship using service role (bypasses RLS)
-        // This is needed because the notify_coaching_request trigger inserts
-        // a notification for the coach, which RLS would block for the athlete user
+        // Create the coaching relationship
+        // When using anon key + user token, the SECURITY DEFINER trigger functions
+        // handle inserting notifications for the coach (cross-user insert)
         const { data: relationship, error: insertErr } = await supabaseAdmin
             .from('coaching_relationships')
             .insert([{
@@ -63,7 +77,6 @@ export async function POST(req: NextRequest) {
                 athlete_id: athleteId,
                 status: 'pending',
                 requested_by: athleteId,
-                intake_data: intakeData || null,
             }])
             .select()
             .single();

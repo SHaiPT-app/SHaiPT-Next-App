@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-function getAdminClient() {
+function getClient(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -10,14 +10,24 @@ function getAdminClient() {
         throw new Error('Missing Supabase configuration');
     }
 
-    return createClient(supabaseUrl, serviceKey || anonKey!, {
+    if (serviceKey) {
+        return createClient(supabaseUrl, serviceKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
+    }
+
+    // Fall back to anon key with user's auth token
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    return createClient(supabaseUrl, anonKey!, {
+        global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
         auth: { autoRefreshToken: false, persistSession: false }
     });
 }
 
 export async function GET(req: NextRequest) {
     try {
-        const supabaseAdmin = getAdminClient();
+        const supabaseClient = getClient(req);
 
         const { searchParams } = new URL(req.url);
         const userId = searchParams.get('userId');
@@ -28,7 +38,7 @@ export async function GET(req: NextRequest) {
         }
 
         if (countOnly === 'true') {
-            const { count, error } = await supabaseAdmin
+            const { count, error } = await supabaseClient
                 .from('notifications')
                 .select('*', { count: 'exact', head: true })
                 .eq('user_id', userId)
@@ -37,7 +47,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ count: count || 0 });
         }
 
-        const { data: notifications, error } = await supabaseAdmin
+        const { data: notifications, error } = await supabaseClient
             .from('notifications')
             .select('*')
             .eq('user_id', userId)
@@ -53,12 +63,12 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const supabaseAdmin = getAdminClient();
+        const supabaseClient = getClient(req);
 
         const { notificationId, userId, markAll } = await req.json();
 
         if (markAll && userId) {
-            const { error } = await supabaseAdmin
+            const { error } = await supabaseClient
                 .from('notifications')
                 .update({ is_read: true })
                 .eq('user_id', userId)
@@ -68,7 +78,7 @@ export async function PATCH(req: NextRequest) {
         }
 
         if (notificationId) {
-            const { data: notification, error } = await supabaseAdmin
+            const { data: notification, error } = await supabaseClient
                 .from('notifications')
                 .update({ is_read: true })
                 .eq('id', notificationId)
