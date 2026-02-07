@@ -180,6 +180,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     {/* Logout Button */}
                     <button
                         onClick={async () => {
+                            // Clear local storage first to prevent stale user data
+                            localStorage.removeItem('user');
                             await supabase.auth.signOut();
                             router.push('/');
                         }}

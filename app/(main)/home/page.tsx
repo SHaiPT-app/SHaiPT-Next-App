@@ -98,11 +98,33 @@ export default function HomePage() {
             }
 
             if (!resolvedUserId) {
-                const storedUser = localStorage.getItem('user');
-                if (storedUser) {
+                // ... (session check omitted)
+            }
+
+            // PRIORITIZE LOCAL STORAGE
+            // If we have a stored user in localStorage, prefer that ID over the session ID
+            // This ensures consistency with WorkoutLogger and other components that rely on localStorage
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                try {
                     const parsed = JSON.parse(storedUser);
-                    setUser(parsed);
-                    resolvedUserId = parsed.id;
+                    if (parsed && parsed.id) {
+                        setUser(parsed);
+                        resolvedUserId = parsed.id;
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse stored user:', e);
+                }
+            } else if (resolvedUserId && !user) {
+                // If no local storage but we have a session ID, fetch the full profile
+                try {
+                    const profile = await db.profiles.getById(resolvedUserId);
+                    if (profile) {
+                        setUser(profile);
+                        localStorage.setItem('user', JSON.stringify(profile));
+                    }
+                } catch {
+                    // Ignore profile fetch errors
                 }
             }
 
