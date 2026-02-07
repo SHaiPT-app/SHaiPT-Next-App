@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/supabaseDb';
 import type { Profile } from '@/lib/types';
 import PillNav from '@/components/PillNav';
 import NotificationBell from '@/components/NotificationBell';
@@ -24,10 +25,25 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 return;
             }
 
-            // Get user profile from localStorage or fetch
+            // Get user profile from localStorage, then refresh from DB
             const storedUser = localStorage.getItem('user');
+            let profile: Profile | null = null;
+
             if (storedUser) {
-                setUser(JSON.parse(storedUser));
+                profile = JSON.parse(storedUser);
+                setUser(profile);
+            }
+
+            // Always fetch fresh profile from DB to get latest role/fields
+            try {
+                const freshProfile = await db.profiles.getById(session.user.id);
+                if (freshProfile) {
+                    profile = freshProfile;
+                    setUser(freshProfile);
+                    localStorage.setItem('user', JSON.stringify(freshProfile));
+                }
+            } catch {
+                // Fall back to localStorage version
             }
 
             setLoading(false);
