@@ -1,29 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function GET(req: NextRequest) {
     try {
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
+
         const { searchParams } = new URL(req.url);
         const userId = searchParams.get('userId');
 
         // Fetch all trainer profiles
-        const trainers = await db.profiles.getTrainers();
+        const { data: trainers, error: trainersErr } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .eq('role', 'trainer')
+            .order('full_name', { ascending: true });
+
+        if (trainersErr) throw trainersErr;
 
         // If a userId is provided, fetch relationship statuses
         let relationships: Record<string, string> = {};
         if (userId) {
-            const userRelationships = await db.coachingRelationships.getByUser(userId);
-            for (const rel of userRelationships) {
-                // Store the status keyed by coach_id (for the requesting user as athlete)
-                if (rel.athlete_id === userId) {
-                    relationships[rel.coach_id] = rel.status;
+            const { data: rels, error: relsErr } = await supabaseAdmin
+                .from('coaching_relationships')
+                .select('*')
+                .or(`coach_id.eq.${userId},athlete_id.eq.${userId}`);
+
+            if (!relsErr && rels) {
+                for (const rel of rels) {
+                    if (rel.athlete_id === userId) {
+                        relationships[rel.coach_id] = rel.status;
+                    }
                 }
             }
         }
 
         // Enrich trainer data with relationship status
-        const enrichedTrainers = trainers.map(trainer => ({
+        const enrichedTrainers = (trainers || []).map(trainer => ({
             ...trainer,
             relationship_status: relationships[trainer.id] || null,
         }));

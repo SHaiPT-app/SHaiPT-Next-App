@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
     try {
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
+
         const { athleteId, coachId, intakeData } = await req.json();
 
         if (!athleteId || !coachId) {
@@ -10,8 +17,12 @@ export async function POST(req: NextRequest) {
         }
 
         // Validate coach exists and is a trainer
-        const coach = await db.profiles.getById(coachId);
-        if (!coach || coach.role !== 'trainer') {
+        const { data: coach, error: coachErr } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .eq('id', coachId)
+            .single();
+        if (coachErr || !coach || coach.role !== 'trainer') {
             return NextResponse.json({ error: 'Coach not found or not a trainer' }, { status: 404 });
         }
 
@@ -21,7 +32,14 @@ export async function POST(req: NextRequest) {
         }
 
         // Check for existing active/pending relationship
-        const existing = await db.coachingRelationships.getByCoachAndAthlete(coachId, athleteId);
+        const { data: existing } = await supabaseAdmin
+            .from('coaching_relationships')
+            .select('*')
+            .eq('coach_id', coachId)
+            .eq('athlete_id', athleteId)
+            .in('status', ['pending', 'active', 'waitlisted'])
+            .maybeSingle();
+
         if (existing) {
             return NextResponse.json({
                 error: `You already have a ${existing.status} relationship with this coach`,
@@ -30,13 +48,19 @@ export async function POST(req: NextRequest) {
         }
 
         // Create the coaching relationship
-        const relationship = await db.coachingRelationships.create({
-            coach_id: coachId,
-            athlete_id: athleteId,
-            status: 'pending',
-            requested_by: athleteId,
-            intake_data: intakeData || undefined,
-        });
+        const { data: relationship, error: insertErr } = await supabaseAdmin
+            .from('coaching_relationships')
+            .insert([{
+                coach_id: coachId,
+                athlete_id: athleteId,
+                status: 'pending',
+                requested_by: athleteId,
+                intake_data: intakeData || null,
+            }])
+            .select()
+            .single();
+
+        if (insertErr) throw insertErr;
 
         // DB trigger notify_coaching_request auto-fires on INSERT
 

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
+import { createClient } from '@supabase/supabase-js';
 import type { CoachingStatus } from '@/lib/types';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
     try {
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
+
         const { relationshipId, action, declineReason } = await req.json();
 
         if (!relationshipId || !action) {
@@ -23,13 +30,21 @@ export async function POST(req: NextRequest) {
 
         const updates: Record<string, any> = {
             status: statusMap[action],
+            updated_at: new Date().toISOString(),
         };
 
         if (action === 'decline' && declineReason) {
             updates.decline_reason = declineReason;
         }
 
-        const relationship = await db.coachingRelationships.update(relationshipId, updates);
+        const { data: relationship, error } = await supabaseAdmin
+            .from('coaching_relationships')
+            .update(updates)
+            .eq('id', relationshipId)
+            .select()
+            .single();
+
+        if (error) throw error;
 
         // DB trigger notify_coaching_accepted auto-fires on UPDATE
 
