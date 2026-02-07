@@ -139,7 +139,6 @@ export default function TrainerDashboardPage() {
     const handleRespond = async (relationshipId: string, action: 'accept' | 'decline' | 'waitlist') => {
         setRespondingTo(relationshipId);
         try {
-            const { data: { session } } = await supabase.auth.getSession();
             const res = await fetch('/api/coaching/respond', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -147,7 +146,6 @@ export default function TrainerDashboardPage() {
                     relationshipId,
                     action,
                     declineReason: action === 'decline' ? declineReasonInput : undefined,
-                    accessToken: session?.access_token,
                 }),
             });
 

@@ -5,6 +5,7 @@ import { X, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
 
+
 interface CoachRequestModalProps {
     trainer: Profile & { relationship_status?: string | null };
     athleteId: string;
@@ -24,10 +25,6 @@ export default function CoachRequestModal({ trainer, athleteId, onClose, onSucce
         setError(null);
 
         try {
-            // Get auth session for the access token
-            const { data: { session } } = await supabase.auth.getSession();
-            const accessToken = session?.access_token;
-
             // Fetch intake data from coach_interviews if available
             let intakeData = null;
             try {
@@ -52,7 +49,6 @@ export default function CoachRequestModal({ trainer, athleteId, onClose, onSucce
                     athleteId,
                     coachId: trainer.id,
                     intakeData,
-                    accessToken,
                 }),
             });
 

@@ -1,28 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
 export async function POST(req: NextRequest) {
     try {
-        const { athleteId, coachId, intakeData, accessToken } = await req.json();
+        const { athleteId, coachId, intakeData } = await req.json();
 
         if (!athleteId || !coachId) {
             return NextResponse.json({ error: 'athleteId and coachId are required' }, { status: 400 });
         }
 
-        // Create authenticated client using the user's access token
-        // This ensures RLS policies are evaluated as the authenticated user
-        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-            global: {
-                headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-            },
+        // Create service-role client lazily inside handler to ensure env vars are available
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (!supabaseUrl || !serviceKey) {
+            console.error('Missing env vars:', { supabaseUrl: !!supabaseUrl, serviceKey: !!serviceKey });
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+        }
+
+        const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
             auth: { autoRefreshToken: false, persistSession: false }
         });
 
         // Validate coach exists and is a trainer
-        const { data: coach, error: coachErr } = await supabase
+        const { data: coach, error: coachErr } = await supabaseAdmin
             .from('profiles')
             .select('*')
             .eq('id', coachId)
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Check for existing active/pending relationship
-        const { data: existing } = await supabase
+        const { data: existing } = await supabaseAdmin
             .from('coaching_relationships')
             .select('*')
             .eq('coach_id', coachId)
@@ -52,8 +53,10 @@ export async function POST(req: NextRequest) {
             }, { status: 409 });
         }
 
-        // Create the coaching relationship
-        const { data: relationship, error: insertErr } = await supabase
+        // Create the coaching relationship using service role (bypasses RLS)
+        // This is needed because the notify_coaching_request trigger inserts
+        // a notification for the coach, which RLS would block for the athlete user
+        const { data: relationship, error: insertErr } = await supabaseAdmin
             .from('coaching_relationships')
             .insert([{
                 coach_id: coachId,
@@ -69,8 +72,6 @@ export async function POST(req: NextRequest) {
             console.error('Coaching insert error:', insertErr);
             throw insertErr;
         }
-
-        // DB trigger notify_coaching_request auto-fires on INSERT
 
         return NextResponse.json({ relationship }, { status: 201 });
     } catch (error: any) {

@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-
-function getClient() {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-    // Prefer service role, fall back to anon key (profiles are publicly readable)
-    return createClient(supabaseUrl, serviceKey || anonKey, {
-        auth: { autoRefreshToken: false, persistSession: false }
-    });
-}
-
 export async function GET(req: NextRequest) {
     try {
-        const supabaseAdmin = getClient();
+        // Create service-role client lazily inside handler
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || (!serviceKey && !anonKey)) {
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+        }
+
+        const supabaseAdmin = createClient(supabaseUrl, serviceKey || anonKey!, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
 
         const { searchParams } = new URL(req.url);
         const userId = searchParams.get('userId');

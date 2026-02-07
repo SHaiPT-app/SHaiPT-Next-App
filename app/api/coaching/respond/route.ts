@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { CoachingStatus } from '@/lib/types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
 export async function POST(req: NextRequest) {
     try {
-        const { relationshipId, action, declineReason, accessToken } = await req.json();
+        const { relationshipId, action, declineReason } = await req.json();
 
         if (!relationshipId || !action) {
             return NextResponse.json({ error: 'relationshipId and action are required' }, { status: 400 });
@@ -18,11 +15,16 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `action must be one of: ${validActions.join(', ')}` }, { status: 400 });
         }
 
-        // Create authenticated client using the user's access token
-        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-            global: {
-                headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-            },
+        // Create service-role client lazily inside handler
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (!supabaseUrl || !serviceKey) {
+            console.error('Missing env vars:', { supabaseUrl: !!supabaseUrl, serviceKey: !!serviceKey });
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+        }
+
+        const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
             auth: { autoRefreshToken: false, persistSession: false }
         });
 
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
             updates.decline_reason = declineReason;
         }
 
-        const { data: relationship, error } = await supabase
+        const { data: relationship, error } = await supabaseAdmin
             .from('coaching_relationships')
             .update(updates)
             .eq('id', relationshipId)
