@@ -193,23 +193,38 @@ export default function CoachInterviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [coachId]);
 
-    // Check for existing training plans on mount
+    // Check for existing training plans on mount (via assignments for reliable RLS)
     useEffect(() => {
         async function checkExistingPlans() {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) return;
 
-                const { data: plans } = await supabase
-                    .from('training_plans')
-                    .select('id, name')
-                    .eq('creator_id', user.id)
+                // Query via training_plan_assignments (reliable RLS path)
+                const { data: assignments } = await supabase
+                    .from('training_plan_assignments')
+                    .select('plan_id')
+                    .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
                     .limit(5);
 
-                if (plans && plans.length > 0) {
-                    setExistingPlans(plans);
-                    setShowExistingPlansBanner(true);
+                if (assignments && assignments.length > 0) {
+                    const uniquePlanIds = [...new Set(assignments.map(a => a.plan_id))];
+                    const planResults = await Promise.all(
+                        uniquePlanIds.map(async (id) => {
+                            const { data } = await supabase
+                                .from('training_plans')
+                                .select('id, name')
+                                .eq('id', id)
+                                .single();
+                            return data;
+                        })
+                    );
+                    const validPlans = planResults.filter((p): p is { id: string; name: string } => p !== null);
+                    if (validPlans.length > 0) {
+                        setExistingPlans(validPlans);
+                        setShowExistingPlansBanner(true);
+                    }
                 }
             } catch {
                 // Non-critical — don't block the interview

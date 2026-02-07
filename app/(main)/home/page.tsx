@@ -62,10 +62,30 @@ export default function HomePage() {
         if (!authUserId) return;
         setPlansLoading(true);
         try {
-            const [workoutPlans, dietPlans] = await Promise.all([
-                db.trainingPlans.getByCreator(authUserId),
-                db.nutritionPlans.getByUser(authUserId),
-            ]);
+            // Load training plans via training_plan_assignments (reliable RLS path)
+            const assignments = await db.trainingPlanAssignments.getByUser(authUserId);
+            const uniquePlanIds = [...new Set(assignments.map(a => a.plan_id))];
+
+            let workoutPlans: TrainingPlan[] = [];
+            if (uniquePlanIds.length > 0) {
+                const planResults = await Promise.all(
+                    uniquePlanIds.map(id => db.trainingPlans.getById(id))
+                );
+                workoutPlans = planResults.filter((p): p is TrainingPlan => p !== null);
+            }
+
+            // Fallback: also try direct query in case some plans don't have assignments
+            if (workoutPlans.length === 0) {
+                try {
+                    const directPlans = await db.trainingPlans.getByCreator(authUserId);
+                    if (directPlans.length > 0) workoutPlans = directPlans;
+                } catch {
+                    // Direct query may fail due to RLS — that's OK, we have the assignment path
+                }
+            }
+
+            const dietPlans = await db.nutritionPlans.getByUser(authUserId);
+
             setPlans(workoutPlans);
             setNutritionPlans(dietPlans);
         } catch (err) {

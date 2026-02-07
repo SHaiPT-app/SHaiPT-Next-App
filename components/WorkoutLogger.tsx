@@ -3,7 +3,17 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { db } from '@/lib/supabaseDb';
-import type { WorkoutSession, Exercise, ExerciseLog, LoggedSet, TrainingPlan, TrainingPlanSession } from '@/lib/types';
+import type { WorkoutSession, Exercise, ExerciseLog, LoggedSet, TrainingPlan, TrainingPlanSession, SessionExercise } from '@/lib/types';
+
+/** Build a fallback Exercise object from SessionExercise JSONB data when DB lookup fails */
+function buildFallbackExercise(se: SessionExercise): Exercise {
+    const name = se.exercise_name
+        || se.exercise_id
+            .replace(/_d\d+_e\d+$/, '')
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase());
+    return { exercise_id: se.exercise_id, name, body_parts: [], target_muscles: [], equipments: [] };
+}
 
 const FORM_CHECKER_PREF_KEY = 'shaipt_form_checker_enabled';
 
@@ -110,7 +120,27 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
         if (!userId) return;
         setLoading(true);
         try {
-            const data = await db.trainingPlans.getByCreator(userId);
+            // Primary path: via training_plan_assignments (reliable RLS)
+            const assignments = await db.trainingPlanAssignments.getByUser(userId);
+            const uniquePlanIds = [...new Set(assignments.map(a => a.plan_id))];
+
+            let data: TrainingPlan[] = [];
+            if (uniquePlanIds.length > 0) {
+                const results = await Promise.all(
+                    uniquePlanIds.map(id => db.trainingPlans.getById(id))
+                );
+                data = results.filter((p): p is TrainingPlan => p !== null);
+            }
+
+            // Fallback: direct query
+            if (data.length === 0) {
+                try {
+                    data = await db.trainingPlans.getByCreator(userId);
+                } catch {
+                    // RLS may block — that's OK
+                }
+            }
+
             setPlans(data);
         } catch (error) {
             console.error('Error loading training plans:', error);
@@ -616,7 +646,7 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
                 )}
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
                     {session.exercises?.map((ex, i) => (
-                        <ExercisePreviewRow key={i} exerciseId={ex.exercise_id} sets={ex.sets.length} reps={ex.sets[0]?.reps} />
+                        <ExercisePreviewRow key={i} sessionExercise={ex} sets={ex.sets.length} reps={ex.sets[0]?.reps} />
                     ))}
                 </div>
             </motion.div>
@@ -711,14 +741,18 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
 // EXERCISE PREVIEW ROW (for form checker prompt)
 // ============================================
 
-function ExercisePreviewRow({ exerciseId, sets, reps }: { exerciseId: string; sets: number; reps?: string }) {
-    const [name, setName] = useState<string>('');
+function ExercisePreviewRow({ sessionExercise, sets, reps }: { sessionExercise: SessionExercise; sets: number; reps?: string }) {
+    const [name, setName] = useState<string>(() => {
+        // Immediate fallback name from JSONB data
+        return buildFallbackExercise(sessionExercise).name;
+    });
 
     useEffect(() => {
-        db.exercises.getById(exerciseId).then(ex => {
+        // Try to load the real name from the exercises table
+        db.exercises.getById(sessionExercise.exercise_id).then(ex => {
             if (ex) setName(ex.name);
         }).catch(() => {});
-    }, [exerciseId]);
+    }, [sessionExercise.exercise_id]);
 
     return (
         <div style={{
@@ -729,7 +763,7 @@ function ExercisePreviewRow({ exerciseId, sets, reps }: { exerciseId: string; se
             borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
         }}>
             <span style={{ color: '#ddd', fontSize: '0.9rem' }}>
-                {name || 'Loading...'}
+                {name}
             </span>
             <span style={{ color: '#888', fontSize: '0.85rem' }}>
                 {sets} sets{reps ? ` x ${reps}` : ''}
@@ -765,11 +799,15 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
 
     useEffect(() => {
         initializeWorkout();
+        // Set immediate fallback exercise so we don't show a loading spinner
+        if (sessionExercise) {
+            setCurrentExercise(buildFallbackExercise(sessionExercise));
+        }
     }, []);
 
     useEffect(() => {
         if (sessionExercise) {
-            loadExerciseDetails(sessionExercise.exercise_id);
+            loadExerciseDetails(sessionExercise.exercise_id, sessionExercise);
         }
     }, [currentExerciseIndex]);
 
@@ -806,12 +844,26 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
         }
     };
 
-    const loadExerciseDetails = async (exerciseId: string) => {
+    const loadExerciseDetails = async (exerciseId: string, se?: SessionExercise) => {
         try {
             const exercise = await db.exercises.getById(exerciseId);
-            setCurrentExercise(exercise);
+            if (exercise) {
+                setCurrentExercise(exercise);
+            } else if (se) {
+                // Fallback: build exercise from JSONB session data
+                setCurrentExercise(buildFallbackExercise(se));
+            } else {
+                // Last resort: parse name from synthetic ID
+                setCurrentExercise(buildFallbackExercise({ exercise_id: exerciseId, sets: [], notes: '' }));
+            }
         } catch (error) {
             console.error('Error loading exercise:', error);
+            // On error, still show fallback
+            if (se) {
+                setCurrentExercise(buildFallbackExercise(se));
+            } else {
+                setCurrentExercise(buildFallbackExercise({ exercise_id: exerciseId, sets: [], notes: '' }));
+            }
         }
     };
 
