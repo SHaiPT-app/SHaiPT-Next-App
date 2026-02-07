@@ -6,13 +6,8 @@ import { Send } from 'lucide-react';
 import type { CoachPersona } from '@/data/coaches';
 import type { IntakeFormData, IntakeFormDataV2 } from '@/lib/types';
 import ProgressBar from './ProgressBar';
-import QuickReplyChips from './QuickReplyChips';
-import TypewriterText from './TypewriterText';
 import IntakePhotoUpload from './IntakePhotoUpload';
 import { supabase } from '@/lib/supabase';
-import { getGoalsForCoach } from '@/data/fitnessGoals';
-import { LOCATION_LABELS } from '@/data/equipment';
-import type { TrainingLocationType } from '@/lib/types';
 
 interface GamifiedChatProps {
     coach: CoachPersona;
@@ -41,33 +36,6 @@ const STEP_MARKERS: Record<string, string> = {
     photo_upload: 'photo_upload',
 };
 
-// Determine which questions should show quick-reply chips
-function getChipsForStep(step: string, coachId: string): { options: string[]; multi: boolean } | null {
-    switch (step) {
-        case 'athletic_history':
-            return {
-                options: ['Never trained', 'Less than 1 year', '1-3 years', '3-5 years', '5-10 years', '10+ years'],
-                multi: false,
-            };
-        case 'fitness_goals':
-            return {
-                options: getGoalsForCoach(coachId).slice(0, 8),
-                multi: true,
-            };
-        case 'equipment_location':
-            return {
-                options: Object.values(LOCATION_LABELS),
-                multi: false,
-            };
-        case 'fitness_level':
-            return {
-                options: ['Beginner', 'Intermediate', 'Advanced'],
-                multi: false,
-            };
-        default:
-            return null;
-    }
-}
 
 function stripStepMarkers(text: string): { cleaned: string; steps: string[] } {
     const steps: string[] = [];
@@ -90,14 +58,10 @@ export default function GamifiedChat({
     const [hasStarted, setHasStarted] = useState(false);
     const [completedSteps, setCompletedSteps] = useState<string[]>([]);
     const [activeStep, setActiveStep] = useState<string | undefined>();
-    const [currentChips, setCurrentChips] = useState<{ options: string[]; multi: boolean } | null>(null);
-    const [chipSelection, setChipSelection] = useState<string[]>([]);
     const [showPhotoUpload, setShowPhotoUpload] = useState(false);
     const [photoUploadComplete, setPhotoUploadComplete] = useState(false);
     const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
     const [userMessageCount, setUserMessageCount] = useState(0);
-    const [latestAssistantText, setLatestAssistantText] = useState('');
-    const [isTypewriting, setIsTypewriting] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -129,14 +93,14 @@ export default function GamifiedChat({
     // Scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, showPhotoUpload, currentChips]);
+    }, [messages, showPhotoUpload]);
 
     // Focus input
     useEffect(() => {
-        if (!isLoading && !showPhotoUpload && !currentChips && inputRef.current) {
+        if (!isLoading && !showPhotoUpload && inputRef.current) {
             inputRef.current.focus();
         }
-    }, [isLoading, showPhotoUpload, currentChips]);
+    }, [isLoading, showPhotoUpload]);
 
     // Extract form data
     const extractFormData = useCallback(async (allMessages: ChatMessage[]) => {
@@ -253,19 +217,9 @@ export default function GamifiedChat({
                 return Array.from(newSet);
             });
             setActiveStep(steps[steps.length - 1]);
-
-            // Check if we should show chips for the detected step
-            const lastStep = steps[steps.length - 1];
-            const chips = getChipsForStep(lastStep, coach.id);
-            if (chips) {
-                setCurrentChips(chips);
-                setChipSelection([]);
-            } else {
-                setCurrentChips(null);
-            }
         }
         return cleaned;
-    }, [coach.id]);
+    }, []);
 
     // Start interview
     const startInterview = useCallback(async () => {
@@ -310,9 +264,7 @@ export default function GamifiedChat({
                 setMessages([introMessage, { id: assistantId, role: 'assistant', content: cleaned }]);
             }
 
-            const finalCleaned = processResponse(fullText);
-            setLatestAssistantText(finalCleaned);
-            setIsTypewriting(true);
+            processResponse(fullText);
         } catch (error) {
             console.error('Interview start error:', error);
             setMessages([introMessage, {
@@ -343,8 +295,6 @@ export default function GamifiedChat({
         const updatedMessages = [...messagesRef.current, userMessage];
         setMessages(updatedMessages);
         setInput('');
-        setCurrentChips(null);
-        setChipSelection([]);
         setIsLoading(true);
         setUserMessageCount(prev => prev + 1);
 
@@ -392,8 +342,6 @@ export default function GamifiedChat({
             }
 
             const finalCleaned = processResponse(fullText);
-            setLatestAssistantText(finalCleaned);
-            setIsTypewriting(true);
 
             const isComplete = response.headers.get('X-Interview-Complete') === 'true';
             const finalMessages = [
@@ -420,11 +368,6 @@ export default function GamifiedChat({
             setIsLoading(false);
         }
     }, [input, isLoading, coach.id, extractFormData, onInterviewComplete, nextId, prefilledFields, processResponse]);
-
-    const handleChipSubmit = useCallback(() => {
-        if (chipSelection.length === 0) return;
-        sendMessage(chipSelection.join(', '));
-    }, [chipSelection, sendMessage]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -536,15 +479,7 @@ export default function GamifiedChat({
                             color="#1a1a1a"
                             whiteSpace="pre-wrap"
                         >
-                            {isTypewriting ? (
-                                <TypewriterText
-                                    text={lastAssistantMsg.content}
-                                    speed={15}
-                                    onComplete={() => setIsTypewriting(false)}
-                                />
-                            ) : (
-                                lastAssistantMsg.content
-                            )}
+                            {lastAssistantMsg.content}
                         </Text>
                     ) : isLoading ? (
                         <Flex alignItems="center" gap="0.4rem" py="0.5rem">
@@ -593,24 +528,6 @@ export default function GamifiedChat({
                             backdropFilter="blur(6px)"
                             style={{ WebkitBackdropFilter: 'blur(6px)' }}
                         >
-                            {currentChips && !showPhotoUpload && !isTypewriting && !isLoading && (
-                                <Box
-                                    mb="0.5rem"
-                                    style={{
-                                        animation: 'chipsFadeIn 0.3s ease-out',
-                                    }}
-                                >
-                                    <QuickReplyChips
-                                        options={currentChips.options}
-                                        selected={chipSelection}
-                                        onSelect={setChipSelection}
-                                        multiSelect={currentChips.multi}
-                                        maxSelections={3}
-                                        onSubmit={handleChipSubmit}
-                                    />
-                                </Box>
-                            )}
-
                             <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
                                 <input
                                     ref={inputRef}
@@ -619,11 +536,9 @@ export default function GamifiedChat({
                                     placeholder={
                                         showPhotoUpload
                                             ? 'Upload photos or skip to continue...'
-                                            : currentChips
-                                                ? 'Or type your answer...'
-                                                : 'Type your answer...'
+                                            : 'Type your answer...'
                                     }
-                                    disabled={isLoading || showPhotoUpload || (!!currentChips && !currentChips.multi)}
+                                    disabled={isLoading || showPhotoUpload}
                                     style={{
                                         flex: 1,
                                         padding: '0.6rem 0.7rem',
@@ -633,7 +548,7 @@ export default function GamifiedChat({
                                         borderRadius: '10px',
                                         color: '#1a1a1a',
                                         outline: 'none',
-                                        opacity: (showPhotoUpload || (currentChips && !currentChips.multi)) ? 0.5 : 1,
+                                        opacity: showPhotoUpload ? 0.5 : 1,
                                     }}
                                 />
                                 <button
