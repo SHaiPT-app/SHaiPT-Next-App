@@ -30,6 +30,7 @@ interface ClientProgressData {
 export default function ClientDetailPage() {
     const [user, setUser] = useState<Profile | null>(null);
     const [data, setData] = useState<ClientProgressData | null>(null);
+    const [clientProfile, setClientProfile] = useState<Profile | null>(null);
     const [assignedPlans, setAssignedPlans] = useState<TrainingPlan[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -91,6 +92,14 @@ export default function ClientDetailPage() {
 
             const progressData = await res.json();
             setData(progressData);
+
+            // Fetch full client profile for gender and other details
+            try {
+                const profile = await db.profiles.getById(clientId);
+                if (profile) setClientProfile(profile);
+            } catch {
+                // Non-critical
+            }
         } catch (err: unknown) {
             console.error('Error fetching client progress:', err);
             setError(err instanceof Error ? err.message : 'Failed to load client progress');
@@ -182,11 +191,14 @@ export default function ClientDetailPage() {
                     }}>
                         {clientName}
                     </h1>
-                    {data?.client?.email && (
-                        <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
-                            {data.client.email}
-                        </p>
-                    )}
+                    <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                        {data?.client?.email}
+                        {clientProfile?.gender && (
+                            <span style={{ marginLeft: '0.75rem', color: '#aaa' }}>
+                                {clientProfile.gender}
+                            </span>
+                        )}
+                    </p>
                 </div>
             </div>
 

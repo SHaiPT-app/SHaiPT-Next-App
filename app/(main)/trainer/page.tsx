@@ -286,6 +286,11 @@ export default function TrainerDashboardPage() {
                                                 </div>
                                                 <div style={{ fontSize: '0.8rem', color: '#888' }}>
                                                     {req.athlete?.email}
+                                                    {req.athlete?.gender && (
+                                                        <span style={{ marginLeft: '0.5rem', color: '#aaa' }}>
+                                                            {req.athlete.gender}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

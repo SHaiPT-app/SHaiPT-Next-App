@@ -209,9 +209,7 @@ export default function ProfilePage() {
                     {user.date_of_birth && (
                         <InfoRow label="Date of Birth" value={user.date_of_birth} />
                     )}
-                    {user.gender && (
-                        <InfoRow label="Gender" value={user.gender} />
-                    )}
+                    <InfoRow label="Gender" value={user.gender || 'Not set'} />
                     {user.fitness_goals && user.fitness_goals.length > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <span style={{ color: '#888', fontSize: '0.85rem' }}>Goals</span>

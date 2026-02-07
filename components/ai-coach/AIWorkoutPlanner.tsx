@@ -186,11 +186,12 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Gender</label>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Gender <span style={{ color: '#f87171' }}>*</span></label>
                                         <select
                                             className="input-field"
                                             value={formData.gender}
                                             onChange={e => setFormData({ ...formData, gender: e.target.value })}
+                                            required
                                         >
                                             <option value="">Select...</option>
                                             <option value="Male">Male</option>
