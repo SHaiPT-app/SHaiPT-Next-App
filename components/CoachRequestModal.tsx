@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
 
 interface CoachRequestModalProps {
@@ -23,15 +24,22 @@ export default function CoachRequestModal({ trainer, athleteId, onClose, onSucce
         setError(null);
 
         try {
+            // Get auth session for the access token
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
+
             // Fetch intake data from coach_interviews if available
             let intakeData = null;
             try {
-                const res = await fetch(`/api/coach-interview?userId=${athleteId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data?.intake_data) {
-                        intakeData = data.intake_data;
-                    }
+                const { data: interview } = await supabase
+                    .from('coach_interviews')
+                    .select('intake_data')
+                    .eq('user_id', athleteId)
+                    .order('updated_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                if (interview?.intake_data) {
+                    intakeData = interview.intake_data;
                 }
             } catch {
                 // No intake data — that's fine
@@ -44,6 +52,7 @@ export default function CoachRequestModal({ trainer, athleteId, onClose, onSucce
                     athleteId,
                     coachId: trainer.id,
                     intakeData,
+                    accessToken,
                 }),
             });
 
