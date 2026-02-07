@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import ClientProgressPage from '@/app/trainer/client/[id]/progress/page';
+import ClientProgressPage from '@/app/(main)/trainer/client/[id]/page';
 
 // Mock next/navigation
 const mockPush = jest.fn();
@@ -22,6 +22,28 @@ jest.mock('@/lib/supabase', () => ({
         },
     },
 }));
+
+// Mock supabaseDb
+jest.mock('@/lib/supabaseDb', () => ({
+    db: {
+        profiles: {
+            getById: jest.fn().mockResolvedValue(null),
+        },
+        trainingPlans: {
+            getByCreator: jest.fn().mockResolvedValue([]),
+        },
+        trainingPlanAssignments: {
+            getByUser: jest.fn().mockResolvedValue([]),
+        },
+    },
+}));
+
+// Mock DirectMessageThread
+jest.mock('@/components/DirectMessageThread', () => {
+    return function MockDirectMessageThread() {
+        return <div data-testid="mock-dm-thread">DirectMessageThread</div>;
+    };
+});
 
 // Mock date-fns to avoid timezone issues
 jest.mock('date-fns', () => ({
