@@ -6,10 +6,12 @@ import { Dumbbell, ClipboardList, Bot, UtensilsCrossed, Trash2, Pencil, ChevronR
 import ConfirmationModal from '@/components/ConfirmationModal';
 import EmptyState from '@/components/EmptyState';
 import { db } from '@/lib/supabaseDb';
+import { supabase } from '@/lib/supabase';
 import type { Profile, TrainingPlan, NutritionPlan } from '@/lib/types';
 
 export default function HomePage() {
     const [user, setUser] = useState<Profile | null>(null);
+    const [authUserId, setAuthUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [plans, setPlans] = useState<TrainingPlan[]>([]);
     const [nutritionPlans, setNutritionPlans] = useState<NutritionPlan[]>([]);
@@ -17,30 +19,61 @@ export default function HomePage() {
     const router = useRouter();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
+        async function initAuth() {
+            // First try to get the authenticated user from Supabase (ensures RLS works)
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (authUser) {
+                setAuthUserId(authUser.id);
+                // Also load display info from localStorage
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    setUser(JSON.parse(storedUser));
+                } else {
+                    // Fallback: build display user from auth data
+                    setUser({ id: authUser.id, email: authUser.email || '', username: authUser.email || '' } as Profile);
+                }
+            } else {
+                // No active auth session — try refreshing
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    setAuthUserId(session.user.id);
+                    const storedUser = localStorage.getItem('user');
+                    if (storedUser) {
+                        setUser(JSON.parse(storedUser));
+                    } else {
+                        setUser({ id: session.user.id, email: session.user.email || '', username: session.user.email || '' } as Profile);
+                    }
+                } else {
+                    // Fall back to localStorage for display only
+                    const storedUser = localStorage.getItem('user');
+                    if (storedUser) {
+                        const parsed = JSON.parse(storedUser);
+                        setUser(parsed);
+                        setAuthUserId(parsed.id);
+                    }
+                }
+            }
+            setLoading(false);
         }
-        setLoading(false);
+        initAuth();
     }, []);
 
     const loadPlans = useCallback(async () => {
-        if (!user?.id) return;
+        if (!authUserId) return;
         setPlansLoading(true);
         try {
             const [workoutPlans, dietPlans] = await Promise.all([
-                db.trainingPlans.getByCreator(user.id),
-                db.nutritionPlans.getByUser(user.id),
+                db.trainingPlans.getByCreator(authUserId),
+                db.nutritionPlans.getByUser(authUserId),
             ]);
             setPlans(workoutPlans);
             setNutritionPlans(dietPlans);
         } catch (err) {
-            // Supabase may fail if user is only in localStorage (not authenticated)
             console.warn('Could not load plans:', err);
         } finally {
             setPlansLoading(false);
         }
-    }, [user?.id]);
+    }, [authUserId]);
 
     useEffect(() => {
         loadPlans();

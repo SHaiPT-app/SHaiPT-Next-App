@@ -101,6 +101,10 @@ export default function CoachInterviewPage() {
     const [isPlanSaving, setIsPlanSaving] = useState(false);
     const planViewRef = useRef<HTMLDivElement>(null);
 
+    // Existing plans state
+    const [existingPlans, setExistingPlans] = useState<{ id: string; name: string }[]>([]);
+    const [showExistingPlansBanner, setShowExistingPlansBanner] = useState(false);
+
     // Dietitian flow state
     const [, setDietitianMessages] = useState<{ role: string; content: string }[]>([]);
     const [generatedNutritionPlan, setGeneratedNutritionPlan] = useState<GeneratedNutritionPlanData | null>(null);
@@ -188,6 +192,31 @@ export default function CoachInterviewPage() {
         loadPreviousData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [coachId]);
+
+    // Check for existing training plans on mount
+    useEffect(() => {
+        async function checkExistingPlans() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { data: plans } = await supabase
+                    .from('training_plans')
+                    .select('id, name')
+                    .eq('creator_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (plans && plans.length > 0) {
+                    setExistingPlans(plans);
+                    setShowExistingPlansBanner(true);
+                }
+            } catch {
+                // Non-critical — don't block the interview
+            }
+        }
+        checkExistingPlans();
+    }, []);
 
     // Waiver acceptance handler
     const handleAcceptWaiver = useCallback(async () => {
@@ -844,6 +873,57 @@ export default function CoachInterviewPage() {
                     </button>
                 </Flex>
             </Flex>
+
+            {/* Existing Plans Banner */}
+            {showExistingPlansBanner && existingPlans.length > 0 && flowStage === 'interview' && (
+                <Box
+                    px="1rem"
+                    py="0.6rem"
+                    flexShrink={0}
+                    bg="rgba(255, 102, 0, 0.08)"
+                    borderBottom="1px solid rgba(255, 102, 0, 0.2)"
+                >
+                    <Flex alignItems="center" justifyContent="space-between" gap="0.5rem">
+                        <Flex alignItems="center" gap="0.5rem" flex={1} minW={0}>
+                            <Dumbbell size={16} color="#FF6600" style={{ flexShrink: 0 }} />
+                            <Text fontSize="0.8rem" color="#ccc" truncate>
+                                You have <Text as="span" color="var(--neon-orange)" fontWeight="600">{existingPlans.length} saved plan{existingPlans.length > 1 ? 's' : ''}</Text>
+                            </Text>
+                        </Flex>
+                        <Flex gap="0.4rem" flexShrink={0}>
+                            <button
+                                onClick={() => router.push('/plans')}
+                                style={{
+                                    padding: '0.35rem 0.75rem',
+                                    background: '#FF6600',
+                                    color: '#0B0B15',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                View Plans
+                            </button>
+                            <button
+                                onClick={() => setShowExistingPlansBanner(false)}
+                                style={{
+                                    padding: '0.35rem 0.5rem',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    color: '#888',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '6px',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Dismiss
+                            </button>
+                        </Flex>
+                    </Flex>
+                </Box>
+            )}
 
             {/* Segmented Control (only during interview phase) */}
             {showInterviewTabs && (
