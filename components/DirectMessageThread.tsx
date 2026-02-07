@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useDirectMessages } from '@/lib/useDirectMessages';
+import { Send } from 'lucide-react';
 
 interface DirectMessageThreadProps {
     userId: string;
@@ -53,14 +54,37 @@ export default function DirectMessageThread({
     };
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg shadow-lg border border-gray-200">
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            background: 'rgba(21, 21, 31, 0.95)',
+            borderRadius: '12px',
+            overflow: 'hidden',
+        }}>
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                <h3 className="font-semibold text-gray-900">{otherUserName}</h3>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.75rem 1rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                background: 'rgba(255, 255, 255, 0.03)',
+            }}>
+                <h3 style={{ fontWeight: '600', color: 'white', fontSize: '0.95rem', margin: 0 }}>
+                    {otherUserName}
+                </h3>
                 {onClose && (
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#888',
+                            cursor: 'pointer',
+                            fontSize: '1.2rem',
+                            lineHeight: 1,
+                        }}
                         aria-label="Close conversation"
                     >
                         &times;
@@ -69,15 +93,27 @@ export default function DirectMessageThread({
             </div>
 
             {/* Messages area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+            <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                minHeight: 0,
+            }}>
                 {loading && (
-                    <p className="text-center text-gray-500 text-sm">Loading messages...</p>
+                    <p style={{ textAlign: 'center', color: '#888', fontSize: '0.85rem' }}>
+                        Loading messages...
+                    </p>
                 )}
                 {error && (
-                    <p className="text-center text-red-500 text-sm">{error}</p>
+                    <p style={{ textAlign: 'center', color: '#f87171', fontSize: '0.85rem' }}>
+                        {error}
+                    </p>
                 )}
                 {!loading && messages.length === 0 && (
-                    <p className="text-center text-gray-400 text-sm">
+                    <p style={{ textAlign: 'center', color: '#666', fontSize: '0.85rem', marginTop: '2rem' }}>
                         No messages yet. Start the conversation!
                     </p>
                 )}
@@ -86,21 +122,32 @@ export default function DirectMessageThread({
                     return (
                         <div
                             key={msg.id}
-                            className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                            style={{
+                                display: 'flex',
+                                justifyContent: isMine ? 'flex-end' : 'flex-start',
+                            }}
                         >
-                            <div
-                                className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                                    isMine
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-900'
-                                }`}
-                            >
-                                <p>{msg.content}</p>
-                                <p
-                                    className={`text-xs mt-1 ${
-                                        isMine ? 'text-blue-200' : 'text-gray-400'
-                                    }`}
-                                >
+                            <div style={{
+                                maxWidth: '75%',
+                                borderRadius: '12px',
+                                padding: '0.6rem 0.85rem',
+                                fontSize: '0.9rem',
+                                lineHeight: 1.5,
+                                background: isMine
+                                    ? 'rgba(255, 102, 0, 0.2)'
+                                    : 'rgba(255, 255, 255, 0.06)',
+                                border: isMine
+                                    ? '1px solid rgba(255, 102, 0, 0.3)'
+                                    : '1px solid rgba(255, 255, 255, 0.08)',
+                                color: isMine ? '#fff' : '#ddd',
+                            }}>
+                                <p style={{ margin: 0 }}>{msg.content}</p>
+                                <p style={{
+                                    fontSize: '0.7rem',
+                                    marginTop: '0.25rem',
+                                    color: isMine ? 'rgba(255, 102, 0, 0.7)' : '#666',
+                                    margin: 0,
+                                }}>
                                     {msg.created_at
                                         ? new Date(msg.created_at).toLocaleTimeString([], {
                                               hour: '2-digit',
@@ -108,7 +155,7 @@ export default function DirectMessageThread({
                                           })
                                         : ''}
                                     {isMine && msg.read_at && (
-                                        <span className="ml-1">&#10003;&#10003;</span>
+                                        <span style={{ marginLeft: '0.3rem' }}>&#10003;&#10003;</span>
                                     )}
                                 </p>
                             </div>
@@ -121,22 +168,52 @@ export default function DirectMessageThread({
             {/* Input area */}
             <form
                 onSubmit={handleSend}
-                className="flex items-center gap-2 px-4 py-3 border-t border-gray-200"
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1rem',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                }}
             >
                 <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{
+                        flex: 1,
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '20px',
+                        padding: '0.6rem 1rem',
+                        color: 'white',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                    }}
                     disabled={sending}
                 />
                 <button
                     type="submit"
                     disabled={sending || !input.trim()}
-                    className="rounded-full bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    style={{
+                        background: sending || !input.trim()
+                            ? 'rgba(255, 102, 0, 0.3)'
+                            : 'var(--neon-orange, #FF6600)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                        flexShrink: 0,
+                    }}
                 >
-                    {sending ? 'Sending...' : 'Send'}
+                    <Send size={18} color="white" />
                 </button>
             </form>
         </div>

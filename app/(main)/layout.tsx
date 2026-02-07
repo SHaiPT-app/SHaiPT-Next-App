@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
 import PillNav from '@/components/PillNav';
+import NotificationBell from '@/components/NotificationBell';
 import { User, Mail, Settings } from 'lucide-react';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -82,7 +83,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     items={[
                         { label: 'Activity', href: '/activity' },
                         { label: 'Home', href: '/home' },
-                        { label: 'AI Coach', href: '/ai' }
+                        { label: 'Coach List', href: '/coach' },
+                        ...(user?.role === 'trainer' ? [{ label: 'Trainer', href: '/trainer' }] : []),
                     ]}
                     activeHref={pathname}
                     baseColor="rgba(255, 255, 255, 0.08)"
@@ -155,6 +157,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     gap: '0.75rem',
                     height: '100%'
                 }}>
+                    {/* Notification Bell */}
+                    {user?.id && <NotificationBell userId={user.id} />}
+
                     {/* Settings Button (Icon Only) */}
                     <button
                         onClick={() => router.push('/settings')}

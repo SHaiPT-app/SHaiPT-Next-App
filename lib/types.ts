@@ -39,6 +39,13 @@ export interface Profile {
     pinned_plan_id?: string; // uuid, nullable, FK to training_plans(id) (ordinal 15)
     trainer_id?: string | null; // uuid, nullable, FK to profiles(id)
 
+    // Trainer-specific fields
+    specialties?: string[]; // text[], default '{}'
+    availability_status?: string; // varchar(20), default 'available'
+    is_accepting_clients?: boolean; // boolean, default true
+    rating?: number; // numeric(3,2), nullable
+    trainer_bio?: string; // text, nullable
+
     // AI features
     ai_features?: AIFeatures; // jsonb, nullable
 
@@ -70,7 +77,7 @@ export interface UserFollow {
     created_at?: string; // timestamptz, default now()
 }
 
-export type CoachingStatus = 'pending' | 'active' | 'declined' | 'ended';
+export type CoachingStatus = 'pending' | 'active' | 'declined' | 'ended' | 'waitlisted';
 
 export interface CoachingRelationship {
     id: string; // uuid, NOT NULL, default gen_random_uuid()
@@ -80,6 +87,8 @@ export interface CoachingRelationship {
     requested_by: string; // uuid, NOT NULL (who initiated)
     can_assign_plans?: boolean; // boolean, default true
     can_view_workouts?: boolean; // boolean, default true
+    decline_reason?: string; // text, nullable
+    intake_data?: IntakeFormData; // jsonb, nullable — trainee intake shared with coach
     created_at?: string; // timestamptz, default now()
     updated_at?: string; // timestamptz, default now()
 }

@@ -128,6 +128,16 @@ export const db = {
                 .limit(10);
             if (error) throw error;
             return data || [];
+        },
+
+        getTrainers: async (): Promise<Profile[]> => {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('role', 'trainer')
+                .order('full_name', { ascending: true });
+            if (error) throw error;
+            return data || [];
         }
     },
 
@@ -723,6 +733,30 @@ export const db = {
                 .eq('status', 'active');
             if (error) throw error;
             return data || [];
+        },
+
+        getPendingAsCoach: async (coachId: string): Promise<CoachingRelationship[]> => {
+            const { data, error } = await supabase
+                .from('coaching_relationships')
+                .select('*')
+                .eq('coach_id', coachId)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        },
+
+        getByCoachAndAthlete: async (coachId: string, athleteId: string): Promise<CoachingRelationship | null> => {
+            const { data, error } = await supabase
+                .from('coaching_relationships')
+                .select('*')
+                .eq('coach_id', coachId)
+                .eq('athlete_id', athleteId)
+                .in('status', ['pending', 'active', 'waitlisted'])
+                .limit(1)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
         },
 
         getAsAthlete: async (athleteId: string): Promise<CoachingRelationship[]> => {
