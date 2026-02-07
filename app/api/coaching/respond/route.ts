@@ -3,13 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 import type { CoachingStatus } from '@/lib/types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+function getAdminClient() {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    return createClient(supabaseUrl, serviceKey || anonKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
+}
 
 export async function POST(req: NextRequest) {
     try {
-        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-            auth: { autoRefreshToken: false, persistSession: false }
-        });
+        const supabaseAdmin = getAdminClient();
 
         const { relationshipId, action, declineReason } = await req.json();
 

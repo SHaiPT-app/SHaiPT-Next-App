@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+function getClient() {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+    // Prefer service role, fall back to anon key (profiles are publicly readable)
+    return createClient(supabaseUrl, serviceKey || anonKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
+}
 
 export async function GET(req: NextRequest) {
     try {
-        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-            auth: { autoRefreshToken: false, persistSession: false }
-        });
+        const supabaseAdmin = getClient();
 
         const { searchParams } = new URL(req.url);
         const userId = searchParams.get('userId');
@@ -20,7 +27,10 @@ export async function GET(req: NextRequest) {
             .eq('role', 'trainer')
             .order('full_name', { ascending: true });
 
-        if (trainersErr) throw trainersErr;
+        if (trainersErr) {
+            console.error('Trainers query error:', trainersErr);
+            throw trainersErr;
+        }
 
         // If a userId is provided, fetch relationship statuses
         let relationships: Record<string, string> = {};
