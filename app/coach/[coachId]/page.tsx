@@ -184,6 +184,24 @@ export default function CoachInterviewPage() {
                     if (interview.is_complete) {
                         setIsInterviewComplete(true);
                     }
+                } else {
+                    // No data for this coach — fall back to most recent completed interview from any coach
+                    const { data: anyInterview } = await supabase
+                        .from('coach_interviews')
+                        .select('intake_data')
+                        .eq('user_id', user.id)
+                        .eq('is_complete', true)
+                        .order('updated_at', { ascending: false })
+                        .limit(1)
+                        .single();
+
+                    if (anyInterview?.intake_data) {
+                        const v1Data = anyInterview.intake_data as IntakeFormData;
+                        setFormData(v1Data);
+                        setFormDataV2(intakeV1toV2(v1Data));
+                        // Don't set isInterviewComplete — new coach still runs its interview
+                        // but prefilledFields will tell AI to skip already-answered topics
+                    }
                 }
             } catch {
                 // No previous data, that's fine
