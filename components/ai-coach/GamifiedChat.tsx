@@ -22,7 +22,7 @@ interface ChatMessage {
     content: string;
 }
 
-const PHOTO_PROMPT_AFTER_MESSAGES = 4;
+const PHOTO_PROMPT_AFTER_MESSAGES = 8;
 
 // Map step markers from AI response to progress step IDs
 const STEP_MARKERS: Record<string, string> = {
@@ -67,6 +67,7 @@ export default function GamifiedChat({
     const inputRef = useRef<HTMLInputElement>(null);
     const messagesRef = useRef<ChatMessage[]>([]);
     const idCounter = useRef(0);
+    const extractionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         messagesRef.current = messages;
@@ -349,7 +350,11 @@ export default function GamifiedChat({
                 { id: assistantId, role: 'assistant' as const, content: finalCleaned },
             ];
 
-            await extractFormData(finalMessages);
+            // Debounce form extraction to reduce API calls (extract after 3s delay)
+            if (extractionTimer.current) clearTimeout(extractionTimer.current);
+            extractionTimer.current = setTimeout(() => {
+                extractFormData(finalMessages);
+            }, 3000);
 
             if (isComplete) {
                 const filteredMessages = finalMessages.filter(

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Home } from 'lucide-react';
 import { coaches } from '@/data/coaches';
 import type { CoachPersona } from '@/data/coaches';
 
@@ -162,16 +163,36 @@ export default function CoachSelectionPage() {
             <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 {/* Header */}
                 <div style={{ marginBottom: '2rem' }}>
-                    <h1
-                        style={{
-                            fontFamily: 'var(--font-orbitron)',
-                            fontSize: '2rem',
-                            color: 'var(--neon-orange)',
-                            marginBottom: '0.5rem',
-                        }}
-                    >
-                        Choose Your AI Coach
-                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                        <button
+                            onClick={() => router.push('/home')}
+                            aria-label="Back to Home"
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '8px',
+                                width: '40px',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--foreground)',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <Home size={20} />
+                        </button>
+                        <h1
+                            style={{
+                                fontFamily: 'var(--font-orbitron)',
+                                fontSize: '2rem',
+                                color: 'var(--neon-orange)',
+                            }}
+                        >
+                            Choose Your AI Coach
+                        </h1>
+                    </div>
                     <p style={{ color: '#888', fontSize: '0.95rem' }}>
                         Select a coaching persona that matches your training goals and style.
                     </p>
