@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dumbbell, ClipboardList, Bot, UtensilsCrossed, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import ConfirmationModal from '@/components/ConfirmationModal';
@@ -9,83 +9,48 @@ import { db } from '@/lib/supabaseDb';
 import { supabase } from '@/lib/supabase';
 import type { Profile, TrainingPlan, NutritionPlan } from '@/lib/types';
 
+async function fetchPlans(userId: string): Promise<{ workoutPlans: TrainingPlan[]; dietPlans: NutritionPlan[] }> {
+    // Load training plans via training_plan_assignments (reliable RLS path)
+    const assignments = await db.trainingPlanAssignments.getByUser(userId);
+    const uniquePlanIds = [...new Set(assignments.map(a => a.plan_id))];
+
+    let workoutPlans: TrainingPlan[] = [];
+    if (uniquePlanIds.length > 0) {
+        const planResults = await Promise.all(
+            uniquePlanIds.map(id => db.trainingPlans.getById(id))
+        );
+        workoutPlans = planResults.filter((p): p is TrainingPlan => p !== null);
+    }
+
+    // Fallback: also try direct query in case some plans don't have assignments
+    if (workoutPlans.length === 0) {
+        try {
+            const directPlans = await db.trainingPlans.getByCreator(userId);
+            if (directPlans.length > 0) workoutPlans = directPlans;
+        } catch {
+            // Direct query may fail due to RLS — that's OK, we have the assignment path
+        }
+    }
+
+    const dietPlans = await db.nutritionPlans.getByUser(userId);
+    return { workoutPlans, dietPlans };
+}
+
 export default function HomePage() {
     const [user, setUser] = useState<Profile | null>(null);
-    const [authUserId, setAuthUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [plans, setPlans] = useState<TrainingPlan[]>([]);
     const [nutritionPlans, setNutritionPlans] = useState<NutritionPlan[]>([]);
     const [plansLoading, setPlansLoading] = useState(true);
     const router = useRouter();
-
-    useEffect(() => {
-        async function initAuth() {
-            // First try to get the authenticated user from Supabase (ensures RLS works)
-            const { data: { user: authUser } } = await supabase.auth.getUser();
-            if (authUser) {
-                setAuthUserId(authUser.id);
-                // Also load display info from localStorage
-                const storedUser = localStorage.getItem('user');
-                if (storedUser) {
-                    setUser(JSON.parse(storedUser));
-                } else {
-                    // Fallback: build display user from auth data
-                    setUser({ id: authUser.id, email: authUser.email || '', username: authUser.email || '' } as Profile);
-                }
-            } else {
-                // No active auth session — try refreshing
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
-                    setAuthUserId(session.user.id);
-                    const storedUser = localStorage.getItem('user');
-                    if (storedUser) {
-                        setUser(JSON.parse(storedUser));
-                    } else {
-                        setUser({ id: session.user.id, email: session.user.email || '', username: session.user.email || '' } as Profile);
-                    }
-                } else {
-                    // Fall back to localStorage for display only
-                    const storedUser = localStorage.getItem('user');
-                    if (storedUser) {
-                        const parsed = JSON.parse(storedUser);
-                        setUser(parsed);
-                        setAuthUserId(parsed.id);
-                    }
-                }
-            }
-            setLoading(false);
-        }
-        initAuth();
-    }, []);
+    const userIdRef = useRef<string | null>(null);
 
     const loadPlans = useCallback(async () => {
-        if (!authUserId) return;
+        const userId = userIdRef.current;
+        if (!userId) return;
         setPlansLoading(true);
         try {
-            // Load training plans via training_plan_assignments (reliable RLS path)
-            const assignments = await db.trainingPlanAssignments.getByUser(authUserId);
-            const uniquePlanIds = [...new Set(assignments.map(a => a.plan_id))];
-
-            let workoutPlans: TrainingPlan[] = [];
-            if (uniquePlanIds.length > 0) {
-                const planResults = await Promise.all(
-                    uniquePlanIds.map(id => db.trainingPlans.getById(id))
-                );
-                workoutPlans = planResults.filter((p): p is TrainingPlan => p !== null);
-            }
-
-            // Fallback: also try direct query in case some plans don't have assignments
-            if (workoutPlans.length === 0) {
-                try {
-                    const directPlans = await db.trainingPlans.getByCreator(authUserId);
-                    if (directPlans.length > 0) workoutPlans = directPlans;
-                } catch {
-                    // Direct query may fail due to RLS — that's OK, we have the assignment path
-                }
-            }
-
-            const dietPlans = await db.nutritionPlans.getByUser(authUserId);
-
+            const { workoutPlans, dietPlans } = await fetchPlans(userId);
             setPlans(workoutPlans);
             setNutritionPlans(dietPlans);
         } catch (err) {
@@ -93,11 +58,75 @@ export default function HomePage() {
         } finally {
             setPlansLoading(false);
         }
-    }, [authUserId]);
+    }, []);
 
     useEffect(() => {
-        loadPlans();
-    }, [loadPlans]);
+        async function initAndLoad() {
+            // Resolve the authenticated user ID
+            let resolvedUserId: string | null = null;
+
+            try {
+                const { data: { user: authUser } } = await supabase.auth.getUser();
+                if (authUser) {
+                    resolvedUserId = authUser.id;
+                    const storedUser = localStorage.getItem('user');
+                    if (storedUser) {
+                        setUser(JSON.parse(storedUser));
+                    } else {
+                        setUser({ id: authUser.id, email: authUser.email || '', username: authUser.email || '' } as Profile);
+                    }
+                }
+            } catch {
+                // getUser() can throw on network errors — continue to fallbacks
+            }
+
+            if (!resolvedUserId) {
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        resolvedUserId = session.user.id;
+                        const storedUser = localStorage.getItem('user');
+                        if (storedUser) {
+                            setUser(JSON.parse(storedUser));
+                        } else {
+                            setUser({ id: session.user.id, email: session.user.email || '', username: session.user.email || '' } as Profile);
+                        }
+                    }
+                } catch {
+                    // getSession() failed — continue to localStorage fallback
+                }
+            }
+
+            if (!resolvedUserId) {
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser);
+                    setUser(parsed);
+                    resolvedUserId = parsed.id;
+                }
+            }
+
+            userIdRef.current = resolvedUserId;
+            setLoading(false);
+
+            // Load plans directly with the resolved userId — no useCallback/useEffect chain
+            if (resolvedUserId) {
+                setPlansLoading(true);
+                try {
+                    const { workoutPlans, dietPlans } = await fetchPlans(resolvedUserId);
+                    setPlans(workoutPlans);
+                    setNutritionPlans(dietPlans);
+                } catch (err) {
+                    console.warn('Could not load plans:', err);
+                } finally {
+                    setPlansLoading(false);
+                }
+            } else {
+                setPlansLoading(false);
+            }
+        }
+        initAndLoad();
+    }, []);
 
     const hasPlans = plans.length > 0 || nutritionPlans.length > 0;
 
