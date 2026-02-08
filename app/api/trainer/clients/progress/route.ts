@@ -1,9 +1,27 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-export async function GET(request: Request) {
+function getSupabase(req: NextRequest) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+    if (serviceKey) {
+        return createClient(supabaseUrl, serviceKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
+    }
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
+    return createClient(supabaseUrl, anonKey, {
+        global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
+}
+
+export async function GET(req: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
+        const sb = getSupabase(req);
+        const { searchParams } = new URL(req.url);
         const trainerId = searchParams.get('trainerId');
         const clientId = searchParams.get('clientId');
 
@@ -14,13 +32,8 @@ export async function GET(request: Request) {
             );
         }
 
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         // Verify active coaching relationship and get permission flags
-        const { data: relationship, error: relError } = await supabase
+        const { data: relationship, error: relError } = await sb
             .from('coaching_relationships')
             .select('*')
             .eq('coach_id', trainerId)
@@ -56,7 +69,7 @@ export async function GET(request: Request) {
         };
 
         // Fetch client profile
-        const { data: profile } = await supabase
+        const { data: profile } = await sb
             .from('profiles')
             .select('id, email, username, full_name, avatar_url, role')
             .eq('id', clientId)
@@ -69,7 +82,7 @@ export async function GET(request: Request) {
         }
 
         // Fetch workout logs with exercise logs
-        const { data: workoutLogs, error: logsError } = await supabase
+        const { data: workoutLogs, error: logsError } = await sb
             .from('workout_logs')
             .select('*')
             .eq('user_id', clientId)
@@ -81,7 +94,7 @@ export async function GET(request: Request) {
         // Fetch exercise logs for the workout logs
         if (workoutLogs && workoutLogs.length > 0) {
             const logIds = workoutLogs.map(l => l.id);
-            const { data: exerciseLogs, error: exError } = await supabase
+            const { data: exerciseLogs, error: exError } = await sb
                 .from('exercise_logs')
                 .select('*')
                 .in('workout_log_id', logIds);
@@ -98,7 +111,7 @@ export async function GET(request: Request) {
         }
 
         // Fetch body measurements
-        const { data: measurements, error: measError } = await supabase
+        const { data: measurements, error: measError } = await sb
             .from('body_measurements')
             .select('*')
             .eq('user_id', clientId)
@@ -108,7 +121,7 @@ export async function GET(request: Request) {
         result.bodyMeasurements = measurements || [];
 
         // Fetch progress media (only public + followers visibility, or all if coach)
-        const { data: media, error: mediaError } = await supabase
+        const { data: media, error: mediaError } = await sb
             .from('progress_media')
             .select('*')
             .eq('user_id', clientId)
@@ -121,7 +134,7 @@ export async function GET(request: Request) {
         if (media && media.length > 0) {
             const mediaWithUrls = await Promise.all(
                 media.map(async (item) => {
-                    const { data } = await supabase.storage
+                    const { data } = await sb.storage
                         .from('progress-media')
                         .createSignedUrl(item.storage_path, 3600);
                     return { ...item, url: data?.signedUrl || null };

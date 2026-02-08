@@ -103,10 +103,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         ...(user?.role === 'trainer' ? [{ label: 'Trainer', href: '/trainer' }] : []),
                     ]}
                     activeHref={pathname}
-                    baseColor="rgba(255, 255, 255, 0.08)"
-                    pillColor="rgba(255, 102, 0, 0.85)"
+                    baseColor="rgba(255, 255, 255, 0.06)"
+                    pillColor="transparent"
                     hoveredPillTextColor="#fff"
-                    pillTextColor="#fff"
+                    pillTextColor="rgba(255, 255, 255, 0.7)"
                     initialLoadAnimation={false}
                 />
 

@@ -77,34 +77,29 @@ export default function AssignPlanPage() {
         setError(null);
 
         try {
+            const selectedPlan = templates.find(p => p.id === planId);
+            const weeks = selectedPlan?.duration_weeks || 12;
             const today = new Date();
             const endDate = new Date(today);
-            endDate.setDate(endDate.getDate() + 84); // 12 weeks default
+            endDate.setDate(endDate.getDate() + weeks * 7);
 
-            const res = await fetch('/api/plan-assignments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    plan_id: planId,
-                    user_id: clientId,
-                    assigned_by_id: user.id,
-                    is_self_assigned: false,
-                    start_date: today.toISOString().split('T')[0],
-                    end_date: endDate.toISOString().split('T')[0],
-                }),
+            await db.trainingPlanAssignments.create({
+                plan_id: planId,
+                user_id: clientId,
+                assigned_by_id: user.id,
+                is_self_assigned: false,
+                start_date: today.toISOString().split('T')[0],
+                end_date: endDate.toISOString().split('T')[0],
+                is_active: true,
             });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Failed to assign plan');
-            }
 
             setAssignSuccess(true);
             setTimeout(() => {
                 router.push(`/trainer/client/${clientId}`);
             }, 1500);
         } catch (err: any) {
-            setError(err.message);
+            console.error('Assign plan error:', err);
+            setError(err.message || 'Failed to assign plan');
         } finally {
             setAssigning(false);
         }

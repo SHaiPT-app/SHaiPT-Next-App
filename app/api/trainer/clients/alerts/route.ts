@@ -1,24 +1,36 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { getClientAlerts, type FormIssueEntry } from '@/lib/aiClientAlerts';
-import type { ClientAlertSummary } from '@/lib/types';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import type { ClientAlert, ClientAlertSummary } from '@/lib/types';
 
-export async function GET(request: Request) {
+function getSupabase(req: NextRequest) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+    if (serviceKey) {
+        return createClient(supabaseUrl, serviceKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
+    }
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
+    return createClient(supabaseUrl, anonKey, {
+        global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
+}
+
+export async function GET(req: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
+        const sb = getSupabase(req);
+        const { searchParams } = new URL(req.url);
         const trainerId = searchParams.get('trainerId');
 
         if (!trainerId) {
             return NextResponse.json({ error: 'trainerId is required' }, { status: 400 });
         }
 
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        // 1. Get active coaching relationships for this trainer
-        const { data: relationships, error: relError } = await supabase
+        // Get active coaching relationships
+        const { data: relationships, error: relError } = await sb
             .from('coaching_relationships')
             .select('athlete_id')
             .eq('coach_id', trainerId)
@@ -31,79 +43,49 @@ export async function GET(request: Request) {
 
         const athleteIds = relationships.map(r => r.athlete_id);
 
-        // 2. Get workout logs for all athletes (last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+        // Get workout logs for last 14 days for inactivity detection
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+        const cutoff = fourteenDaysAgo.toISOString().split('T')[0];
 
-        const { data: workoutLogs, error: logsError } = await supabase
+        const { data: workoutLogs } = await sb
             .from('workout_logs')
-            .select('id, user_id, date, completed_at')
+            .select('user_id, date')
             .in('user_id', athleteIds)
-            .gte('date', thirtyDaysAgoStr)
+            .gte('date', cutoff)
             .order('date', { ascending: false });
 
-        if (logsError) throw logsError;
-
-        // 3. Get exercise logs for recent workouts (for plateau detection)
-        const workoutLogIds = (workoutLogs || []).map(wl => wl.id);
-        let exerciseLogsWithDates: Array<{
-            id: string;
-            workout_log_id: string;
-            exercise_id: string;
-            exercise_order: number;
-            sets: unknown[];
-            total_sets?: number;
-            total_reps?: number;
-            max_weight?: number;
-            average_rest_seconds?: number;
-            created_at?: string;
-            workout_date: string;
-        }> = [];
-
-        if (workoutLogIds.length > 0) {
-            const { data: exerciseLogs, error: exError } = await supabase
-                .from('exercise_logs')
-                .select('*')
-                .in('workout_log_id', workoutLogIds);
-
-            if (exError) throw exError;
-
-            // Map workout_log_id -> date for enrichment
-            const logDateMap = new Map<string, string>();
-            for (const wl of workoutLogs || []) {
-                logDateMap.set(wl.id, wl.date);
-            }
-
-            exerciseLogsWithDates = (exerciseLogs || []).map(el => ({
-                ...el,
-                workout_date: logDateMap.get(el.workout_log_id) || '',
-            }));
-        }
-
-        // 4. Build alerts per athlete
-        // Note: form issues would come from a dedicated table in a full implementation.
-        // For now, we pass an empty array since form issues are detected in real-time
-        // during pose analysis sessions and would need to be stored separately.
+        // Generate simple alerts: inactivity (no workout in 7+ days)
         const now = new Date();
         const alertSummaries: ClientAlertSummary[] = [];
 
         for (const athleteId of athleteIds) {
-            const clientWorkoutLogs = (workoutLogs || []).filter(wl => wl.user_id === athleteId);
-            const clientExerciseLogs = exerciseLogsWithDates.filter(
-                el => clientWorkoutLogs.some(wl => wl.id === el.workout_log_id)
-            );
+            const clientLogs = (workoutLogs || []).filter(l => l.user_id === athleteId);
+            const alerts: ClientAlert[] = [];
 
-            // Form issues: check if there's a form_issues table, otherwise empty
-            const formIssues: FormIssueEntry[] = [];
-
-            const alerts = getClientAlerts(
-                athleteId,
-                clientWorkoutLogs,
-                clientExerciseLogs as any,
-                formIssues,
-                now
-            );
+            if (clientLogs.length === 0) {
+                alerts.push({
+                    type: 'missed_workouts',
+                    severity: 'critical',
+                    title: 'Inactive',
+                    message: 'No workouts in the last 14 days',
+                    clientId: athleteId,
+                    detectedAt: now.toISOString(),
+                });
+            } else {
+                const lastDate = new Date(clientLogs[0].date + 'T00:00:00');
+                const daysSince = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysSince >= 7) {
+                    alerts.push({
+                        type: 'missed_workouts',
+                        severity: 'warning',
+                        title: 'Low Activity',
+                        message: `No workouts in ${daysSince} days`,
+                        clientId: athleteId,
+                        detectedAt: now.toISOString(),
+                    });
+                }
+            }
 
             if (alerts.length > 0) {
                 alertSummaries.push({
