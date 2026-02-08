@@ -194,33 +194,37 @@ BEGIN
     END IF;
 END $$;
 
--- Coaches can read their clients' body measurements
+-- Coaches can read their clients' body measurements (only if table exists)
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE tablename = 'body_measurements'
-        AND policyname = 'Coaches can view client body measurements'
-    ) THEN
-        CREATE POLICY "Coaches can view client body measurements"
-        ON body_measurements FOR SELECT
-        TO authenticated
-        USING (user_id = auth.uid() OR is_coach_of(user_id));
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'body_measurements') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE tablename = 'body_measurements'
+            AND policyname = 'Coaches can view client body measurements'
+        ) THEN
+            CREATE POLICY "Coaches can view client body measurements"
+            ON body_measurements FOR SELECT
+            TO authenticated
+            USING (user_id = auth.uid() OR is_coach_of(user_id));
+        END IF;
     END IF;
 END $$;
 
--- Coaches can read their clients' progress media
+-- Coaches can read their clients' progress media (only if table exists)
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE tablename = 'progress_media'
-        AND policyname = 'Coaches can view client progress media'
-    ) THEN
-        CREATE POLICY "Coaches can view client progress media"
-        ON progress_media FOR SELECT
-        TO authenticated
-        USING (user_id = auth.uid() OR is_coach_of(user_id));
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'progress_media') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE tablename = 'progress_media'
+            AND policyname = 'Coaches can view client progress media'
+        ) THEN
+            CREATE POLICY "Coaches can view client progress media"
+            ON progress_media FOR SELECT
+            TO authenticated
+            USING (user_id = auth.uid() OR is_coach_of(user_id));
+        END IF;
     END IF;
 END $$;
 

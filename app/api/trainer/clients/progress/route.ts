@@ -117,37 +117,40 @@ export async function GET(req: NextRequest) {
             }));
         }
 
-        // Fetch body measurements
-        const { data: measurements, error: measError } = await sb
-            .from('body_measurements')
-            .select('*')
-            .eq('user_id', clientId)
-            .order('date', { ascending: false });
+        // Fetch body measurements (table may not exist)
+        try {
+            const { data: measurements } = await sb
+                .from('body_measurements')
+                .select('*')
+                .eq('user_id', clientId)
+                .order('date', { ascending: false });
+            result.bodyMeasurements = measurements || [];
+        } catch {
+            // Table may not exist — skip
+        }
 
-        if (measError) throw measError;
-        result.bodyMeasurements = measurements || [];
+        // Fetch progress media (table may not exist)
+        try {
+            const { data: media } = await sb
+                .from('progress_media')
+                .select('*')
+                .eq('user_id', clientId)
+                .in('visibility', ['public', 'followers'])
+                .order('taken_at', { ascending: false });
 
-        // Fetch progress media (only public + followers visibility, or all if coach)
-        const { data: media, error: mediaError } = await sb
-            .from('progress_media')
-            .select('*')
-            .eq('user_id', clientId)
-            .in('visibility', ['public', 'followers'])
-            .order('taken_at', { ascending: false });
-
-        if (mediaError) throw mediaError;
-
-        // Generate signed URLs for media
-        if (media && media.length > 0) {
-            const mediaWithUrls = await Promise.all(
-                media.map(async (item) => {
-                    const { data } = await sb.storage
-                        .from('progress-media')
-                        .createSignedUrl(item.storage_path, 3600);
-                    return { ...item, url: data?.signedUrl || null };
-                })
-            );
-            result.progressMedia = mediaWithUrls;
+            if (media && media.length > 0) {
+                const mediaWithUrls = await Promise.all(
+                    media.map(async (item) => {
+                        const { data } = await sb.storage
+                            .from('progress-media')
+                            .createSignedUrl(item.storage_path, 3600);
+                        return { ...item, url: data?.signedUrl || null };
+                    })
+                );
+                result.progressMedia = mediaWithUrls;
+            }
+        } catch {
+            // Table may not exist — skip
         }
 
         return NextResponse.json(result);
