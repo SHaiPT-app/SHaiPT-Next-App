@@ -41,7 +41,14 @@ export async function GET(req: NextRequest) {
             .eq('status', 'active')
             .single();
 
-        if (relError || !relationship) {
+        if (relError) {
+            console.error('Coaching relationship query error:', relError);
+            return NextResponse.json(
+                { error: `Coaching relationship error: ${relError.message}` },
+                { status: 403 }
+            );
+        }
+        if (!relationship) {
             return NextResponse.json(
                 { error: 'No active coaching relationship found' },
                 { status: 403 }
