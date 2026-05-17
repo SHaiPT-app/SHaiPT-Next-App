@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Hero from '@/components/landing/Hero';
+import ScrollVideoSection from '@/components/landing/ScrollVideoSection';
 import Features from '@/components/landing/Features';
 import Comparison from '@/components/landing/Comparison';
 import Pricing from '@/components/landing/Pricing';
@@ -32,6 +33,7 @@ export default function Home() {
   return (
     <StaticBackground>
       <Hero />
+      <ScrollVideoSection />
       <Features />
       <Comparison />
       <Pricing />
