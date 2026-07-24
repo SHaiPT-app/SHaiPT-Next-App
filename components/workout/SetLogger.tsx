@@ -96,18 +96,18 @@ export function SetLogger({
     ];
 
     return (
-        <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-4">
+        <div className="glass-card p-4">
             {/* Header with Set Type Toggle */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-white">Set {setNumber}</span>
+                    <span className="text-lg font-bold text-ink-hi">Set {setNumber}</span>
                     <button
                         onClick={() => setSetType(setType === 'working' ? 'warmup' : 'working')}
                         className={`
                             px-2 py-0.5 rounded text-xs font-medium transition-colors
                             ${setType === 'warmup'
                                 ? 'bg-yellow-500/20 text-yellow-400'
-                                : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+                                : 'bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi'
                             }
                         `}
                     >
@@ -119,7 +119,7 @@ export function SetLogger({
                 <div className="relative">
                     <button
                         onClick={() => setShowIntensifierMenu(!showIntensifierMenu)}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 text-purple-400 text-sm hover:bg-purple-500/30"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--brand-glow-soft)] text-brand text-sm hover:bg-brand/20"
                     >
                         <Zap className="w-4 h-4" />
                         <span>Intensifier</span>
@@ -130,7 +130,7 @@ export function SetLogger({
                         <motion.div
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="absolute right-0 top-full mt-1 w-48 bg-gray-800 rounded-lg border border-gray-700 shadow-xl z-10"
+                            className="absolute right-0 top-full mt-1 w-48 bg-[var(--surface-2)] backdrop-blur-xl rounded-lg border border-line-strong shadow-xl z-10"
                         >
                             {intensifierOptions.map((option) => (
                                 <button
@@ -139,7 +139,7 @@ export function SetLogger({
                                         setShowIntensifierMenu(false);
                                         onShowIntensifier(option.type);
                                     }}
-                                    className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"
+                                    className="w-full px-4 py-2 text-left text-sm text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)] first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"
                                 >
                                     <span>{option.icon}</span>
                                     <span>{option.label}</span>
@@ -152,9 +152,9 @@ export function SetLogger({
 
             {/* Target Reference */}
             {targetSet && (
-                <div className="mb-4 px-3 py-2 bg-gray-800/50 rounded-lg">
-                    <span className="text-xs text-gray-500">Target: </span>
-                    <span className="text-sm text-gray-400">
+                <div className="mb-4 px-3 py-2 bg-[var(--surface-2)] rounded-lg">
+                    <span className="text-xs text-ink-low">Target: </span>
+                    <span className="text-sm text-ink-mid">
                         {targetSet.weight || '--'} × {targetSet.reps || '--'}
                     </span>
                 </div>
@@ -162,11 +162,11 @@ export function SetLogger({
 
             {/* Weight Input */}
             <div className="mb-4">
-                <label className="text-sm text-gray-400 mb-2 block">Weight ({weightUnit})</label>
+                <label className="text-sm text-ink-mid mb-2 block">Weight ({weightUnit})</label>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => handleWeightChange(-weightIncrement)}
-                        className="w-12 h-12 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 flex items-center justify-center"
+                        className="w-12 h-12 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)] flex items-center justify-center"
                     >
                         <Minus className="w-5 h-5" />
                     </button>
@@ -175,12 +175,12 @@ export function SetLogger({
                         type="number"
                         value={weight}
                         onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
-                        className="flex-1 h-12 bg-gray-800 border border-gray-700 rounded-lg text-center text-2xl font-bold text-white focus:outline-none focus:border-cyan-500"
+                        className="flex-1 h-12 bg-[var(--surface-2)] border border-line-strong rounded-lg text-center text-2xl font-bold text-ink-hi focus:outline-none focus:border-brand"
                     />
 
                     <button
                         onClick={() => handleWeightChange(weightIncrement)}
-                        className="w-12 h-12 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 flex items-center justify-center"
+                        className="w-12 h-12 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)] flex items-center justify-center"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
@@ -189,11 +189,11 @@ export function SetLogger({
 
             {/* Reps Input */}
             <div className="mb-4">
-                <label className="text-sm text-gray-400 mb-2 block">Reps</label>
+                <label className="text-sm text-ink-mid mb-2 block">Reps</label>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => handleRepsChange(-1)}
-                        className="w-12 h-12 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 flex items-center justify-center"
+                        className="w-12 h-12 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)] flex items-center justify-center"
                     >
                         <Minus className="w-5 h-5" />
                     </button>
@@ -202,12 +202,12 @@ export function SetLogger({
                         type="number"
                         value={reps}
                         onChange={(e) => setReps(parseInt(e.target.value) || 0)}
-                        className="flex-1 h-12 bg-gray-800 border border-gray-700 rounded-lg text-center text-2xl font-bold text-white focus:outline-none focus:border-cyan-500"
+                        className="flex-1 h-12 bg-[var(--surface-2)] border border-line-strong rounded-lg text-center text-2xl font-bold text-ink-hi focus:outline-none focus:border-brand"
                     />
 
                     <button
                         onClick={() => handleRepsChange(1)}
-                        className="w-12 h-12 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 flex items-center justify-center"
+                        className="w-12 h-12 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)] flex items-center justify-center"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
@@ -218,7 +218,7 @@ export function SetLogger({
             <div className="mb-4">
                 <button
                     onClick={() => setShowRpeSelector(!showRpeSelector)}
-                    className="text-sm text-gray-400 mb-2 flex items-center gap-1 hover:text-gray-200"
+                    className="text-sm text-ink-mid mb-2 flex items-center gap-1 hover:text-ink-hi"
                 >
                     RPE (optional)
                     <ChevronDown className={`w-4 h-4 transition-transform ${showRpeSelector ? 'rotate-180' : ''}`} />
@@ -237,8 +237,8 @@ export function SetLogger({
                                 className={`
                                     px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
                                     ${rpe === value
-                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                        : 'bg-gray-800 text-gray-400 hover:text-white'
+                                        ? 'bg-[var(--brand-glow-soft)] text-brand border border-brand/30'
+                                        : 'bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi'
                                     }
                                 `}
                             >
@@ -255,9 +255,9 @@ export function SetLogger({
                 whileTap={{ scale: 0.98 }}
                 onClick={handleSubmit}
                 disabled={weight < 0 || reps <= 0}
-                className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium
+                className="w-full py-3 rounded-lg bg-[image:var(--brand-gradient)] text-white font-medium
                          flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
-                         shadow-lg shadow-cyan-500/20"
+                         shadow-[0_4px_24px_var(--brand-glow)]"
             >
                 <Check className="w-5 h-5" />
                 Log Set

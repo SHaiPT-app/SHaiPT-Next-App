@@ -9,6 +9,9 @@ interface AIDietitianProps {
     user: User;
 }
 
+const inputClasses = 'w-full rounded-[10px] border border-line-soft bg-[var(--surface-1)] p-3 text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand';
+const labelClasses = 'mb-2 block text-ink-mid';
+
 export default function AIDietitian({ user }: AIDietitianProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
@@ -97,31 +100,31 @@ export default function AIDietitian({ user }: AIDietitianProps) {
 
     return (
         <FeatureGate user={user} feature="dietitian">
-            <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: plan ? '1fr 1fr' : '1fr' }}>
+            <div className="grid gap-8" style={{ gridTemplateColumns: plan ? '1fr 1fr' : '1fr' }}>
 
                 {/* Left Column: Form or Plan View */}
                 <div>
                     {showForm ? (
-                        <div className="glass-panel" style={{ padding: '2rem' }}>
-                            <h2 style={{ marginBottom: '1.5rem', color: 'var(--accent)' }}>Create Your Meal Plan</h2>
+                        <div className="glass-card p-8">
+                            <h2 className="font-display mb-6 text-2xl font-bold text-ink-hi">Create Your Meal Plan</h2>
 
-                            <div style={{ display: 'grid', gap: '1.5rem' }}>
+                            <div className="grid gap-6">
                                 {/* Demographics */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Age</label>
+                                        <label className={labelClasses}>Age</label>
                                         <input
                                             type="number"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.age}
                                             onChange={e => setFormData({ ...formData, age: parseInt(e.target.value) || '' })}
                                             placeholder="e.g. 25"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Gender <span style={{ color: '#f87171' }}>*</span></label>
+                                        <label className={labelClasses}>Gender <span className="text-[var(--error)]">*</span></label>
                                         <select
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.gender}
                                             onChange={e => setFormData({ ...formData, gender: e.target.value })}
                                             required
@@ -133,20 +136,20 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Height (cm)</label>
+                                        <label className={labelClasses}>Height (cm)</label>
                                         <input
                                             type="text"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.height}
                                             onChange={e => setFormData({ ...formData, height: e.target.value })}
                                             placeholder="e.g. 180"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Weight (kg)</label>
+                                        <label className={labelClasses}>Weight (kg)</label>
                                         <input
                                             type="text"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.weight}
                                             onChange={e => setFormData({ ...formData, weight: e.target.value })}
                                             placeholder="e.g. 75"
@@ -155,11 +158,11 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                 </div>
 
                                 {/* Lifestyle */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Activity Level</label>
+                                        <label className={labelClasses}>Activity Level</label>
                                         <select
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.activity_level}
                                             onChange={e => setFormData({ ...formData, activity_level: e.target.value })}
                                         >
@@ -171,10 +174,10 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Meals Per Day</label>
+                                        <label className={labelClasses}>Meals Per Day</label>
                                         <input
                                             type="number"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.meals_per_day}
                                             onChange={e => setFormData({ ...formData, meals_per_day: parseInt(e.target.value) })}
                                             min={1} max={6}
@@ -184,8 +187,8 @@ export default function AIDietitian({ user }: AIDietitianProps) {
 
                                 {/* Goals */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Fitness Goals</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <label className={labelClasses}>Fitness Goals</label>
+                                    <div className="flex flex-wrap gap-2">
                                         {['Weight Loss', 'Muscle Gain', 'Maintenance', 'Fat Loss', 'Bulking', 'Healthy Eating'].map(goal => {
                                             const goalKey = goal.toLowerCase().replace(' ', '_');
                                             return (
@@ -197,14 +200,11 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                                             : [...formData.fitness_goals, goalKey];
                                                         setFormData({ ...formData, fitness_goals: newGoals });
                                                     }}
-                                                    style={{
-                                                        padding: '0.5rem 1rem',
-                                                        borderRadius: '20px',
-                                                        border: '1px solid var(--glass-border)',
-                                                        background: formData.fitness_goals.includes(goalKey) ? 'var(--primary)' : 'transparent',
-                                                        color: formData.fitness_goals.includes(goalKey) ? 'white' : '#888',
-                                                        cursor: 'pointer'
-                                                    }}
+                                                    className={`cursor-pointer rounded-full border px-4 py-2 transition-colors ${
+                                                        formData.fitness_goals.includes(goalKey)
+                                                            ? 'border-brand bg-brand text-white'
+                                                            : 'border-line-strong bg-transparent text-ink-low hover:border-brand/50 hover:text-ink-mid'
+                                                    }`}
                                                 >
                                                     {goal}
                                                 </button>
@@ -215,8 +215,8 @@ export default function AIDietitian({ user }: AIDietitianProps) {
 
                                 {/* Preferences */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Dietary Preferences</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <label className={labelClasses}>Dietary Preferences</label>
+                                    <div className="flex flex-wrap gap-2">
                                         {['Vegetarian', 'Vegan', 'Keto', 'Paleo', 'Gluten-Free', 'Dairy-Free', 'Halal', 'Kosher'].map(pref => {
                                             const prefKey = pref.toLowerCase().replace('-', '_');
                                             return (
@@ -228,14 +228,11 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                                             : [...formData.dietary_preferences, prefKey];
                                                         setFormData({ ...formData, dietary_preferences: newPrefs });
                                                     }}
-                                                    style={{
-                                                        padding: '0.5rem 1rem',
-                                                        borderRadius: '20px',
-                                                        border: '1px solid var(--glass-border)',
-                                                        background: formData.dietary_preferences.includes(prefKey) ? 'var(--primary)' : 'transparent',
-                                                        color: formData.dietary_preferences.includes(prefKey) ? 'white' : '#888',
-                                                        cursor: 'pointer'
-                                                    }}
+                                                    className={`cursor-pointer rounded-full border px-4 py-2 transition-colors ${
+                                                        formData.dietary_preferences.includes(prefKey)
+                                                            ? 'border-brand bg-brand text-white'
+                                                            : 'border-line-strong bg-transparent text-ink-low hover:border-brand/50 hover:text-ink-mid'
+                                                    }`}
                                                 >
                                                     {pref}
                                                 </button>
@@ -245,22 +242,22 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                 </div>
 
                                 {/* Allergies & Dislikes */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Allergies</label>
+                                        <label className={labelClasses}>Allergies</label>
                                         <input
                                             type="text"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.allergies.join(', ')}
                                             onChange={e => setFormData({ ...formData, allergies: e.target.value.split(',').map(s => s.trim()) })}
                                             placeholder="e.g. Peanuts, Shellfish"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Food Dislikes</label>
+                                        <label className={labelClasses}>Food Dislikes</label>
                                         <input
                                             type="text"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.food_dislikes.join(', ')}
                                             onChange={e => setFormData({ ...formData, food_dislikes: e.target.value.split(',').map(s => s.trim()) })}
                                             placeholder="e.g. Mushrooms, Olives"
@@ -268,11 +265,11 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                                <div className="grid grid-cols-3 gap-4">
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Cooking Skill</label>
+                                        <label className={labelClasses}>Cooking Skill</label>
                                         <select
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.cooking_skill}
                                             onChange={e => setFormData({ ...formData, cooking_skill: e.target.value })}
                                         >
@@ -282,19 +279,19 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Prep Time (mins)</label>
+                                        <label className={labelClasses}>Prep Time (mins)</label>
                                         <input
                                             type="number"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.meal_prep_time_minutes}
                                             onChange={e => setFormData({ ...formData, meal_prep_time_minutes: parseInt(e.target.value) })}
                                             step={5}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Budget</label>
+                                        <label className={labelClasses}>Budget</label>
                                         <select
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.budget_level}
                                             onChange={e => setFormData({ ...formData, budget_level: e.target.value })}
                                         >
@@ -306,22 +303,21 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                 </div>
 
                                 <button
-                                    className="btn-primary"
+                                    className="btn-brand mt-4"
                                     onClick={handleGeneratePlan}
                                     disabled={loading}
-                                    style={{ marginTop: '1rem', padding: '1rem' }}
                                 >
                                     {loading ? 'Generating Plan...' : 'Generate Meal Plan'}
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gap: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ color: 'var(--accent)' }}>Your Meal Plan</h3>
+                        <div className="grid gap-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-display text-lg font-bold text-ink-hi">Your Meal Plan</h3>
                                 <button
                                     onClick={() => setShowForm(true)}
-                                    style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: '#888', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer' }}
+                                    className="btn-outline !px-4 !py-2 !text-sm"
                                 >
                                     Edit Preferences
                                 </button>
@@ -329,52 +325,52 @@ export default function AIDietitian({ user }: AIDietitianProps) {
 
                             {/* Plan Overview */}
                             {plan?.plan_overview && (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '1rem', textAlign: 'center' }}>
-                                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px' }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#888' }}>Calories</div>
-                                        <div style={{ fontWeight: 'bold' }}>{plan.plan_overview.daily_calories}</div>
+                                <div className="mb-4 grid grid-cols-4 gap-2 text-center">
+                                    <div className="rounded-lg border border-line-soft bg-[var(--surface-1)] p-2">
+                                        <div className="text-[0.7rem] text-ink-low">Calories</div>
+                                        <div className="font-bold text-ink-hi">{plan.plan_overview.daily_calories}</div>
                                     </div>
-                                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px' }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#888' }}>Protein</div>
-                                        <div style={{ fontWeight: 'bold' }}>{plan.plan_overview.macros?.protein_g}g</div>
+                                    <div className="rounded-lg border border-line-soft bg-[var(--surface-1)] p-2">
+                                        <div className="text-[0.7rem] text-ink-low">Protein</div>
+                                        <div className="font-bold text-ink-hi">{plan.plan_overview.macros?.protein_g}g</div>
                                     </div>
-                                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px' }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#888' }}>Carbs</div>
-                                        <div style={{ fontWeight: 'bold' }}>{plan.plan_overview.macros?.carbs_g}g</div>
+                                    <div className="rounded-lg border border-line-soft bg-[var(--surface-1)] p-2">
+                                        <div className="text-[0.7rem] text-ink-low">Carbs</div>
+                                        <div className="font-bold text-ink-hi">{plan.plan_overview.macros?.carbs_g}g</div>
                                     </div>
-                                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px' }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#888' }}>Fats</div>
-                                        <div style={{ fontWeight: 'bold' }}>{plan.plan_overview.macros?.fat_g}g</div>
+                                    <div className="rounded-lg border border-line-soft bg-[var(--surface-1)] p-2">
+                                        <div className="text-[0.7rem] text-ink-low">Fats</div>
+                                        <div className="font-bold text-ink-hi">{plan.plan_overview.macros?.fat_g}g</div>
                                     </div>
                                 </div>
                             )}
 
                             {plan?.daily_schedule ? (
                                 Object.entries(plan.daily_schedule).map(([day, meals]: [string, any]) => (
-                                    <div key={day} style={{ border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
-                                        <h4 style={{ textTransform: 'capitalize', color: 'var(--primary)', marginBottom: '1rem' }}>{day.replace('_', ' ')}</h4>
-                                        <div style={{ display: 'grid', gap: '1rem' }}>
+                                    <div key={day} className="glass-card p-4">
+                                        <h4 className="font-display mb-4 capitalize text-brand">{day.replace('_', ' ')}</h4>
+                                        <div className="grid gap-4">
                                             {['breakfast', 'lunch', 'dinner', 'snacks'].map(mealType => {
                                                 const meal = meals[mealType];
                                                 if (!meal || (Array.isArray(meal) && meal.length === 0)) return null;
 
                                                 return (
-                                                    <div key={mealType} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '6px' }}>
-                                                        <h5 style={{ textTransform: 'capitalize', marginBottom: '0.5rem', color: '#ddd' }}>{mealType}</h5>
+                                                    <div key={mealType} className="rounded-lg bg-[var(--surface-2)] p-4">
+                                                        <h5 className="mb-2 capitalize text-ink-hi">{mealType}</h5>
                                                         {Array.isArray(meal) ? (
-                                                            <ul style={{ paddingLeft: '1.5rem', margin: 0 }}>
+                                                            <ul className="m-0 pl-6">
                                                                 {meal.map((snack: any, i: number) => (
-                                                                    <li key={i} style={{ color: '#aaa' }}>{snack.name || snack}</li>
+                                                                    <li key={i} className="text-ink-mid">{snack.name || snack}</li>
                                                                 ))}
                                                             </ul>
                                                         ) : (
                                                             <div>
-                                                                <div style={{ fontWeight: 'bold', color: 'white' }}>{meal.name}</div>
-                                                                <div style={{ fontSize: '0.9rem', color: '#aaa', marginTop: '0.25rem' }}>
+                                                                <div className="font-bold text-ink-hi">{meal.name}</div>
+                                                                <div className="mt-1 text-[0.9rem] text-ink-mid">
                                                                     {meal.nutrition?.calories} kcal | P: {meal.nutrition?.protein_g}g | C: {meal.nutrition?.carbs_g}g | F: {meal.nutrition?.fat_g}g
                                                                 </div>
                                                                 {meal.instructions && (
-                                                                    <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: '#666', marginTop: '0.25rem' }}>
+                                                                    <div className="mt-1 text-[0.8rem] italic text-ink-low">
                                                                         Prep: {meal.instructions}
                                                                     </div>
                                                                 )}
@@ -387,7 +383,7 @@ export default function AIDietitian({ user }: AIDietitianProps) {
                                     </div>
                                 ))
                             ) : (
-                                <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>
+                                <div className="p-8 text-center text-ink-low">
                                     No meal plan data available.
                                 </div>
                             )}
@@ -397,8 +393,8 @@ export default function AIDietitian({ user }: AIDietitianProps) {
 
                 {/* Right Column: Chat Interface (Only visible after plan generation) */}
                 {!showForm && (
-                    <div className="glass-panel" style={{ height: '600px', display: 'flex', flexDirection: 'column', position: 'sticky', top: '2rem' }}>
-                        <h3 style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>AI Dietitian Chat</h3>
+                    <div className="glass-card sticky top-8 flex h-[600px] flex-col overflow-hidden">
+                        <h3 className="border-b border-line-soft p-4 font-display font-bold text-ink-hi">AI Dietitian Chat</h3>
                         <ChatInterface
                             messages={messages}
                             onSendMessage={handleSendMessage}

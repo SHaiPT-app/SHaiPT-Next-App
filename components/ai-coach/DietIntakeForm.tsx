@@ -1,6 +1,5 @@
 'use client';
 
-import { Box, Text, Flex, VStack } from '@chakra-ui/react';
 import type { DietIntakeFormData } from '@/lib/types';
 
 interface DietIntakeFormProps {
@@ -49,77 +48,45 @@ const FORM_SECTIONS: FormSection[] = [
     },
 ];
 
+const fieldClass = (isFilled: boolean): string =>
+    `w-full rounded-lg border px-3 py-[0.6rem] text-[0.85rem] text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand focus:ring-1 focus:ring-brand ${
+        isFilled ? 'border-brand/25 bg-brand/5' : 'border-line-soft bg-[var(--surface-1)]'
+    }`;
+
 export default function DietIntakeForm({ formData, onFieldChange }: DietIntakeFormProps) {
     return (
-        <Box
-            h="100%"
-            overflowY="auto"
-            px={{ base: '1rem', md: '1.5rem' }}
-            py="1.25rem"
-        >
+        <div className="h-full overflow-y-auto px-4 py-5 md:px-6">
             {/* Paper-style header */}
-            <Box
-                mb="1.5rem"
-                pb="1rem"
-                borderBottom="2px solid rgba(255, 102, 0, 0.3)"
-            >
-                <Text
-                    fontFamily="var(--font-orbitron)"
-                    fontSize="1.1rem"
-                    fontWeight="700"
-                    color="var(--neon-orange)"
-                    mb="0.25rem"
-                >
+            <div className="mb-6 border-b-2 border-brand/30 pb-4">
+                <h2 className="font-display mb-1 text-lg font-bold text-ink-hi">
                     Nutrition Intake Form
-                </Text>
-                <Text fontSize="0.8rem" color="#888">
+                </h2>
+                <p className="text-[0.8rem] text-ink-mid">
                     This form auto-fills as you chat with Dr. Nadia. You can also edit fields directly.
-                </Text>
-            </Box>
+                </p>
+            </div>
 
-            <VStack gap="1.5rem" align="stretch">
+            <div className="flex flex-col gap-6">
                 {FORM_SECTIONS.map((section) => (
-                    <Box key={section.title}>
-                        <Text
-                            fontSize="0.75rem"
-                            fontWeight="700"
-                            color="var(--neon-orange)"
-                            textTransform="uppercase"
-                            letterSpacing="0.08em"
-                            mb="0.75rem"
-                            fontFamily="var(--font-orbitron)"
-                        >
+                    <div key={section.title}>
+                        <h3 className="eyebrow mb-3">
                             {section.title}
-                        </Text>
-                        <VStack gap="0.6rem" align="stretch">
+                        </h3>
+                        <div className="flex flex-col gap-[0.6rem]">
                             {section.fields.map((field) => {
                                 const value = formData[field.key];
                                 const isFilled = value.trim().length > 0;
 
                                 return (
-                                    <Box key={field.key}>
-                                        <Flex
-                                            alignItems="center"
-                                            gap="0.5rem"
-                                            mb="0.25rem"
-                                        >
-                                            <Text
-                                                fontSize="0.75rem"
-                                                color="#aaa"
-                                                fontWeight="500"
-                                            >
+                                    <div key={field.key}>
+                                        <div className="mb-1 flex items-center gap-2">
+                                            <span className="text-sm text-ink-mid">
                                                 {field.label}
-                                            </Text>
+                                            </span>
                                             {isFilled && (
-                                                <Box
-                                                    w="6px"
-                                                    h="6px"
-                                                    borderRadius="50%"
-                                                    bg="var(--neon-orange)"
-                                                    flexShrink={0}
-                                                />
+                                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand shadow-[0_0_8px_var(--brand-glow)]" />
                                             )}
-                                        </Flex>
+                                        </div>
                                         {field.multiline ? (
                                             <textarea
                                                 data-testid={`diet-field-${field.key}`}
@@ -128,32 +95,7 @@ export default function DietIntakeForm({ formData, onFieldChange }: DietIntakeFo
                                                     onFieldChange(field.key, e.target.value)
                                                 }
                                                 rows={3}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.6rem 0.75rem',
-                                                    fontSize: '0.85rem',
-                                                    background: isFilled
-                                                        ? 'rgba(255, 102, 0, 0.05)'
-                                                        : 'rgba(255, 255, 255, 0.03)',
-                                                    border: isFilled
-                                                        ? '1px solid rgba(255, 102, 0, 0.25)'
-                                                        : '1px solid rgba(255, 255, 255, 0.1)',
-                                                    borderRadius: '8px',
-                                                    color: 'var(--foreground)',
-                                                    outline: 'none',
-                                                    resize: 'vertical',
-                                                    transition: 'all 0.3s ease',
-                                                    fontFamily: 'inherit',
-                                                    lineHeight: '1.5',
-                                                }}
-                                                onFocus={(e) => {
-                                                    e.currentTarget.style.borderColor = 'var(--neon-orange)';
-                                                }}
-                                                onBlur={(e) => {
-                                                    e.currentTarget.style.borderColor = isFilled
-                                                        ? 'rgba(255, 102, 0, 0.25)'
-                                                        : 'rgba(255, 255, 255, 0.1)';
-                                                }}
+                                                className={`${fieldClass(isFilled)} resize-y leading-normal`}
                                             />
                                         ) : (
                                             <input
@@ -162,38 +104,16 @@ export default function DietIntakeForm({ formData, onFieldChange }: DietIntakeFo
                                                 onChange={(e) =>
                                                     onFieldChange(field.key, e.target.value)
                                                 }
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.6rem 0.75rem',
-                                                    fontSize: '0.85rem',
-                                                    background: isFilled
-                                                        ? 'rgba(255, 102, 0, 0.05)'
-                                                        : 'rgba(255, 255, 255, 0.03)',
-                                                    border: isFilled
-                                                        ? '1px solid rgba(255, 102, 0, 0.25)'
-                                                        : '1px solid rgba(255, 255, 255, 0.1)',
-                                                    borderRadius: '8px',
-                                                    color: 'var(--foreground)',
-                                                    outline: 'none',
-                                                    transition: 'all 0.3s ease',
-                                                }}
-                                                onFocus={(e) => {
-                                                    e.currentTarget.style.borderColor = 'var(--neon-orange)';
-                                                }}
-                                                onBlur={(e) => {
-                                                    e.currentTarget.style.borderColor = isFilled
-                                                        ? 'rgba(255, 102, 0, 0.25)'
-                                                        : 'rgba(255, 255, 255, 0.1)';
-                                                }}
+                                                className={fieldClass(isFilled)}
                                             />
                                         )}
-                                    </Box>
+                                    </div>
                                 );
                             })}
-                        </VStack>
-                    </Box>
+                        </div>
+                    </div>
                 ))}
-            </VStack>
-        </Box>
+            </div>
+        </div>
     );
 }

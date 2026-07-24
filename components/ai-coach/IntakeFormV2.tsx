@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback } from 'react';
-import { Box, Text, Flex, VStack } from '@chakra-ui/react';
 import type { IntakeFormDataV2, TrainingLocationType } from '@/lib/types';
 import { EQUIPMENT_BY_LOCATION, LOCATION_LABELS } from '@/data/equipment';
 import { getGoalsForCoach } from '@/data/fitnessGoals';
@@ -20,45 +19,24 @@ interface IntakeFormV2Props {
 }
 
 // Styles
-const cardStyle = (selected: boolean): React.CSSProperties => ({
-    padding: '0.65rem 0.85rem',
-    borderRadius: '10px',
-    border: selected ? '1.5px solid var(--neon-orange)' : '1.5px solid rgba(255, 255, 255, 0.1)',
-    background: selected ? 'rgba(255, 102, 0, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-    color: selected ? 'var(--neon-orange)' : 'var(--foreground)',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    textAlign: 'center' as const,
-    fontWeight: selected ? '600' : '400',
-    fontSize: '0.82rem',
-});
+const chipClass = (selected: boolean): string =>
+    `cursor-pointer rounded-[10px] border text-center transition-all duration-200 ${
+        selected
+            ? 'border-brand bg-[var(--brand-glow-soft)] font-semibold text-brand'
+            : 'border-line-soft bg-[var(--surface-1)] font-normal text-foreground hover:border-line-strong'
+    }`;
 
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '0.6rem 0.75rem',
-    fontSize: '0.85rem',
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '8px',
-    color: 'var(--foreground)',
-    outline: 'none',
-    transition: 'all 0.2s',
-};
+const inputClass =
+    'w-full rounded-lg border border-line-soft bg-[var(--surface-1)] px-3 py-[0.6rem] text-[0.85rem] text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand focus:ring-1 focus:ring-brand';
 
-const sectionTitleStyle: React.CSSProperties = {
-    fontSize: '0.75rem',
-    fontWeight: '700',
-    color: 'var(--neon-orange)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    fontFamily: 'var(--font-orbitron)',
-};
+const labelClass = 'text-sm text-ink-mid';
 
-const labelStyle: React.CSSProperties = {
-    fontSize: '0.75rem',
-    color: '#aaa',
-    fontWeight: '500',
-};
+const unitBtnClass = (selected: boolean, readOnly: boolean): string =>
+    `border-none px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+        selected
+            ? 'bg-[image:var(--brand-gradient)] text-white'
+            : 'bg-[var(--surface-1)] text-ink-low'
+    } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`;
 
 const ATHLETIC_HISTORY_OPTIONS = [
     { value: 'never', label: 'Never Trained' },
@@ -139,75 +117,64 @@ export default function IntakeFormV2({
     );
 
     return (
-        <Box
-            h="100%"
-            overflowY="auto"
-            px={{ base: '1rem', md: '1.5rem' }}
-            py="1.25rem"
-        >
+        <div className="h-full overflow-y-auto px-4 py-5 md:px-6">
             {/* Header */}
-            <Box mb="1.5rem" pb="1rem" borderBottom="2px solid rgba(255, 102, 0, 0.3)">
-                <Text
-                    fontFamily="var(--font-orbitron)"
-                    fontSize="1.1rem"
-                    fontWeight="700"
-                    color="var(--neon-orange)"
-                    mb="0.25rem"
-                >
+            <div className="mb-6 border-b-2 border-brand/30 pb-4">
+                <h2 className="font-display mb-1 text-lg font-bold text-ink-hi">
                     Client Intake Form
-                </Text>
-                <Text fontSize="0.8rem" color="#888">
+                </h2>
+                <p className="text-[0.8rem] text-ink-mid">
                     {readOnly
                         ? 'Your submitted intake information. Review before proceeding.'
                         : 'Fill in your details below. All fields are required unless marked optional.'}
-                </Text>
-            </Box>
+                </p>
+            </div>
 
-            <VStack gap="1.75rem" align="stretch">
+            <div className="flex flex-col gap-7">
                 {/* ─── Basic Info ──────────────────────── */}
-                <Box>
-                    <Text style={sectionTitleStyle} mb="0.75rem">
+                <div>
+                    <h3 className="eyebrow mb-3">
                         Basic Information
-                    </Text>
-                    <VStack gap="0.6rem" align="stretch">
+                    </h3>
+                    <div className="flex flex-col gap-[0.6rem]">
                         {/* Name row */}
-                        <Flex gap="0.5rem">
-                            <Box flex={1}>
-                                <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                    <Text style={labelStyle}>First Name</Text>
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <div className="mb-1 flex items-center gap-[0.4rem]">
+                                    <span className={labelClass}>First Name</span>
                                     <FieldTooltip text="Your given name" />
-                                </Flex>
+                                </div>
                                 <input
                                     data-testid="v2-first-name"
                                     value={formData.first_name}
                                     onChange={e => onChange({ first_name: e.target.value })}
                                     placeholder="e.g. John"
                                     readOnly={readOnly}
-                                    style={inputStyle}
+                                    className={inputClass}
                                 />
-                            </Box>
-                            <Box flex={1}>
-                                <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                    <Text style={labelStyle}>Last Name</Text>
+                            </div>
+                            <div className="flex-1">
+                                <div className="mb-1 flex items-center gap-[0.4rem]">
+                                    <span className={labelClass}>Last Name</span>
                                     <FieldTooltip text="Your family name" />
-                                </Flex>
+                                </div>
                                 <input
                                     data-testid="v2-last-name"
                                     value={formData.last_name}
                                     onChange={e => onChange({ last_name: e.target.value })}
                                     placeholder="e.g. Smith"
                                     readOnly={readOnly}
-                                    style={inputStyle}
+                                    className={inputClass}
                                 />
-                            </Box>
-                        </Flex>
+                            </div>
+                        </div>
 
                         {/* Age */}
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                <Text style={labelStyle}>Age</Text>
+                        <div>
+                            <div className="mb-1 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Age</span>
                                 <FieldTooltip text="Your current age in years (2 digits)" />
-                            </Flex>
+                            </div>
                             <input
                                 data-testid="v2-age"
                                 type="number"
@@ -220,17 +187,17 @@ export default function IntakeFormV2({
                                 }}
                                 placeholder="e.g. 27"
                                 readOnly={readOnly}
-                                style={{ ...inputStyle, maxWidth: '120px' }}
+                                className={`${inputClass} max-w-[120px]`}
                             />
-                        </Box>
+                        </div>
 
                         {/* Weight */}
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                <Text style={labelStyle}>Weight</Text>
+                        <div>
+                            <div className="mb-1 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Weight</span>
                                 <FieldTooltip text="Your current body weight" />
-                            </Flex>
-                            <Flex gap="0.5rem" alignItems="center">
+                            </div>
+                            <div className="flex items-center gap-2">
                                 <input
                                     data-testid="v2-weight"
                                     type="number"
@@ -243,41 +210,33 @@ export default function IntakeFormV2({
                                     }}
                                     placeholder="e.g. 180"
                                     readOnly={readOnly}
-                                    style={{ ...inputStyle, maxWidth: '120px' }}
+                                    className={`${inputClass} max-w-[120px]`}
                                 />
-                                <Flex gap="0" borderRadius="8px" overflow="hidden" border="1px solid rgba(255,255,255,0.1)">
+                                <div className="flex overflow-hidden rounded-lg border border-line-soft">
                                     {(['lbs', 'kg'] as const).map(unit => (
                                         <button
                                             key={unit}
                                             type="button"
                                             onClick={() => !readOnly && onChange({ weight_unit: unit })}
-                                            style={{
-                                                padding: '0.5rem 0.75rem',
-                                                fontSize: '0.8rem',
-                                                fontWeight: '600',
-                                                background: formData.weight_unit === unit ? 'var(--neon-orange)' : 'rgba(255,255,255,0.03)',
-                                                color: formData.weight_unit === unit ? '#0B0B15' : '#888',
-                                                border: 'none',
-                                                cursor: readOnly ? 'default' : 'pointer',
-                                            }}
+                                            className={unitBtnClass(formData.weight_unit === unit, readOnly)}
                                         >
                                             {unit}
                                         </button>
                                     ))}
-                                </Flex>
-                            </Flex>
-                        </Box>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Height */}
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                <Text style={labelStyle}>Height</Text>
+                        <div>
+                            <div className="mb-1 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Height</span>
                                 <FieldTooltip text="Your height in your preferred unit" />
-                            </Flex>
-                            <Flex gap="0.5rem" alignItems="center" flexWrap="wrap">
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
                                 {formData.height_unit === 'imperial' ? (
                                     <>
-                                        <Flex alignItems="center" gap="0.25rem">
+                                        <div className="flex items-center gap-1">
                                             <input
                                                 data-testid="v2-height-feet"
                                                 type="number"
@@ -290,11 +249,11 @@ export default function IntakeFormV2({
                                                 }}
                                                 placeholder="5"
                                                 readOnly={readOnly}
-                                                style={{ ...inputStyle, maxWidth: '70px' }}
+                                                className={`${inputClass} max-w-[70px]`}
                                             />
-                                            <Text color="#888" fontSize="0.85rem">ft</Text>
-                                        </Flex>
-                                        <Flex alignItems="center" gap="0.25rem">
+                                            <span className="text-[0.85rem] text-ink-mid">ft</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
                                             <input
                                                 data-testid="v2-height-inches"
                                                 type="number"
@@ -307,13 +266,13 @@ export default function IntakeFormV2({
                                                 }}
                                                 placeholder="10"
                                                 readOnly={readOnly}
-                                                style={{ ...inputStyle, maxWidth: '70px' }}
+                                                className={`${inputClass} max-w-[70px]`}
                                             />
-                                            <Text color="#888" fontSize="0.85rem">in</Text>
-                                        </Flex>
+                                            <span className="text-[0.85rem] text-ink-mid">in</span>
+                                        </div>
                                     </>
                                 ) : (
-                                    <Flex alignItems="center" gap="0.25rem">
+                                    <div className="flex items-center gap-1">
                                         <input
                                             data-testid="v2-height-cm"
                                             type="number"
@@ -326,12 +285,12 @@ export default function IntakeFormV2({
                                             }}
                                             placeholder="178"
                                             readOnly={readOnly}
-                                            style={{ ...inputStyle, maxWidth: '100px' }}
+                                            className={`${inputClass} max-w-[100px]`}
                                         />
-                                        <Text color="#888" fontSize="0.85rem">cm</Text>
-                                    </Flex>
+                                        <span className="text-[0.85rem] text-ink-mid">cm</span>
+                                    </div>
                                 )}
-                                <Flex gap="0" borderRadius="8px" overflow="hidden" border="1px solid rgba(255,255,255,0.1)">
+                                <div className="flex overflow-hidden rounded-lg border border-line-soft">
                                     {([
                                         { key: 'imperial', label: 'ft/in' },
                                         { key: 'metric', label: 'cm' },
@@ -340,145 +299,105 @@ export default function IntakeFormV2({
                                             key={u.key}
                                             type="button"
                                             onClick={() => !readOnly && onChange({ height_unit: u.key })}
-                                            style={{
-                                                padding: '0.5rem 0.75rem',
-                                                fontSize: '0.8rem',
-                                                fontWeight: '600',
-                                                background: formData.height_unit === u.key ? 'var(--neon-orange)' : 'rgba(255,255,255,0.03)',
-                                                color: formData.height_unit === u.key ? '#0B0B15' : '#888',
-                                                border: 'none',
-                                                cursor: readOnly ? 'default' : 'pointer',
-                                            }}
+                                            className={unitBtnClass(formData.height_unit === u.key, readOnly)}
                                         >
                                             {u.label}
                                         </button>
                                     ))}
-                                </Flex>
-                            </Flex>
-                        </Box>
-                    </VStack>
-                </Box>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* ─── Athletic History ──────────────────────── */}
-                <Box>
-                    <Text style={sectionTitleStyle} mb="0.75rem">
+                <div>
+                    <h3 className="eyebrow mb-3">
                         Athletic History
-                    </Text>
-                    <Flex alignItems="center" gap="0.4rem" mb="0.5rem">
-                        <Text style={labelStyle}>How long have you been training?</Text>
+                    </h3>
+                    <div className="mb-2 flex items-center gap-[0.4rem]">
+                        <span className={labelClass}>How long have you been training?</span>
                         <FieldTooltip text="Select the option that best describes your training experience" />
-                    </Flex>
-                    <Flex gap="0.4rem" flexWrap="wrap">
+                    </div>
+                    <div className="flex flex-wrap gap-[0.4rem]">
                         {ATHLETIC_HISTORY_OPTIONS.map(opt => (
-                            <Box
+                            <div
                                 key={opt.value}
                                 onClick={() => !readOnly && onChange({ athletic_history: opt.value })}
-                                style={cardStyle(formData.athletic_history === opt.value)}
+                                className={`${chipClass(formData.athletic_history === opt.value)} px-[0.85rem] py-[0.65rem] text-[0.82rem]`}
                             >
                                 {opt.label}
-                            </Box>
+                            </div>
                         ))}
-                    </Flex>
-                </Box>
+                    </div>
+                </div>
 
                 {/* ─── Fitness Goals ──────────────────────── */}
-                <Box>
-                    <Text style={sectionTitleStyle} mb="0.75rem">
+                <div>
+                    <h3 className="eyebrow mb-3">
                         Fitness Goals
-                    </Text>
-                    <Flex alignItems="center" gap="0.4rem" mb="0.5rem">
-                        <Text style={labelStyle}>Select up to 3 goals (click order = priority)</Text>
+                    </h3>
+                    <div className="mb-2 flex items-center gap-[0.4rem]">
+                        <span className={labelClass}>Select up to 3 goals (click order = priority)</span>
                         <FieldTooltip text="Your first click is priority #1, second is #2, etc." />
-                    </Flex>
-                    <Flex gap="0.4rem" flexWrap="wrap">
+                    </div>
+                    <div className="flex flex-wrap gap-[0.4rem]">
                         {goals.map(goal => {
                             const idx = formData.fitness_goals.indexOf(goal);
                             const isSelected = idx >= 0;
                             return (
-                                <Box
+                                <div
                                     key={goal}
                                     onClick={() => handleGoalClick(goal)}
-                                    style={{
-                                        ...cardStyle(isSelected),
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.35rem',
-                                    }}
+                                    className={`${chipClass(isSelected)} flex items-center gap-[0.35rem] px-[0.85rem] py-[0.65rem] text-[0.82rem]`}
                                 >
                                     {isSelected && (
-                                        <span
-                                            style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                width: '18px',
-                                                height: '18px',
-                                                borderRadius: '50%',
-                                                background: 'var(--neon-orange)',
-                                                color: '#0B0B15',
-                                                fontSize: '0.65rem',
-                                                fontWeight: '700',
-                                                flexShrink: 0,
-                                            }}
-                                        >
+                                        <span className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[image:var(--brand-gradient)] text-[0.65rem] font-bold text-white">
                                             {idx + 1}
                                         </span>
                                     )}
                                     {goal}
-                                </Box>
+                                </div>
                             );
                         })}
-                    </Flex>
-                </Box>
+                    </div>
+                </div>
 
                 {/* ─── Training Schedule ──────────────────────── */}
-                <Box>
-                    <Text style={sectionTitleStyle} mb="0.75rem">
+                <div>
+                    <h3 className="eyebrow mb-3">
                         Training Schedule
-                    </Text>
-                    <VStack gap="0.75rem" align="stretch">
+                    </h3>
+                    <div className="flex flex-col gap-3">
                         {/* Days per week */}
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.5rem">
-                                <Text style={labelStyle}>Days per week</Text>
+                        <div>
+                            <div className="mb-2 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Days per week</span>
                                 <FieldTooltip text="How many days per week can you train?" />
-                            </Flex>
-                            <Flex gap="0.35rem">
+                            </div>
+                            <div className="flex gap-[0.35rem]">
                                 {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                                    <Box
+                                    <div
                                         key={day}
                                         onClick={() => handleDayClick(day)}
-                                        style={{
-                                            width: '38px',
-                                            height: '38px',
-                                            borderRadius: '50%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            border: formData.training_days === day
-                                                ? '2px solid var(--neon-orange)'
-                                                : '1.5px solid rgba(255, 255, 255, 0.1)',
-                                            background: formData.training_days === day
-                                                ? 'rgba(255, 102, 0, 0.15)'
-                                                : 'rgba(255, 255, 255, 0.03)',
-                                            color: formData.training_days === day ? 'var(--neon-orange)' : '#888',
-                                            fontWeight: '600',
-                                            fontSize: '0.85rem',
-                                            cursor: readOnly ? 'default' : 'pointer',
-                                        }}
+                                        className={`flex h-[38px] w-[38px] items-center justify-center rounded-full border text-[0.85rem] font-semibold transition-colors ${
+                                            formData.training_days === day
+                                                ? 'border-brand bg-[var(--brand-glow-soft)] text-brand ring-1 ring-brand'
+                                                : 'border-line-soft bg-[var(--surface-1)] text-ink-low hover:border-line-strong'
+                                        } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
                                     >
                                         {day}
-                                    </Box>
+                                    </div>
                                 ))}
-                            </Flex>
-                        </Box>
+                            </div>
+                        </div>
 
                         {/* Duration */}
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                <Text style={labelStyle}>Session Duration (minutes)</Text>
+                        <div>
+                            <div className="mb-1 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Session Duration (minutes)</span>
                                 <FieldTooltip text="How long is your typical training session?" />
-                            </Flex>
+                            </div>
                             <input
                                 data-testid="v2-duration"
                                 type="number"
@@ -491,17 +410,17 @@ export default function IntakeFormV2({
                                 }}
                                 placeholder="e.g. 60"
                                 readOnly={readOnly}
-                                style={{ ...inputStyle, maxWidth: '120px' }}
+                                className={`${inputClass} max-w-[120px]`}
                             />
-                        </Box>
+                        </div>
 
                         {/* Preferred time */}
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                <Text style={labelStyle}>Preferred Time</Text>
+                        <div>
+                            <div className="mb-1 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Preferred Time</span>
                                 <FieldTooltip text="When do you prefer to train?" />
-                            </Flex>
-                            <Flex gap="0.35rem" alignItems="center">
+                            </div>
+                            <div className="flex items-center gap-[0.35rem]">
                                 <input
                                     data-testid="v2-time-hour"
                                     type="number"
@@ -514,9 +433,9 @@ export default function IntakeFormV2({
                                     }}
                                     placeholder="HH"
                                     readOnly={readOnly}
-                                    style={{ ...inputStyle, maxWidth: '60px', textAlign: 'center' }}
+                                    className={`${inputClass} max-w-[60px] text-center`}
                                 />
-                                <Text color="#888">:</Text>
+                                <span className="text-ink-mid">:</span>
                                 <input
                                     data-testid="v2-time-minute"
                                     type="number"
@@ -529,136 +448,115 @@ export default function IntakeFormV2({
                                     }}
                                     placeholder="MM"
                                     readOnly={readOnly}
-                                    style={{ ...inputStyle, maxWidth: '60px', textAlign: 'center' }}
+                                    className={`${inputClass} max-w-[60px] text-center`}
                                 />
-                                <Flex gap="0" borderRadius="8px" overflow="hidden" border="1px solid rgba(255,255,255,0.1)">
+                                <div className="flex overflow-hidden rounded-lg border border-line-soft">
                                     {(['AM', 'PM'] as const).map(ampm => (
                                         <button
                                             key={ampm}
                                             type="button"
                                             onClick={() => !readOnly && onChange({ preferred_time_ampm: ampm })}
-                                            style={{
-                                                padding: '0.45rem 0.6rem',
-                                                fontSize: '0.75rem',
-                                                fontWeight: '600',
-                                                background: formData.preferred_time_ampm === ampm ? 'var(--neon-orange)' : 'rgba(255,255,255,0.03)',
-                                                color: formData.preferred_time_ampm === ampm ? '#0B0B15' : '#888',
-                                                border: 'none',
-                                                cursor: readOnly ? 'default' : 'pointer',
-                                            }}
+                                            className={`border-none px-[0.6rem] py-[0.45rem] text-xs font-semibold transition-colors ${
+                                                formData.preferred_time_ampm === ampm
+                                                    ? 'bg-[image:var(--brand-gradient)] text-white'
+                                                    : 'bg-[var(--surface-1)] text-ink-low'
+                                            } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
                                         >
                                             {ampm}
                                         </button>
                                     ))}
-                                </Flex>
-                            </Flex>
-                        </Box>
-                    </VStack>
-                </Box>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* ─── Equipment & Location ──────────────────────── */}
-                <Box>
-                    <Text style={sectionTitleStyle} mb="0.75rem">
+                <div>
+                    <h3 className="eyebrow mb-3">
                         Equipment & Location
-                    </Text>
-                    <VStack gap="0.75rem" align="stretch">
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.5rem">
-                                <Text style={labelStyle}>Training Location</Text>
+                    </h3>
+                    <div className="flex flex-col gap-3">
+                        <div>
+                            <div className="mb-2 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Training Location</span>
                                 <FieldTooltip text="Where will you primarily train?" />
-                            </Flex>
-                            <Flex gap="0.4rem" flexWrap="wrap">
+                            </div>
+                            <div className="flex flex-wrap gap-[0.4rem]">
                                 {(Object.entries(LOCATION_LABELS) as [TrainingLocationType, string][]).map(
                                     ([key, label]) => (
-                                        <Box
+                                        <div
                                             key={key}
                                             onClick={() => {
                                                 if (readOnly) return;
                                                 onChange({ training_location: key, equipment: [] });
                                             }}
-                                            style={cardStyle(formData.training_location === key)}
+                                            className={`${chipClass(formData.training_location === key)} px-[0.85rem] py-[0.65rem] text-[0.82rem]`}
                                         >
                                             {label}
-                                        </Box>
+                                        </div>
                                     )
                                 )}
-                            </Flex>
-                        </Box>
+                            </div>
+                        </div>
 
                         {formData.training_location && locationEquipment.length > 0 && (
-                            <Box>
-                                <Flex alignItems="center" justifyContent="space-between" mb="0.5rem">
-                                    <Flex alignItems="center" gap="0.4rem">
-                                        <Text style={labelStyle}>Available Equipment</Text>
+                            <div>
+                                <div className="mb-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-[0.4rem]">
+                                        <span className={labelClass}>Available Equipment</span>
                                         <FieldTooltip text="Check all equipment you have access to" />
-                                    </Flex>
+                                    </div>
                                     {!readOnly && (
-                                        <Flex gap="0.5rem">
+                                        <div className="flex gap-2">
                                             <button
                                                 type="button"
                                                 onClick={handleSelectAllEquipment}
-                                                style={{
-                                                    fontSize: '0.7rem',
-                                                    color: 'var(--neon-orange)',
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    fontWeight: '600',
-                                                }}
+                                                className="cursor-pointer border-none bg-transparent text-[0.7rem] font-semibold text-brand"
                                             >
                                                 Select All
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={handleDeselectAllEquipment}
-                                                style={{
-                                                    fontSize: '0.7rem',
-                                                    color: '#888',
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                }}
+                                                className="cursor-pointer border-none bg-transparent text-[0.7rem] text-ink-low"
                                             >
                                                 Deselect All
                                             </button>
-                                        </Flex>
+                                        </div>
                                     )}
-                                </Flex>
-                                <Flex gap="0.4rem" flexWrap="wrap">
+                                </div>
+                                <div className="flex flex-wrap gap-[0.4rem]">
                                     {locationEquipment.map(item => (
-                                        <Box
+                                        <div
                                             key={item}
                                             onClick={() => handleEquipmentToggle(item)}
-                                            style={{
-                                                ...cardStyle(formData.equipment.includes(item)),
-                                                padding: '0.45rem 0.7rem',
-                                                fontSize: '0.78rem',
-                                            }}
+                                            className={`${chipClass(formData.equipment.includes(item))} px-[0.7rem] py-[0.45rem] text-[0.78rem]`}
                                         >
                                             {formData.equipment.includes(item) && (
-                                                <span style={{ marginRight: '0.3rem' }}>&#10003;</span>
+                                                <span className="mr-[0.3rem]">&#10003;</span>
                                             )}
                                             {item}
-                                        </Box>
+                                        </div>
                                     ))}
-                                </Flex>
-                            </Box>
+                                </div>
+                            </div>
                         )}
-                    </VStack>
-                </Box>
+                    </div>
+                </div>
 
                 {/* ─── Medical ──────────────────────── */}
-                <Box>
-                    <Text style={sectionTitleStyle} mb="0.75rem">
+                <div>
+                    <h3 className="eyebrow mb-3">
                         Medical History
-                    </Text>
-                    <VStack gap="0.6rem" align="stretch">
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                <Text style={labelStyle}>Injuries / Limitations</Text>
-                                <Text fontSize="0.65rem" color="#666" fontStyle="italic">(Optional)</Text>
+                    </h3>
+                    <div className="flex flex-col gap-[0.6rem]">
+                        <div>
+                            <div className="mb-1 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Injuries / Limitations</span>
+                                <span className="text-[0.65rem] italic text-ink-low">(Optional)</span>
                                 <FieldTooltip text="Any past or current injuries, surgeries, or physical limitations" />
-                            </Flex>
+                            </div>
                             <textarea
                                 data-testid="v2-injuries"
                                 value={formData.injuries}
@@ -666,20 +564,15 @@ export default function IntakeFormV2({
                                 placeholder="e.g. ACL surgery 2020 (fully recovered), mild lower back tightness"
                                 readOnly={readOnly}
                                 rows={3}
-                                style={{
-                                    ...inputStyle,
-                                    resize: 'vertical',
-                                    fontFamily: 'inherit',
-                                    lineHeight: '1.5',
-                                }}
+                                className={`${inputClass} resize-y leading-normal`}
                             />
-                        </Box>
-                        <Box>
-                            <Flex alignItems="center" gap="0.4rem" mb="0.25rem">
-                                <Text style={labelStyle}>Medical Considerations</Text>
-                                <Text fontSize="0.65rem" color="#666" fontStyle="italic">(Optional)</Text>
+                        </div>
+                        <div>
+                            <div className="mb-1 flex items-center gap-[0.4rem]">
+                                <span className={labelClass}>Medical Considerations</span>
+                                <span className="text-[0.65rem] italic text-ink-low">(Optional)</span>
                                 <FieldTooltip text="Any medical conditions, medications, or health concerns" />
-                            </Flex>
+                            </div>
                             <textarea
                                 data-testid="v2-medical"
                                 value={formData.medical_considerations}
@@ -687,58 +580,47 @@ export default function IntakeFormV2({
                                 placeholder="e.g. Asthma (controlled), taking daily allergy medication"
                                 readOnly={readOnly}
                                 rows={3}
-                                style={{
-                                    ...inputStyle,
-                                    resize: 'vertical',
-                                    fontFamily: 'inherit',
-                                    lineHeight: '1.5',
-                                }}
+                                className={`${inputClass} resize-y leading-normal`}
                             />
-                        </Box>
-                    </VStack>
-                </Box>
+                        </div>
+                    </div>
+                </div>
 
                 {/* ─── Fitness Level ──────────────────────── */}
-                <Box>
-                    <Text style={sectionTitleStyle} mb="0.75rem">
+                <div>
+                    <h3 className="eyebrow mb-3">
                         Fitness Level
-                    </Text>
-                    <Flex alignItems="center" gap="0.4rem" mb="0.5rem">
-                        <Text style={labelStyle}>Self-assessment</Text>
+                    </h3>
+                    <div className="mb-2 flex items-center gap-[0.4rem]">
+                        <span className={labelClass}>Self-assessment</span>
                         <FieldTooltip text="Be honest -- this helps us calibrate your starting point" />
-                    </Flex>
-                    <VStack gap="0.4rem" align="stretch">
+                    </div>
+                    <div className="flex flex-col gap-[0.4rem]">
                         {FITNESS_LEVELS.map(level => (
-                            <Box
+                            <div
                                 key={level.value}
                                 onClick={() => !readOnly && onChange({ fitness_level: level.value })}
-                                style={{
-                                    ...cardStyle(formData.fitness_level === level.value),
-                                    textAlign: 'left',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.15rem',
-                                }}
+                                className={`${chipClass(formData.fitness_level === level.value)} flex flex-col gap-[0.15rem] px-[0.85rem] py-[0.65rem] text-left text-[0.82rem]`}
                             >
-                                <Text fontWeight="600" fontSize="0.85rem">
+                                <span className="text-[0.85rem] font-semibold">
                                     {level.label}
-                                </Text>
-                                <Text fontSize="0.72rem" color="#888" fontWeight="400">
+                                </span>
+                                <span className="text-[0.72rem] font-normal text-ink-mid">
                                     {level.desc}
-                                </Text>
-                            </Box>
+                                </span>
+                            </div>
                         ))}
-                    </VStack>
-                </Box>
+                    </div>
+                </div>
 
                 {/* ─── Photo Upload ──────────────────────── */}
-                <Box>
-                    <Text style={sectionTitleStyle} mb="0.75rem">
+                <div>
+                    <h3 className="eyebrow mb-3">
                         Physique Photos
-                    </Text>
-                    <Text style={labelStyle} mb="0.5rem">
+                    </h3>
+                    <p className={`${labelClass} mb-2`}>
                         Upload front, back, and side photos (optional)
-                    </Text>
+                    </p>
                     {showPhotoUpload && onPhotosSubmitted && onPhotoSkip ? (
                         <IntakePhotoUpload
                             onPhotosSubmitted={onPhotosSubmitted}
@@ -746,12 +628,12 @@ export default function IntakeFormV2({
                             isUploading={isUploadingPhotos}
                         />
                     ) : (
-                        <Text fontSize="0.8rem" color="#666">
+                        <p className="text-[0.8rem] text-ink-low">
                             Photos can be uploaded during the chat interview or from your profile settings.
-                        </Text>
+                        </p>
                     )}
-                </Box>
-            </VStack>
-        </Box>
+                </div>
+            </div>
+        </div>
     );
 }

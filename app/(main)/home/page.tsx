@@ -197,94 +197,48 @@ export default function HomePage() {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh'
-            }}>
+            <div className="flex min-h-screen items-center justify-center">
                 <div className="spinner"></div>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: '1.5rem', paddingBottom: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+        <div className="mx-auto max-w-[900px] p-6 pb-8">
             {/* Header */}
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '2rem',
-                    marginBottom: '0.5rem',
-                    color: 'var(--primary)'
-                }}>
+            <div className="mb-8">
+                <h1 className="display text-gradient-brand mb-2 text-[2rem]">
                     Dashboard
                 </h1>
-                <p style={{ color: '#888', fontSize: '0.9rem' }}>
+                <p className="text-sm text-ink-mid">
                     Welcome back, {user?.full_name || user?.username || 'Athlete'}!
                 </p>
             </div>
 
             {/* Plan Assignment Banner */}
             {planBanner && (
-                <div style={{
-                    background: 'rgba(255, 102, 0, 0.1)',
-                    border: '1px solid rgba(255, 102, 0, 0.3)',
-                    borderRadius: '12px',
-                    padding: '1rem 1.25rem',
-                    marginBottom: '1.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                }}>
-                    <div style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '12px',
-                        background: 'var(--primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                    }}>
-                        <Dumbbell size={22} color="white" />
+                <div className="mb-6 flex items-center gap-4 rounded-xl border border-brand/30 bg-[var(--brand-glow-soft)] px-5 py-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand shadow-[0_0_16px_var(--brand-glow-soft)]">
+                        <Dumbbell size={22} className="text-ink-hi" />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '600', color: 'white', fontSize: '0.95rem', marginBottom: '0.15rem' }}>
+                    <div className="flex-1">
+                        <div className="mb-0.5 text-[0.95rem] font-semibold text-ink-hi">
                             New Plan Assigned!
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: '#ccc' }}>
+                        <div className="text-sm text-ink-mid">
                             {planBanner.content}
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                    <div className="flex shrink-0 gap-2">
                         <button
                             onClick={() => router.push('/home/workout')}
-                            style={{
-                                background: 'var(--primary)',
-                                border: 'none',
-                                borderRadius: '8px',
-                                padding: '0.5rem 0.75rem',
-                                color: 'white',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem',
-                                fontWeight: '600',
-                            }}
+                            className="btn-brand !px-4 !py-2 !text-[0.8rem]"
                         >
                             View Plan
                         </button>
                         <button
                             onClick={dismissBanner}
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '8px',
-                                padding: '0.5rem',
-                                color: '#888',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                            }}
+                            className="icon-btn !h-9 !w-9"
                         >
                             <X size={16} />
                         </button>
@@ -295,153 +249,60 @@ export default function HomePage() {
             {/* Two Primary Action Cards */}
             <div
                 data-testid="primary-actions"
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                    gap: '1rem',
-                    marginBottom: '2.5rem'
-                }}
+                className="mb-10 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4"
             >
                 {/* Start Workout Card */}
                 <button
                     data-testid="start-workout-card"
                     onClick={() => router.push('/home/workout')}
-                    className="glass-panel"
-                    style={{
-                        padding: '2rem 1.5rem',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        border: '1px solid rgba(242, 95, 41, 0.3)',
-                        background: 'rgba(242, 95, 41, 0.05)',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(242, 95, 41, 0.12)';
-                        e.currentTarget.style.borderColor = 'var(--primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(242, 95, 41, 0.05)';
-                        e.currentTarget.style.borderColor = 'rgba(242, 95, 41, 0.3)';
-                    }}
+                    className="glass-card glass-card-hover flex cursor-pointer items-center gap-4 !border-brand/30 !bg-[var(--brand-glow-soft)] px-6 py-8 text-left"
                 >
-                    <div style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '14px',
-                        background: 'var(--primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                    }}>
-                        <Dumbbell size={28} color="white" />
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-brand shadow-[0_0_24px_var(--brand-glow-soft)]">
+                        <Dumbbell size={28} className="text-ink-hi" />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{
-                            fontFamily: 'var(--font-orbitron)',
-                            fontSize: '1.1rem',
-                            fontWeight: '600',
-                            color: 'white',
-                            marginBottom: '0.25rem'
-                        }}>
+                    <div className="flex-1">
+                        <div className="font-display mb-1 text-[1.1rem] font-semibold text-ink-hi">
                             Start Workout
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: '#888' }}>
+                        <div className="text-sm text-ink-mid">
                             {plans.length > 0
                                 ? `${plans.length} saved plan${plans.length > 1 ? 's' : ''} available`
                                 : 'Create a plan with AI Coach first'}
                         </div>
                     </div>
-                    <ChevronRight size={20} color="#888" />
+                    <ChevronRight size={20} className="shrink-0 text-ink-low" />
                 </button>
 
                 {/* AI Coach Card */}
                 <button
                     data-testid="ai-coach-card"
                     onClick={() => router.push('/coach')}
-                    className="glass-panel"
-                    style={{
-                        padding: '2rem 1.5rem',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        border: hasPlans
-                            ? '1px solid rgba(255, 255, 255, 0.1)'
-                            : '2px solid var(--primary)',
-                        background: hasPlans
-                            ? 'rgba(255, 255, 255, 0.03)'
-                            : 'rgba(242, 95, 41, 0.08)',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(242, 95, 41, 0.12)';
-                        e.currentTarget.style.borderColor = 'var(--primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = hasPlans
-                            ? 'rgba(255, 255, 255, 0.03)'
-                            : 'rgba(242, 95, 41, 0.08)';
-                        e.currentTarget.style.borderColor = hasPlans
-                            ? 'rgba(255, 255, 255, 0.1)'
-                            : 'var(--primary)';
-                    }}
+                    className={`glass-card glass-card-hover relative flex cursor-pointer items-center gap-4 overflow-hidden px-6 py-8 text-left ${
+                        hasPlans ? '' : '!border-2 !border-brand !bg-[var(--brand-glow-soft)]'
+                    }`}
                 >
                     {!hasPlans && (
                         <div
                             data-testid="recommended-badge"
-                            style={{
-                                position: 'absolute',
-                                top: '0.5rem',
-                                right: '0.5rem',
-                                background: 'var(--primary)',
-                                color: 'white',
-                                fontSize: '0.65rem',
-                                fontWeight: '700',
-                                padding: '0.2rem 0.5rem',
-                                borderRadius: '4px',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
-                            }}
+                            className="absolute right-2 top-2 rounded bg-brand px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.5px] text-ink-hi shadow-[0_0_12px_var(--brand-glow-soft)]"
                         >
                             Recommended
                         </div>
                     )}
-                    <div style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '14px',
-                        background: 'linear-gradient(135deg, var(--primary), #ff6b35)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                    }}>
-                        <Bot size={28} color="white" />
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-[image:var(--brand-gradient)] shadow-[0_0_24px_var(--brand-glow-soft)]">
+                        <Bot size={28} className="text-ink-hi" />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{
-                            fontFamily: 'var(--font-orbitron)',
-                            fontSize: '1.1rem',
-                            fontWeight: '600',
-                            color: 'white',
-                            marginBottom: '0.25rem'
-                        }}>
+                    <div className="flex-1">
+                        <div className="font-display mb-1 text-[1.1rem] font-semibold text-ink-hi">
                             Coach List
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: '#888' }}>
+                        <div className="text-sm text-ink-mid">
                             {hasPlans
                                 ? 'Browse AI and human coaches'
                                 : 'Get started with a personalized plan'}
                         </div>
                     </div>
-                    <ChevronRight size={20} color="#888" />
+                    <ChevronRight size={20} className="shrink-0 text-ink-low" />
                 </button>
             </div>
 
@@ -500,53 +361,25 @@ function MyLibrary({
     return (
         <div data-testid="my-library">
             {/* Section Header */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '1.25rem'
-            }}>
-                <h2 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '1.25rem',
-                    margin: 0,
-                    color: 'white'
-                }}>
+            <div className="mb-5 flex items-center justify-between">
+                <h2 className="display m-0 text-xl">
                     My Library
                 </h2>
-                <span style={{ color: '#666', fontSize: '0.85rem' }}>
+                <span className="text-sm text-ink-low">
                     {totalItems} item{totalItems !== 1 ? 's' : ''}
                 </span>
             </div>
 
             {/* Tab Toggle */}
-            <div style={{
-                display: 'flex',
-                gap: '0.5rem',
-                marginBottom: '1.5rem',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '10px',
-                padding: '0.25rem'
-            }}>
+            <div className="mb-6 flex gap-2 rounded-xl border border-line-soft bg-[var(--surface-1)] p-1">
                 <button
                     data-testid="library-tab-workout"
                     onClick={() => setActiveTab('workout')}
-                    style={{
-                        flex: 1,
-                        padding: '0.6rem',
-                        background: activeTab === 'workout' ? 'var(--primary)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: activeTab === 'workout' ? 'white' : '#888',
-                        cursor: 'pointer',
-                        fontWeight: activeTab === 'workout' ? '600' : '400',
-                        fontSize: '0.9rem',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.4rem'
-                    }}
+                    className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm transition-all ${
+                        activeTab === 'workout'
+                            ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                            : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                    }`}
                 >
                     <Dumbbell size={16} />
                     Workout Plans ({plans.length})
@@ -554,22 +387,11 @@ function MyLibrary({
                 <button
                     data-testid="library-tab-nutrition"
                     onClick={() => setActiveTab('nutrition')}
-                    style={{
-                        flex: 1,
-                        padding: '0.6rem',
-                        background: activeTab === 'nutrition' ? 'var(--primary)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: activeTab === 'nutrition' ? 'white' : '#888',
-                        cursor: 'pointer',
-                        fontWeight: activeTab === 'nutrition' ? '600' : '400',
-                        fontSize: '0.9rem',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.4rem'
-                    }}
+                    className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm transition-all ${
+                        activeTab === 'nutrition'
+                            ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                            : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                    }`}
                 >
                     <UtensilsCrossed size={16} />
                     Diet Plans ({nutritionPlans.length})
@@ -578,7 +400,7 @@ function MyLibrary({
 
             {/* Content */}
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>Loading...</div>
+                <div className="p-8 text-center text-ink-mid">Loading...</div>
             ) : (
                 <>
                     {activeTab === 'workout' ? (
@@ -590,54 +412,26 @@ function MyLibrary({
                                 action={{ label: 'Open AI Coach', onClick: () => router.push('/coach') }}
                             />
                         ) : (
-                            <div style={{ display: 'grid', gap: '0.75rem' }}>
+                            <div className="grid gap-3">
                                 {plans.map(plan => (
                                     <div
                                         key={plan.id}
                                         data-testid="library-workout-plan"
-                                        className="glass-panel"
-                                        style={{
-                                            padding: '1.25rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            cursor: 'pointer'
-                                        }}
+                                        className="glass-card glass-card-hover flex cursor-pointer items-center gap-4 p-5"
                                         onClick={() => router.push(`/plans?id=${plan.id}`)}
                                     >
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <h3 style={{
-                                                fontWeight: '600',
-                                                marginBottom: '0.25rem',
-                                                fontSize: '1rem',
-                                                color: 'white',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap'
-                                            }}>
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="mb-1 truncate text-base font-semibold text-ink-hi">
                                                 {plan.name}
                                             </h3>
-                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 {plan.duration_weeks && (
-                                                    <span style={{
-                                                        fontSize: '0.75rem',
-                                                        color: 'var(--primary)',
-                                                        background: 'rgba(242, 95, 41, 0.1)',
-                                                        padding: '0.15rem 0.5rem',
-                                                        borderRadius: '4px'
-                                                    }}>
+                                                    <span className="rounded bg-[var(--brand-glow-soft)] px-2 py-0.5 text-xs text-brand">
                                                         {plan.duration_weeks} Weeks
                                                     </span>
                                                 )}
                                                 {plan.phase_type && (
-                                                    <span style={{
-                                                        fontSize: '0.75rem',
-                                                        color: '#aaa',
-                                                        background: 'rgba(255, 255, 255, 0.05)',
-                                                        padding: '0.15rem 0.5rem',
-                                                        borderRadius: '4px',
-                                                        textTransform: 'capitalize'
-                                                    }}>
+                                                    <span className="rounded bg-[var(--surface-2)] px-2 py-0.5 text-xs capitalize text-ink-mid">
                                                         {plan.phase_type}
                                                     </span>
                                                 )}
@@ -645,25 +439,15 @@ function MyLibrary({
                                         </div>
 
                                         {/* Actions */}
-                                        <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                                        <div className="flex shrink-0 gap-1.5">
                                             <button
                                                 data-testid="edit-workout-plan"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     router.push(`/plans/new?edit=${plan.id}`);
                                                 }}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.05)',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    padding: '0.4rem',
-                                                    cursor: 'pointer',
-                                                    color: '#ccc',
-                                                    transition: 'all 0.2s'
-                                                }}
+                                                className="icon-btn !h-9 !w-9 !rounded-lg"
                                                 title="Edit"
-                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                                             >
                                                 <Pencil size={16} />
                                             </button>
@@ -678,18 +462,8 @@ function MyLibrary({
                                                         name: plan.name
                                                     });
                                                 }}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.05)',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    padding: '0.4rem',
-                                                    cursor: 'pointer',
-                                                    color: '#ff4444',
-                                                    transition: 'all 0.2s'
-                                                }}
+                                                className="icon-btn !h-9 !w-9 !rounded-lg !text-destructive hover:!border-destructive/40 hover:!bg-destructive/10 hover:!text-destructive hover:!shadow-none"
                                                 title="Delete"
-                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,68,68,0.1)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                                             >
                                                 <Trash2 size={16} />
                                             </button>
@@ -707,53 +481,26 @@ function MyLibrary({
                                 action={{ label: 'Open AI Coach', onClick: () => router.push('/coach') }}
                             />
                         ) : (
-                            <div style={{ display: 'grid', gap: '0.75rem' }}>
+                            <div className="grid gap-3">
                                 {nutritionPlans.map(plan => (
                                     <div
                                         key={plan.id}
                                         data-testid="library-nutrition-plan"
-                                        className="glass-panel"
-                                        style={{
-                                            padding: '1.25rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            cursor: 'pointer'
-                                        }}
+                                        className="glass-card glass-card-hover flex cursor-pointer items-center gap-4 p-5"
                                         onClick={() => router.push(`/nutrition?planId=${plan.id}`)}
                                     >
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <h3 style={{
-                                                fontWeight: '600',
-                                                marginBottom: '0.25rem',
-                                                fontSize: '1rem',
-                                                color: 'white',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap'
-                                            }}>
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="mb-1 truncate text-base font-semibold text-ink-hi">
                                                 {plan.name || 'Nutrition Plan'}
                                             </h3>
-                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 {plan.plan_overview?.daily_calories && (
-                                                    <span style={{
-                                                        fontSize: '0.75rem',
-                                                        color: 'var(--primary)',
-                                                        background: 'rgba(242, 95, 41, 0.1)',
-                                                        padding: '0.15rem 0.5rem',
-                                                        borderRadius: '4px'
-                                                    }}>
+                                                    <span className="rounded bg-[var(--brand-glow-soft)] px-2 py-0.5 text-xs text-brand">
                                                         {plan.plan_overview.daily_calories} cal/day
                                                     </span>
                                                 )}
                                                 {plan.dietary_preferences?.length > 0 && (
-                                                    <span style={{
-                                                        fontSize: '0.75rem',
-                                                        color: '#aaa',
-                                                        background: 'rgba(255, 255, 255, 0.05)',
-                                                        padding: '0.15rem 0.5rem',
-                                                        borderRadius: '4px'
-                                                    }}>
+                                                    <span className="rounded bg-[var(--surface-2)] px-2 py-0.5 text-xs text-ink-mid">
                                                         {plan.dietary_preferences.slice(0, 2).join(', ')}
                                                     </span>
                                                 )}
@@ -761,7 +508,7 @@ function MyLibrary({
                                         </div>
 
                                         {/* Actions */}
-                                        <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                                        <div className="flex shrink-0 gap-1.5">
                                             <button
                                                 data-testid="delete-nutrition-plan"
                                                 onClick={(e) => {
@@ -773,18 +520,8 @@ function MyLibrary({
                                                         name: plan.name || 'Nutrition Plan'
                                                     });
                                                 }}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.05)',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    padding: '0.4rem',
-                                                    cursor: 'pointer',
-                                                    color: '#ff4444',
-                                                    transition: 'all 0.2s'
-                                                }}
+                                                className="icon-btn !h-9 !w-9 !rounded-lg !text-destructive hover:!border-destructive/40 hover:!bg-destructive/10 hover:!text-destructive hover:!shadow-none"
                                                 title="Delete"
-                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,68,68,0.1)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                                             >
                                                 <Trash2 size={16} />
                                             </button>

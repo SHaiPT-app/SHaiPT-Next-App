@@ -18,19 +18,24 @@ interface ProgressBarProps {
 
 export default function ProgressBar({ completedSteps, activeStep }: ProgressBarProps) {
     return (
-        <div className="interview-progress">
-            {INTERVIEW_STEPS.map((step, i) => {
+        <div className="flex items-center gap-1 px-4 py-2">
+            {INTERVIEW_STEPS.map((step) => {
                 const isComplete = completedSteps.includes(step.id);
                 const isActive = step.id === activeStep;
 
                 return (
                     <div
                         key={step.id}
-                        className="interview-progress-step"
+                        className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                            isComplete
+                                ? 'bg-[image:var(--brand-gradient)] shadow-[0_0_8px_var(--brand-glow-soft)]'
+                                : isActive
+                                ? 'bg-brand/50'
+                                : 'bg-[var(--line-soft)]'
+                        }`}
                         data-complete={isComplete ? 'true' : 'false'}
                         data-active={isActive ? 'true' : 'false'}
                         title={step.label}
-                        style={i > 0 ? { marginLeft: '2px' } : undefined}
                     />
                 );
             })}

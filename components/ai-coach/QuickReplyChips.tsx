@@ -39,18 +39,8 @@ export default function QuickReplyChips({
     );
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div
-                style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.4rem',
-                    overflowX: 'auto',
-                    WebkitOverflowScrolling: 'touch',
-                    scrollbarWidth: 'none',
-                    padding: '0.25rem 0',
-                }}
-            >
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-[0.4rem] overflow-x-auto py-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none]">
                 {options.map(option => {
                     const selIdx = selected.indexOf(option);
                     const isSelected = selIdx >= 0;
@@ -75,17 +65,7 @@ export default function QuickReplyChips({
                 <button
                     type="button"
                     onClick={onSubmit}
-                    style={{
-                        alignSelf: 'flex-end',
-                        padding: '0.4rem 1rem',
-                        background: '#FF6600',
-                        color: '#0B0B15',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '0.8rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                    }}
+                    className="self-end cursor-pointer rounded-lg border-none bg-brand px-4 py-[0.4rem] text-[0.8rem] font-semibold text-white transition-colors hover:bg-brand-deep"
                 >
                     Confirm ({selected.length})
                 </button>

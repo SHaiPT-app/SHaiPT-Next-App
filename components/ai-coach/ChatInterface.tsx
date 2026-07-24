@@ -35,39 +35,28 @@ export default function ChatInterface({ messages, onSendMessage, loading, placeh
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="flex h-full flex-col">
             {/* Messages Area */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
                 {messages.map((msg) => (
                     <div
                         key={msg.id}
-                        style={{
-                            display: 'flex',
-                            justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                        }}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                        <div style={{
-                            maxWidth: '80%',
-                            padding: '0.75rem 1rem',
-                            borderRadius: '12px',
-                            background: msg.role === 'user' ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
-                            color: msg.role === 'user' ? 'black' : 'white',
-                            borderTopRightRadius: msg.role === 'user' ? '0' : '12px',
-                            borderTopLeftRadius: msg.role === 'assistant' ? '0' : '12px',
-                        }}>
+                        <div
+                            className={`max-w-[80%] rounded-xl px-4 py-3 text-ink-hi ${
+                                msg.role === 'user'
+                                    ? 'rounded-tr-none border border-brand/30 bg-[var(--brand-glow-soft)]'
+                                    : 'rounded-tl-none border border-line-soft bg-[var(--surface-1)]'
+                            }`}
+                        >
                             {msg.content}
                         </div>
                     </div>
                 ))}
                 {loading && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        <div style={{
-                            padding: '0.75rem 1rem',
-                            borderRadius: '12px',
-                            background: 'rgba(255,255,255,0.1)',
-                            color: '#888',
-                            borderTopLeftRadius: '0',
-                        }}>
+                    <div className="flex justify-start">
+                        <div className="rounded-xl rounded-tl-none border border-line-soft bg-[var(--surface-1)] px-4 py-3 text-brand">
                             Typing...
                         </div>
                     </div>
@@ -76,21 +65,19 @@ export default function ChatInterface({ messages, onSendMessage, loading, placeh
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSubmit} style={{ padding: '1rem', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '0.5rem' }}>
+            <form onSubmit={handleSubmit} className="flex gap-2 border-t border-line-soft p-4">
                 <input
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={placeholder || "Type a message..."}
-                    className="input-field"
-                    style={{ marginBottom: 0, flex: 1 }}
+                    className="flex-1 rounded-[10px] border border-line-soft bg-[var(--surface-1)] p-3 text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand"
                     disabled={loading}
                 />
                 <button
                     type="submit"
-                    className="btn-primary"
+                    className="btn-brand !px-6 !py-3 !text-sm"
                     disabled={loading || !inputValue.trim()}
-                    style={{ width: 'auto', padding: '0 1.5rem' }}
                 >
                     Send
                 </button>

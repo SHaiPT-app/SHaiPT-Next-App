@@ -158,8 +158,11 @@ export default function AIFormChecker() {
             [23, 24] // Hips
         ];
 
+        // Resolve brand tokens for canvas drawing (canvas cannot use CSS var() directly)
+        const tokens = getComputedStyle(ctx.canvas);
+
         ctx.lineWidth = 3;
-        ctx.strokeStyle = '#FF6600';
+        ctx.strokeStyle = tokens.getPropertyValue('--brand').trim();
 
         connections.forEach(([start, end]) => {
             const p1 = landmarks[start];
@@ -173,7 +176,7 @@ export default function AIFormChecker() {
         });
 
         // Draw points
-        ctx.fillStyle = '#ff0000';
+        ctx.fillStyle = tokens.getPropertyValue('--error').trim();
         [11, 12, 13, 14, 15, 16, 23, 24].forEach(idx => {
             const p = landmarks[idx];
             if (p) {
@@ -234,16 +237,16 @@ export default function AIFormChecker() {
     };
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>AI Form Checker (Bench Press)</h2>
+        <div className="mx-auto max-w-[800px]">
+            <h2 className="font-display mb-4 text-2xl font-bold text-ink-hi">AI Form Checker (Bench Press)</h2>
 
             {error && (
-                <div style={{ background: 'rgba(255,0,0,0.1)', border: '1px solid red', color: 'red', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                <div className="mb-4 rounded-lg border border-[var(--error)] p-4 text-[var(--error)] [background:color-mix(in_srgb,var(--error)_10%,transparent)]">
                     {error}
                 </div>
             )}
 
-            <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#222', borderRadius: '4px', fontSize: '0.8rem', color: '#aaa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="mb-4 flex items-center justify-between rounded-lg border border-line-soft bg-[var(--surface-1)] p-2 text-[0.8rem] text-ink-mid">
                 <div>
                     Status: {loading ? 'Loading Model...' : landmarkerRef.current ? 'Model Ready' : 'Initializing...'} |
                     Camera: {running ? 'Active' : 'Inactive'}
@@ -260,30 +263,30 @@ export default function AIFormChecker() {
                         });
                         alert('Diagnostics logged to console');
                     }}
-                    style={{ background: '#444', border: 'none', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer' }}
+                    className="cursor-pointer rounded-md border border-line-strong bg-[var(--surface-2)] px-2 py-1 text-ink-hi transition-colors hover:border-brand/50 hover:text-brand"
                 >
                     Run Diagnostics
                 </button>
             </div>
 
-            <div style={{ position: 'relative', aspectRatio: '16/9', background: 'black', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}>
+            <div className="relative mb-4 aspect-video overflow-hidden rounded-2xl bg-black">
                 <video
                     ref={videoRef}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)' }}
+                    className="h-full w-full -scale-x-100 object-contain"
                     playsInline
                     muted
                     autoPlay
                 />
                 <canvas
                     ref={canvasRef}
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', zIndex: 10, pointerEvents: 'none' }}
+                    className="pointer-events-none absolute left-0 top-0 z-10 h-full w-full -scale-x-100"
                 />
 
                 {!running && !loading && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+                    <div className="absolute left-0 top-0 flex h-full w-full items-center justify-center bg-black/50">
                         <button
                             onClick={startCamera}
-                            style={{ background: 'var(--accent)', color: 'white', padding: '1rem 2rem', borderRadius: '8px', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}
+                            className="btn-brand !text-lg"
                         >
                             Start Camera
                         </button>
@@ -291,34 +294,34 @@ export default function AIFormChecker() {
                 )}
 
                 {loading && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', color: 'white' }}>
+                    <div className="absolute left-0 top-0 flex h-full w-full items-center justify-center bg-black/70 text-ink-hi">
                         Loading AI Model...
                     </div>
                 )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.9rem', color: '#aaa' }}>Overall Score</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: score > 80 ? 'var(--accent)' : score > 50 ? 'orange' : 'red' }}>{score}%</div>
+            <div className="grid grid-cols-3 gap-4">
+                <div className="rounded-lg border border-line-soft bg-[var(--surface-1)] p-4 text-center">
+                    <div className="text-[0.9rem] text-ink-mid">Overall Score</div>
+                    <div className={`text-[2rem] font-bold ${score > 80 ? 'text-[var(--success)]' : score > 50 ? 'text-brand' : 'text-[var(--error)]'}`}>{score}%</div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.9rem', color: '#aaa' }}>Left Angle</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{leftAngle}°</div>
-                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Target: 45-60°</div>
+                <div className="rounded-lg border border-line-soft bg-[var(--surface-1)] p-4 text-center">
+                    <div className="text-[0.9rem] text-ink-mid">Left Angle</div>
+                    <div className="text-2xl font-bold text-ink-hi">{leftAngle}°</div>
+                    <div className="text-[0.8rem] text-ink-low">Target: 45-60°</div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.9rem', color: '#aaa' }}>Right Angle</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{rightAngle}°</div>
-                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Target: 45-60°</div>
+                <div className="rounded-lg border border-line-soft bg-[var(--surface-1)] p-4 text-center">
+                    <div className="text-[0.9rem] text-ink-mid">Right Angle</div>
+                    <div className="text-2xl font-bold text-ink-hi">{rightAngle}°</div>
+                    <div className="text-[0.8rem] text-ink-low">Target: 45-60°</div>
                 </div>
             </div>
 
             {running && (
-                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                <div className="mt-4 text-center">
                     <button
                         onClick={stopCamera}
-                        style={{ background: '#333', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #555', cursor: 'pointer' }}
+                        className="btn-outline !px-4 !py-2 !text-sm"
                     >
                         Stop Camera
                     </button>

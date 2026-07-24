@@ -35,8 +35,8 @@ export function ExerciseNotes({
                 className={`
                     flex items-center gap-2 px-3 py-2 rounded-lg transition-colors
                     ${notes
-                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                        : 'bg-gray-800 text-gray-400 hover:text-white'
+                        ? 'bg-[var(--brand-glow-soft)] text-brand border border-brand/30'
+                        : 'bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi'
                     }
                 `}
             >
@@ -62,17 +62,17 @@ export function ExerciseNotes({
                             initial={{ y: 100, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 100, opacity: 0 }}
-                            className="w-full max-w-lg bg-gray-900 rounded-t-2xl sm:rounded-2xl border border-gray-800 overflow-hidden"
+                            className="w-full max-w-lg bg-[var(--surface-1)] backdrop-blur-xl rounded-t-2xl sm:rounded-2xl border border-line-soft overflow-hidden"
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                    <MessageSquare className="w-5 h-5 text-cyan-400" />
+                            <div className="flex items-center justify-between p-4 border-b border-line-soft">
+                                <h3 className="text-lg font-semibold text-ink-hi flex items-center gap-2">
+                                    <MessageSquare className="w-5 h-5 text-brand" />
                                     Exercise Notes
                                 </h3>
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"
+                                    className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)]"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
@@ -85,26 +85,26 @@ export function ExerciseNotes({
                                     onChange={(e) => setLocalNotes(e.target.value)}
                                     placeholder={placeholder}
                                     rows={6}
-                                    className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500
-                                             resize-none focus:outline-none focus:border-cyan-500"
+                                    className="w-full bg-[var(--surface-2)] border border-line-strong rounded-lg p-3 text-ink-hi placeholder:text-ink-low
+                                             resize-none focus:outline-none focus:border-brand"
                                 />
 
-                                <div className="mt-2 text-xs text-gray-500">
+                                <div className="mt-2 text-xs text-ink-low">
                                     Tips: Note any form cues, adjustments, or how the exercise felt.
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="p-4 border-t border-gray-800 flex gap-3">
+                            <div className="p-4 border-t border-line-soft flex gap-3">
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="flex-1 py-2.5 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                    className="btn-outline flex-1"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    className="flex-1 py-2.5 rounded-lg bg-cyan-500 text-white hover:bg-cyan-600 flex items-center justify-center gap-2"
+                                    className="btn-brand flex-1"
                                 >
                                     <Save className="w-4 h-4" />
                                     Save Notes

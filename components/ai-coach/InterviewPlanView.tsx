@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Box, Text, Flex, VStack } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
 import {
@@ -19,8 +18,6 @@ import {
 } from 'lucide-react';
 import type { GeneratedPlanData, GeneratedSession, GeneratedExercise } from '@/app/api/ai-coach/generate-plan/route';
 
-const MotionBox = motion.create(Box);
-
 interface InterviewPlanViewProps {
     plan: GeneratedPlanData;
     onPlanUpdate: (plan: GeneratedPlanData) => void;
@@ -29,12 +26,12 @@ interface InterviewPlanViewProps {
 }
 
 const PHASE_COLORS: Record<string, string> = {
-    hypertrophy: '#FF6600',
-    strength: '#ff007f',
-    endurance: '#FF6600',
-    deload: '#f59e0b',
-    power: '#c084fc',
-    general: '#6ee7b7',
+    hypertrophy: 'var(--brand)',
+    strength: 'var(--neon-pink)',
+    endurance: 'var(--brand)',
+    deload: 'var(--warning)',
+    power: 'var(--brand-hot)',
+    general: 'var(--success)',
 };
 
 const PHASE_ICONS: Record<string, typeof Dumbbell> = {
@@ -45,6 +42,9 @@ const PHASE_ICONS: Record<string, typeof Dumbbell> = {
     power: Zap,
     general: Dumbbell,
 };
+
+const setInputClass =
+    'w-full rounded border border-line-soft bg-[var(--surface-1)] px-[0.3rem] py-[0.2rem] text-[0.8rem] text-ink-hi outline-none focus:border-brand focus:ring-1 focus:ring-brand';
 
 export default function InterviewPlanView({
     plan,
@@ -142,88 +142,55 @@ export default function InterviewPlanView({
     );
 
     return (
-        <MotionBox
+        <motion.div
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
             data-testid="interview-plan-view"
         >
             {/* Plan Header */}
-            <Box
-                p="1rem"
-                borderRadius="12px"
-                bg="rgba(255, 102, 0, 0.05)"
-                border="1px solid rgba(255, 102, 0, 0.2)"
-                mb="0.75rem"
-            >
-                <Flex justifyContent="space-between" alignItems="flex-start">
-                    <Box flex={1}>
-                        <Text
-                            fontFamily="var(--font-orbitron)"
-                            fontSize="1rem"
-                            fontWeight="700"
-                            color="var(--neon-orange)"
-                            mb="0.25rem"
-                        >
+            <div className="glass-card mb-3 p-4">
+                <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                        <h3 className="font-display mb-1 text-base font-bold text-ink-hi">
                             {plan.name}
-                        </Text>
-                        <Text fontSize="0.8rem" color="#888" mb="0.5rem">
+                        </h3>
+                        <p className="mb-2 text-[0.8rem] text-ink-mid">
                             {plan.description}
-                        </Text>
-                        <Flex gap="0.5rem" flexWrap="wrap">
-                            <Text
-                                fontSize="0.7rem"
-                                px="0.5rem"
-                                py="0.15rem"
-                                borderRadius="4px"
-                                bg="rgba(255, 102, 0, 0.1)"
-                                color="#FF6600"
-                            >
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            <span className="rounded bg-[var(--brand-glow-soft)] px-2 py-[0.15rem] text-[0.7rem] text-brand">
                                 {plan.duration_weeks} weeks
-                            </Text>
-                            <Text
-                                fontSize="0.7rem"
-                                px="0.5rem"
-                                py="0.15rem"
-                                borderRadius="4px"
-                                bg="rgba(255, 102, 0, 0.1)"
-                                color="#FF6600"
-                            >
+                            </span>
+                            <span className="rounded bg-[var(--brand-glow-soft)] px-2 py-[0.15rem] text-[0.7rem] text-brand">
                                 {plan.sessions.length} days/week
-                            </Text>
-                        </Flex>
-                    </Box>
-                    <Box>
+                            </span>
+                        </div>
+                    </div>
+                    <div>
                         {saveStatus === 'saving' || isSaving ? (
-                            <Text fontSize="0.7rem" color="#FF6600">Saving...</Text>
+                            <span className="text-[0.7rem] text-brand">Saving...</span>
                         ) : saveStatus === 'saved' ? (
-                            <Flex alignItems="center" gap="0.25rem">
-                                <Check size={12} color="#00C864" />
-                                <Text fontSize="0.7rem" color="#00C864">Saved</Text>
-                            </Flex>
+                            <span className="flex items-center gap-1">
+                                <Check size={12} className="text-[var(--success)]" />
+                                <span className="text-[0.7rem] text-[var(--success)]">Saved</span>
+                            </span>
                         ) : saveStatus === 'error' ? (
-                            <Text fontSize="0.7rem" color="#ff4444">Save failed</Text>
+                            <span className="text-[0.7rem] text-destructive">Save failed</span>
                         ) : null}
-                    </Box>
-                </Flex>
-            </Box>
+                    </div>
+                </div>
+            </div>
 
             {/* Periodization Blocks */}
             {plan.periodization_blocks.length > 1 && (
-                <Box mb="0.75rem">
-                    <Text
-                        fontSize="0.7rem"
-                        color="#666"
-                        textTransform="uppercase"
-                        letterSpacing="0.05em"
-                        mb="0.5rem"
-                        px="0.25rem"
-                    >
+                <div className="mb-3">
+                    <p className="eyebrow mb-2 px-1">
                         Periodization
-                    </Text>
-                    <Flex gap="4px" borderRadius="8px" overflow="hidden">
+                    </p>
+                    <div className="flex gap-1 overflow-hidden rounded-lg">
                         {plan.periodization_blocks.map((block, i) => {
-                            const color = PHASE_COLORS[block.phase_type] || '#FF6600';
+                            const color = PHASE_COLORS[block.phase_type] || 'var(--brand)';
                             const Icon = PHASE_ICONS[block.phase_type] || Dumbbell;
                             const totalWeeks = plan.periodization_blocks.reduce(
                                 (sum, b) => sum + b.phase_duration_weeks,
@@ -232,49 +199,40 @@ export default function InterviewPlanView({
                             const widthPercent = (block.phase_duration_weeks / totalWeeks) * 100;
 
                             return (
-                                <Box
+                                <div
                                     key={i}
-                                    flex={`0 0 ${widthPercent}%`}
-                                    bg={`${color}15`}
-                                    border={`1px solid ${color}40`}
-                                    borderRadius={
+                                    className={`flex flex-col items-center gap-[0.15rem] px-[0.35rem] py-2 ${
                                         i === 0
-                                            ? '8px 0 0 8px'
+                                            ? 'rounded-l-lg'
                                             : i === plan.periodization_blocks.length - 1
-                                            ? '0 8px 8px 0'
-                                            : '0'
-                                    }
-                                    p="0.5rem 0.35rem"
-                                    display="flex"
-                                    flexDirection="column"
-                                    alignItems="center"
-                                    gap="0.15rem"
+                                            ? 'rounded-r-lg'
+                                            : ''
+                                    }`}
+                                    style={{
+                                        flex: `0 0 ${widthPercent}%`,
+                                        background: `color-mix(in srgb, ${color} 8%, transparent)`,
+                                        border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
+                                    }}
                                 >
-                                    <Icon size={12} color={color} />
-                                    <Text fontSize="0.6rem" fontWeight="600" color={color}>
+                                    <Icon size={12} style={{ color }} />
+                                    <span className="text-[0.6rem] font-semibold" style={{ color }}>
                                         {block.label}
-                                    </Text>
-                                    <Text fontSize="0.55rem" color={color} opacity={0.7}>
+                                    </span>
+                                    <span className="text-[0.55rem] opacity-70" style={{ color }}>
                                         {block.phase_duration_weeks}w
-                                    </Text>
-                                </Box>
+                                    </span>
+                                </div>
                             );
                         })}
-                    </Flex>
-                </Box>
+                    </div>
+                </div>
             )}
 
             {/* Session Cards */}
-            <VStack gap="0.5rem" align="stretch">
-                <Text
-                    fontSize="0.7rem"
-                    color="#666"
-                    textTransform="uppercase"
-                    letterSpacing="0.05em"
-                    px="0.25rem"
-                >
+            <div className="flex flex-col items-stretch gap-2">
+                <p className="eyebrow px-1">
                     Weekly Schedule
-                </Text>
+                </p>
 
                 {plan.sessions.map((session) => (
                     <SessionCard
@@ -310,19 +268,13 @@ export default function InterviewPlanView({
                         }
                     />
                 ))}
-            </VStack>
+            </div>
 
             {/* Edit hint */}
-            <Text
-                fontSize="0.7rem"
-                color="#555"
-                textAlign="center"
-                mt="0.75rem"
-                fontStyle="italic"
-            >
+            <p className="mt-3 text-center text-[0.7rem] italic text-ink-low">
                 Tap any day to expand. Use the edit icon to modify exercises, sets, reps, and weights.
-            </Text>
-        </MotionBox>
+            </p>
+        </motion.div>
     );
 }
 
@@ -366,69 +318,38 @@ function SessionCard({
         : `Day ${session.day_number}`;
 
     return (
-        <Box>
+        <div>
             <button
                 onClick={onToggle}
                 data-testid={`session-day-${session.day_number}`}
-                style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.75rem',
-                    background: isExpanded
-                        ? 'rgba(255, 102, 0, 0.08)'
-                        : 'rgba(255, 255, 255, 0.03)',
-                    border: isExpanded
-                        ? '1px solid rgba(255, 102, 0, 0.25)'
-                        : '1px solid rgba(255, 255, 255, 0.06)',
-                    borderRadius: isExpanded ? '10px 10px 0 0' : '10px',
-                    cursor: 'pointer',
-                    color: 'var(--foreground)',
-                    textAlign: 'left',
-                    transition: 'all 0.2s',
-                }}
+                className={`flex w-full cursor-pointer items-center gap-3 border p-3 text-left text-foreground transition-all duration-200 ${
+                    isExpanded
+                        ? 'rounded-t-[10px] border-brand/25 bg-[var(--brand-glow-soft)]'
+                        : 'rounded-[10px] border-line-soft bg-[var(--surface-1)] hover:border-line-strong'
+                }`}
             >
-                <Box
-                    w="32px"
-                    h="32px"
-                    bg="rgba(255, 102, 0, 0.15)"
-                    color="#FF6600"
-                    borderRadius="8px"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    fontWeight="600"
-                    fontSize="0.75rem"
-                    flexShrink={0}
-                >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand/30 bg-[var(--brand-glow-soft)] text-xs font-semibold text-brand">
                     {dayLabel}
-                </Box>
-                <Box flex={1}>
-                    <Text fontWeight="500" fontSize="0.9rem">
+                </span>
+                <span className="flex-1">
+                    <span className="block text-[0.9rem] font-medium text-ink-hi">
                         {session.name}
-                    </Text>
-                    <Text fontSize="0.75rem" color="#666">
+                    </span>
+                    <span className="block text-xs text-ink-low">
                         {session.exercises.length} exercises
-                    </Text>
-                </Box>
+                    </span>
+                </span>
                 {isExpanded ? (
-                    <ChevronDown size={16} color="#888" />
+                    <ChevronDown size={16} className="text-ink-low" />
                 ) : (
-                    <ChevronRight size={16} color="#888" />
+                    <ChevronRight size={16} className="text-ink-low" />
                 )}
             </button>
 
             {/* Expanded Exercises */}
             {isExpanded && (
-                <Box
-                    border="1px solid rgba(255, 102, 0, 0.25)"
-                    borderTop="none"
-                    borderRadius="0 0 10px 10px"
-                    p="0.75rem"
-                    bg="rgba(255, 255, 255, 0.02)"
-                >
-                    <VStack gap="0.5rem" align="stretch">
+                <div className="rounded-b-[10px] border border-t-0 border-brand/25 bg-[var(--surface-1)] p-3">
+                    <div className="flex flex-col items-stretch gap-2">
                         {session.exercises.map((exercise, exIdx) => {
                             const isEditing =
                                 editingExercise?.dayNumber === session.day_number &&
@@ -450,10 +371,10 @@ function SessionCard({
                                 />
                             );
                         })}
-                    </VStack>
-                </Box>
+                    </div>
+                </div>
             )}
-        </Box>
+        </div>
     );
 }
 
@@ -487,21 +408,17 @@ function ExerciseCard({
     onRemoveExercise,
 }: ExerciseCardProps) {
     return (
-        <Box
-            bg={isEditing ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)'}
-            border={
+        <div
+            className={`rounded-lg border p-[0.6rem] transition-all duration-200 ${
                 isEditing
-                    ? '1px solid rgba(255, 102, 0, 0.3)'
-                    : '1px solid rgba(255, 255, 255, 0.05)'
-            }
-            borderRadius="8px"
-            p="0.6rem"
-            transition="all 0.2s"
+                    ? 'border-brand/30 bg-[var(--surface-2)]'
+                    : 'border-line-soft bg-[var(--surface-1)]'
+            }`}
             data-testid="exercise-card"
         >
             {/* Exercise Header */}
-            <Flex justifyContent="space-between" alignItems="center" mb="0.4rem">
-                <Box flex={1}>
+            <div className="mb-[0.4rem] flex items-center justify-between">
+                <div className="flex-1">
                     {isEditing ? (
                         <input
                             value={exercise.exercise_name}
@@ -509,38 +426,23 @@ function ExerciseCard({
                                 onUpdateExercise({ exercise_name: e.target.value })
                             }
                             data-testid="exercise-name-input"
-                            style={{
-                                fontWeight: 600,
-                                fontSize: '0.85rem',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '4px',
-                                padding: '0.25rem 0.4rem',
-                                color: 'var(--foreground)',
-                                width: '100%',
-                            }}
+                            className="w-full rounded border border-line-soft bg-[var(--surface-1)] px-[0.4rem] py-1 text-[0.85rem] font-semibold text-ink-hi outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                     ) : (
-                        <Text fontWeight="600" fontSize="0.85rem">
+                        <p className="text-[0.85rem] font-semibold text-ink-hi">
                             {exercise.exercise_name}
-                        </Text>
+                        </p>
                     )}
-                </Box>
-                <Flex gap="0.2rem" ml="0.5rem">
+                </div>
+                <div className="ml-2 flex gap-[0.2rem]">
                     <button
                         onClick={onEdit}
                         data-testid="edit-exercise-btn"
-                        style={{
-                            background: isEditing
-                                ? 'rgba(255, 102, 0, 0.15)'
-                                : 'rgba(255, 255, 255, 0.05)',
-                            border: 'none',
-                            borderRadius: '6px',
-                            padding: '0.3rem',
-                            cursor: 'pointer',
-                            color: isEditing ? '#FF6600' : '#888',
-                            transition: 'all 0.2s',
-                        }}
+                        className={`cursor-pointer rounded-md border-none p-[0.3rem] transition-all duration-200 ${
+                            isEditing
+                                ? 'bg-[var(--brand-glow-soft)] text-brand'
+                                : 'bg-[var(--surface-2)] text-ink-low hover:text-brand'
+                        }`}
                     >
                         {isEditing ? <Check size={12} /> : <Edit3 size={12} />}
                     </button>
@@ -548,38 +450,23 @@ function ExerciseCard({
                         <button
                             onClick={onRemoveExercise}
                             data-testid="remove-exercise-btn"
-                            style={{
-                                background: 'rgba(255, 68, 68, 0.1)',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '0.3rem',
-                                cursor: 'pointer',
-                                color: '#ff4444',
-                            }}
+                            className="cursor-pointer rounded-md border-none bg-destructive/10 p-[0.3rem] text-destructive"
                         >
                             <Trash2 size={12} />
                         </button>
                     )}
-                </Flex>
-            </Flex>
+                </div>
+            </div>
 
             {/* Sets Table */}
-            <Box>
+            <div>
                 {/* Header */}
                 <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: isEditing
-                            ? '24px 1fr 1fr 1fr 24px'
-                            : '24px 1fr 1fr 1fr',
-                        gap: '0.4rem',
-                        padding: '0.2rem 0',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                        fontSize: '0.6rem',
-                        color: '#666',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                    }}
+                    className={`grid gap-[0.4rem] border-b border-line-soft py-[0.2rem] text-[0.6rem] uppercase tracking-wider text-ink-low ${
+                        isEditing
+                            ? 'grid-cols-[24px_1fr_1fr_1fr_24px]'
+                            : 'grid-cols-[24px_1fr_1fr_1fr]'
+                    }`}
                 >
                     <span>Set</span>
                     <span>Reps</span>
@@ -592,27 +479,17 @@ function ExerciseCard({
                 {exercise.sets.map((set, setIdx) => (
                     <div
                         key={setIdx}
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: isEditing
-                                ? '24px 1fr 1fr 1fr 24px'
-                                : '24px 1fr 1fr 1fr',
-                            gap: '0.4rem',
-                            padding: '0.3rem 0',
-                            alignItems: 'center',
-                            borderBottom:
-                                setIdx < exercise.sets.length - 1
-                                    ? '1px solid rgba(255, 255, 255, 0.03)'
-                                    : 'none',
-                        }}
+                        className={`grid items-center gap-[0.4rem] py-[0.3rem] ${
+                            isEditing
+                                ? 'grid-cols-[24px_1fr_1fr_1fr_24px]'
+                                : 'grid-cols-[24px_1fr_1fr_1fr]'
+                        } ${
+                            setIdx < exercise.sets.length - 1
+                                ? 'border-b border-line-soft'
+                                : ''
+                        }`}
                     >
-                        <span
-                            style={{
-                                color: '#FF6600',
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                            }}
-                        >
+                        <span className="text-xs font-semibold text-brand">
                             {setIdx + 1}
                         </span>
 
@@ -624,15 +501,7 @@ function ExerciseCard({
                                     onChange={(e) =>
                                         onUpdateSet(setIdx, 'reps', e.target.value)
                                     }
-                                    style={{
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '4px',
-                                        padding: '0.2rem 0.3rem',
-                                        color: 'var(--foreground)',
-                                        fontSize: '0.8rem',
-                                        width: '100%',
-                                    }}
+                                    className={setInputClass}
                                 />
                                 <input
                                     type="text"
@@ -640,15 +509,7 @@ function ExerciseCard({
                                     onChange={(e) =>
                                         onUpdateSet(setIdx, 'weight', e.target.value)
                                     }
-                                    style={{
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '4px',
-                                        padding: '0.2rem 0.3rem',
-                                        color: 'var(--foreground)',
-                                        fontSize: '0.8rem',
-                                        width: '100%',
-                                    }}
+                                    className={setInputClass}
                                 />
                                 <input
                                     type="number"
@@ -660,67 +521,36 @@ function ExerciseCard({
                                             parseInt(e.target.value) || 0
                                         )
                                     }
-                                    style={{
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '4px',
-                                        padding: '0.2rem 0.3rem',
-                                        color: 'var(--foreground)',
-                                        fontSize: '0.8rem',
-                                        width: '100%',
-                                    }}
+                                    className={setInputClass}
                                 />
                                 <button
                                     onClick={() => onRemoveSet(setIdx)}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        color: '#ff4444',
-                                        padding: '0.15rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
+                                    className="flex cursor-pointer items-center justify-center border-none bg-transparent p-[0.15rem] text-destructive"
                                 >
                                     <X size={10} />
                                 </button>
                             </>
                         ) : (
                             <>
-                                <span style={{ fontSize: '0.8rem' }}>{set.reps}</span>
-                                <span style={{ fontSize: '0.8rem', color: '#ccc' }}>
+                                <span className="text-[0.8rem] text-ink-hi">{set.reps}</span>
+                                <span className="text-[0.8rem] text-ink-mid">
                                     {set.weight || '--'}
                                 </span>
-                                <span style={{ fontSize: '0.8rem', color: '#888' }}>
+                                <span className="text-[0.8rem] text-ink-low">
                                     {set.rest_seconds ? `${set.rest_seconds}s` : '--'}
                                 </span>
                             </>
                         )}
                     </div>
                 ))}
-            </Box>
+            </div>
 
             {/* Add Set (editing) */}
             {isEditing && (
                 <button
                     onClick={onAddSet}
                     data-testid="add-set-btn"
-                    style={{
-                        width: '100%',
-                        marginTop: '0.4rem',
-                        padding: '0.3rem',
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        border: '1px dashed rgba(255, 255, 255, 0.1)',
-                        borderRadius: '4px',
-                        color: '#888',
-                        cursor: 'pointer',
-                        fontSize: '0.7rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.2rem',
-                    }}
+                    className="mt-[0.4rem] flex w-full cursor-pointer items-center justify-center gap-[0.2rem] rounded border border-dashed border-line-soft bg-transparent p-[0.3rem] text-[0.7rem] text-ink-low transition-colors hover:border-brand/40 hover:text-brand"
                 >
                     <Plus size={10} />
                     Add Set
@@ -729,34 +559,21 @@ function ExerciseCard({
 
             {/* Notes */}
             {isEditing ? (
-                <Box mt="0.4rem">
+                <div className="mt-[0.4rem]">
                     <input
                         type="text"
                         value={exercise.notes}
                         onChange={(e) => onUpdateExercise({ notes: e.target.value })}
                         data-testid="exercise-notes-input"
-                        style={{
-                            width: '100%',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '4px',
-                            padding: '0.2rem 0.4rem',
-                            color: 'var(--foreground)',
-                            fontSize: '0.75rem',
-                        }}
+                        className="w-full rounded border border-line-soft bg-[var(--surface-1)] px-[0.4rem] py-[0.2rem] text-xs text-ink-hi outline-none placeholder:text-ink-low focus:border-brand focus:ring-1 focus:ring-brand"
                         placeholder="Notes (form cues, tempo, intensifiers)..."
                     />
-                </Box>
+                </div>
             ) : exercise.notes ? (
-                <Text
-                    mt="0.3rem"
-                    fontSize="0.7rem"
-                    color="#888"
-                    fontStyle="italic"
-                >
+                <p className="mt-[0.3rem] text-[0.7rem] italic text-ink-low">
                     {exercise.notes}
-                </Text>
+                </p>
             ) : null}
-        </Box>
+        </div>
     );
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Box, Text, Flex, VStack } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
 import { Send, User, Bot } from 'lucide-react';
@@ -9,8 +8,6 @@ import type { CoachPersona } from '@/data/coaches';
 import type { IntakeFormData } from '@/lib/types';
 import IntakePhotoUpload from './IntakePhotoUpload';
 import { supabase } from '@/lib/supabase';
-
-const MotionFlex = motion.create(Flex);
 
 interface InterviewChatProps {
     coach: CoachPersona;
@@ -402,135 +399,86 @@ export default function InterviewChat({
     };
 
     return (
-        <Flex direction="column" h="100%" overflow="hidden">
+        <div className="flex h-full flex-col overflow-hidden">
             {/* Chat Header */}
-            <Flex
-                px="1rem"
-                py="0.75rem"
-                borderBottom="1px solid rgba(255, 255, 255, 0.1)"
-                alignItems="center"
-                gap="0.75rem"
-                flexShrink={0}
-            >
-                <Box
-                    w="40px"
-                    h="40px"
-                    borderRadius="50%"
-                    overflow="hidden"
-                    border="2px solid var(--neon-orange)"
-                    flexShrink={0}
-                >
+            <div className="flex flex-shrink-0 items-center gap-3 border-b border-line-soft px-4 py-3">
+                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border-2 border-brand">
                     <img
                         src={coach.avatarUrl}
                         alt={coach.fullName}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        className="h-full w-full object-cover"
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             if (target.parentElement) {
-                                target.parentElement.style.background = 'linear-gradient(135deg, var(--neon-orange), #E55C00)';
+                                target.parentElement.style.background = 'var(--brand-gradient)';
                                 target.parentElement.style.display = 'flex';
                                 target.parentElement.style.alignItems = 'center';
                                 target.parentElement.style.justifyContent = 'center';
-                                target.parentElement.innerHTML = `<span style="font-size:1rem;font-weight:700;color:#fff;font-family:var(--font-orbitron)">${coach.fullName.charAt(0)}</span>`;
+                                target.parentElement.innerHTML = `<span style="font-size:1rem;font-weight:700;color:var(--ink-hi);font-family:var(--font-orbitron)">${coach.fullName.charAt(0)}</span>`;
                             }
                         }}
                     />
-                </Box>
-                <Box>
-                    <Text
-                        fontFamily="var(--font-orbitron)"
-                        fontSize="0.9rem"
-                        fontWeight="600"
-                        color="var(--foreground)"
-                        lineHeight="1.2"
-                    >
+                </div>
+                <div>
+                    <p className="font-display text-[0.9rem] font-semibold leading-[1.2] text-ink-hi">
                         {coach.displayName}
-                    </Text>
-                    <Text fontSize="0.7rem" color={isLoading ? 'var(--neon-orange)' : '#888'}>
+                    </p>
+                    <p className={`text-[0.7rem] ${isLoading ? 'text-brand' : 'text-ink-low'}`}>
                         {isLoading ? 'Typing...' : 'Intake Interview'}
-                    </Text>
-                </Box>
-            </Flex>
+                    </p>
+                </div>
+            </div>
 
             {/* Messages Area */}
-            <Box flex={1} overflowY="auto" px="0.75rem" py="0.75rem">
-                <VStack gap="0.75rem" align="stretch">
+            <div className="flex-1 overflow-y-auto px-3 py-3">
+                <div className="flex flex-col items-stretch gap-3">
                     <AnimatePresence mode="popLayout">
                         {messages.map(message => (
-                            <MotionFlex
+                            <motion.div
                                 key={message.id}
                                 variants={fadeInUp}
                                 initial="hidden"
                                 animate="visible"
-                                gap="0.5rem"
-                                alignItems="flex-start"
+                                className="flex items-start gap-2"
                             >
-                                <Box
-                                    w="28px"
-                                    h="28px"
-                                    borderRadius="50%"
-                                    bg={
+                                <div
+                                    className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[0.75rem] ${
                                         message.role === 'user'
-                                            ? 'linear-gradient(135deg, #FF6600, #E55C00)'
-                                            : 'linear-gradient(135deg, rgba(255, 102, 0, 0.6), rgba(229, 92, 0, 0.4))'
-                                    }
-                                    display="flex"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    flexShrink={0}
-                                    fontSize="0.75rem"
-                                    mt="0.15rem"
+                                            ? 'text-white [background:var(--brand-gradient)]'
+                                            : 'border border-brand/30 bg-[var(--brand-glow-soft)] text-brand'
+                                    }`}
                                 >
                                     {message.role === 'user' ? (
-                                        <User size={14} color="#0B0B15" />
+                                        <User size={14} />
                                     ) : (
-                                        <Bot size={14} color="#0B0B15" />
+                                        <Bot size={14} />
                                     )}
-                                </Box>
-                                <Box
-                                    flex={1}
-                                    p="0.65rem 0.75rem"
-                                    borderRadius="10px"
-                                    bg={
+                                </div>
+                                <div
+                                    className={`flex-1 rounded-[10px] border px-3 py-[0.65rem] ${
                                         message.role === 'user'
-                                            ? 'rgba(255, 102, 0, 0.08)'
-                                            : 'rgba(255, 255, 255, 0.04)'
-                                    }
-                                    border="1px solid"
-                                    borderColor={
-                                        message.role === 'user'
-                                            ? 'rgba(255, 102, 0, 0.15)'
-                                            : 'rgba(255, 255, 255, 0.06)'
-                                    }
+                                            ? 'border-brand/30 bg-[var(--brand-glow-soft)]'
+                                            : 'border-line-soft bg-[var(--surface-1)]'
+                                    }`}
                                 >
-                                    <Text
-                                        fontSize="0.6rem"
-                                        color="gray.600"
-                                        mb="0.15rem"
-                                        fontWeight="600"
-                                        textTransform="uppercase"
-                                        letterSpacing="0.05em"
-                                    >
+                                    <p className="mb-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.05em] text-ink-low">
                                         {message.role === 'user' ? 'You' : coach.nickname}
-                                    </Text>
-                                    <Text
-                                        whiteSpace="pre-wrap"
-                                        lineHeight="1.5"
-                                        color="var(--foreground)"
-                                        fontSize="0.85rem"
-                                    >
+                                    </p>
+                                    <p className="whitespace-pre-wrap text-[0.85rem] leading-normal text-ink-hi">
                                         {message.content}
-                                    </Text>
+                                    </p>
                                     {message.role === 'assistant' && !message.content && isLoading && (
-                                        <Flex gap="0.2rem" alignItems="center" py="0.25rem">
-                                            <Box as="span" w="5px" h="5px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out infinite" />
-                                            <Box as="span" w="5px" h="5px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out 0.2s infinite" />
-                                            <Box as="span" w="5px" h="5px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out 0.4s infinite" />
-                                        </Flex>
+                                        <div className="flex items-center gap-1 py-1">
+                                            <span className="thinking-dots">
+                                                <span></span>
+                                                <span></span>
+                                                <span></span>
+                                            </span>
+                                        </div>
                                     )}
-                                </Box>
-                            </MotionFlex>
+                                </div>
+                            </motion.div>
                         ))}
                     </AnimatePresence>
 
@@ -544,20 +492,12 @@ export default function InterviewChat({
                     )}
 
                     <div ref={messagesEndRef} />
-                </VStack>
-            </Box>
+                </div>
+            </div>
 
             {/* Input Area */}
-            <Box
-                px="0.75rem"
-                py="0.75rem"
-                borderTop="1px solid rgba(255, 255, 255, 0.1)"
-                flexShrink={0}
-            >
-                <form
-                    onSubmit={handleSubmit}
-                    style={{ display: 'flex', gap: '0.5rem' }}
-                >
+            <div className="flex-shrink-0 border-t border-line-soft px-3 py-3">
+                <form onSubmit={handleSubmit} className="flex gap-2">
                     <input
                         ref={inputRef}
                         value={input}
@@ -565,49 +505,20 @@ export default function InterviewChat({
                         placeholder={showPhotoUpload ? 'Upload photos or skip to continue...' : 'Type your answer...'}
                         disabled={isLoading || showPhotoUpload}
                         data-testid="interview-chat-input"
-                        style={{
-                            flex: 1,
-                            padding: '0.7rem 0.75rem',
-                            fontSize: '0.9rem',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '10px',
-                            color: 'var(--foreground)',
-                            outline: 'none',
-                            transition: 'border-color 0.2s',
-                            opacity: showPhotoUpload ? 0.5 : 1,
-                        }}
-                        onFocus={e => {
-                            e.currentTarget.style.borderColor = 'var(--neon-orange)';
-                        }}
-                        onBlur={e => {
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                        }}
+                        className={`flex-1 rounded-[10px] border border-line-soft bg-[var(--surface-1)] px-3 py-[0.7rem] text-[0.9rem] text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand ${
+                            showPhotoUpload ? 'opacity-50' : ''
+                        }`}
                     />
                     <button
                         type="submit"
                         disabled={isLoading || !input.trim() || showPhotoUpload}
                         data-testid="interview-chat-send"
-                        style={{
-                            padding: '0.7rem',
-                            background:
-                                isLoading || !input.trim() || showPhotoUpload
-                                    ? 'rgba(255, 102, 0, 0.3)'
-                                    : '#FF6600',
-                            color: '#0B0B15',
-                            border: 'none',
-                            borderRadius: '10px',
-                            cursor: isLoading || !input.trim() || showPhotoUpload ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'background 0.2s',
-                        }}
+                        className="flex cursor-pointer items-center justify-center rounded-[10px] border-none bg-brand p-[0.7rem] text-white transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         <Send size={18} />
                     </button>
                 </form>
-            </Box>
-        </Flex>
+            </div>
+        </div>
     );
 }

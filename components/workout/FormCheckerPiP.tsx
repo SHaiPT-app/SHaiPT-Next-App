@@ -157,7 +157,7 @@ export function FormCheckerPiP({
                     <div
                         className={`
                             relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50
-                            border border-gray-700 bg-gray-900
+                            border border-line-strong bg-[var(--surface-0)]
                             ${isMinimized ? 'w-16 h-16' : 'w-36 h-48 sm:w-48 sm:h-64'}
                             transition-all duration-300
                         `}
@@ -172,15 +172,15 @@ export function FormCheckerPiP({
                                 className={`w-full h-full object-cover ${isMinimized ? 'hidden' : ''}`}
                             />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                                <VideoOff className="w-8 h-8 text-gray-600" />
+                            <div className="w-full h-full flex items-center justify-center bg-[var(--surface-2)]">
+                                <VideoOff className="w-8 h-8 text-ink-low" />
                             </div>
                         )}
 
                         {/* Minimized State */}
                         {isMinimized && (
                             <div className="w-full h-full flex items-center justify-center">
-                                <Camera className="w-6 h-6 text-cyan-400" />
+                                <Camera className="w-6 h-6 text-brand" />
                             </div>
                         )}
 
@@ -198,7 +198,7 @@ export function FormCheckerPiP({
                                 {/* Position Toggle */}
                                 <button
                                     onClick={cyclePosition}
-                                    className="p-1.5 rounded-full bg-gray-800/80 text-gray-400 hover:text-white"
+                                    className="p-1.5 rounded-full bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi"
                                 >
                                     <Move className="w-4 h-4" />
                                 </button>
@@ -211,7 +211,7 @@ export function FormCheckerPiP({
                                             p-2 rounded-full transition-colors
                                             ${isRecording
                                                 ? 'bg-red-500 text-white'
-                                                : 'bg-gray-800/80 text-gray-400 hover:text-white'
+                                                : 'bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi'
                                             }
                                         `}
                                     >
@@ -222,7 +222,7 @@ export function FormCheckerPiP({
                                 {/* Minimize/Maximize */}
                                 <button
                                     onClick={() => setIsMinimized(!isMinimized)}
-                                    className="p-1.5 rounded-full bg-gray-800/80 text-gray-400 hover:text-white"
+                                    className="p-1.5 rounded-full bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi"
                                 >
                                     {isMinimized ? (
                                         <Maximize2 className="w-4 h-4" />
@@ -236,7 +236,7 @@ export function FormCheckerPiP({
                         {/* Close Button */}
                         <button
                             onClick={onClose}
-                            className="absolute top-2 right-2 p-1 rounded-full bg-gray-800/80 text-gray-400 hover:text-white"
+                            className="absolute top-2 right-2 p-1 rounded-full bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi"
                         >
                             <X className="w-4 h-4" />
                         </button>

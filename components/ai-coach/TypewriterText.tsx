@@ -56,17 +56,7 @@ export default function TypewriterText({
         <span className={className} style={style}>
             {displayed}
             {!isComplete && (
-                <span
-                    style={{
-                        display: 'inline-block',
-                        width: '2px',
-                        height: '1em',
-                        background: 'var(--neon-orange)',
-                        marginLeft: '1px',
-                        verticalAlign: 'text-bottom',
-                        animation: 'typewriter-cursor 0.8s infinite',
-                    }}
-                />
+                <span className="ml-[1px] inline-block h-[1em] w-[2px] animate-[typewriter-cursor_0.8s_infinite] bg-brand align-text-bottom" />
             )}
         </span>
     );

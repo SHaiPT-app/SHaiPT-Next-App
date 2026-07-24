@@ -10,6 +10,9 @@ interface AIWorkoutPlannerProps {
     user: User;
 }
 
+const inputClasses = 'w-full rounded-[10px] border border-line-soft bg-[var(--surface-1)] p-3 text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand';
+const labelClasses = 'mb-2 block text-ink-mid';
+
 export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
     const router = useRouter();
     const [messages, setMessages] = useState<Message[]>([]);
@@ -164,31 +167,31 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
 
     return (
         <FeatureGate user={user} feature="workout_planner">
-            <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: plan ? '1fr 1fr' : '1fr' }}>
+            <div className="grid gap-8" style={{ gridTemplateColumns: plan ? '1fr 1fr' : '1fr' }}>
 
                 {/* Left Column: Form or Plan View */}
                 <div>
                     {showForm ? (
-                        <div className="glass-panel" style={{ padding: '2rem' }}>
-                            <h2 style={{ marginBottom: '1.5rem', color: 'var(--accent)' }}>Create Your Workout Plan</h2>
+                        <div className="glass-card p-8">
+                            <h2 className="font-display mb-6 text-2xl font-bold text-ink-hi">Create Your Workout Plan</h2>
 
-                            <div style={{ display: 'grid', gap: '1.5rem' }}>
+                            <div className="grid gap-6">
                                 {/* Demographics */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Age</label>
+                                        <label className={labelClasses}>Age</label>
                                         <input
                                             type="number"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.age}
                                             onChange={e => setFormData({ ...formData, age: parseInt(e.target.value) || '' })}
                                             placeholder="e.g. 25"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Gender <span style={{ color: '#f87171' }}>*</span></label>
+                                        <label className={labelClasses}>Gender <span className="text-[var(--error)]">*</span></label>
                                         <select
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.gender}
                                             onChange={e => setFormData({ ...formData, gender: e.target.value })}
                                             required
@@ -200,20 +203,20 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Height (cm)</label>
+                                        <label className={labelClasses}>Height (cm)</label>
                                         <input
                                             type="text"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.height}
                                             onChange={e => setFormData({ ...formData, height: e.target.value })}
                                             placeholder="e.g. 180"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Weight (kg)</label>
+                                        <label className={labelClasses}>Weight (kg)</label>
                                         <input
                                             type="text"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.weight}
                                             onChange={e => setFormData({ ...formData, weight: e.target.value })}
                                             placeholder="e.g. 75"
@@ -223,9 +226,9 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
 
                                 {/* Fitness Profile */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Experience Level</label>
+                                    <label className={labelClasses}>Experience Level</label>
                                     <select
-                                        className="input-field"
+                                        className={inputClasses}
                                         value={formData.fitness_level}
                                         onChange={e => setFormData({ ...formData, fitness_level: e.target.value })}
                                     >
@@ -236,8 +239,8 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                                 </div>
 
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Primary Goal</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <label className={labelClasses}>Primary Goal</label>
+                                    <div className="flex flex-wrap gap-2">
                                         {['Muscle Gain', 'Weight Loss', 'Strength', 'Endurance', 'Flexibility'].map(goal => (
                                             <button
                                                 key={goal}
@@ -247,14 +250,11 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                                                         : [...formData.goals, goal];
                                                     setFormData({ ...formData, goals: newGoals });
                                                 }}
-                                                style={{
-                                                    padding: '0.5rem 1rem',
-                                                    borderRadius: '20px',
-                                                    border: '1px solid var(--glass-border)',
-                                                    background: formData.goals.includes(goal) ? 'var(--primary)' : 'transparent',
-                                                    color: formData.goals.includes(goal) ? 'white' : '#888',
-                                                    cursor: 'pointer'
-                                                }}
+                                                className={`cursor-pointer rounded-full border px-4 py-2 transition-colors ${
+                                                    formData.goals.includes(goal)
+                                                        ? 'border-brand bg-brand text-white'
+                                                        : 'border-line-strong bg-transparent text-ink-low hover:border-brand/50 hover:text-ink-mid'
+                                                }`}
                                             >
                                                 {goal}
                                             </button>
@@ -262,22 +262,22 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Days/Week</label>
+                                        <label className={labelClasses}>Days/Week</label>
                                         <input
                                             type="number"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.workout_days_per_week}
                                             onChange={e => setFormData({ ...formData, workout_days_per_week: parseInt(e.target.value) })}
                                             min={1} max={7}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Minutes/Session</label>
+                                        <label className={labelClasses}>Minutes/Session</label>
                                         <input
                                             type="number"
-                                            className="input-field"
+                                            className={inputClasses}
                                             value={formData.session_duration_minutes}
                                             onChange={e => setFormData({ ...formData, session_duration_minutes: parseInt(e.target.value) })}
                                             step={5}
@@ -287,10 +287,10 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
 
                                 {/* Equipment */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Available Equipment</label>
+                                    <label className={labelClasses}>Available Equipment</label>
                                     <input
                                         type="text"
-                                        className="input-field"
+                                        className={inputClasses}
                                         value={formData.available_equipment.join(', ')}
                                         onChange={e => setFormData({ ...formData, available_equipment: e.target.value.split(',').map(s => s.trim()) })}
                                         placeholder="e.g. Dumbbells, Barbell, Bench (comma separated)"
@@ -299,10 +299,10 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
 
                                 {/* Injuries */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc' }}>Injuries / Limitations</label>
+                                    <label className={labelClasses}>Injuries / Limitations</label>
                                     <input
                                         type="text"
-                                        className="input-field"
+                                        className={inputClasses}
                                         value={formData.injuries_or_limitations.join(', ')}
                                         onChange={e => setFormData({ ...formData, injuries_or_limitations: e.target.value.split(',').map(s => s.trim()) })}
                                         placeholder="e.g. Lower back pain, knee issues (comma separated)"
@@ -310,31 +310,29 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                                 </div>
 
                                 <button
-                                    className="btn-primary"
+                                    className="btn-brand mt-4"
                                     onClick={handleGeneratePlan}
                                     disabled={loading}
-                                    style={{ marginTop: '1rem', padding: '1rem' }}
                                 >
                                     {loading ? 'Generating Plan...' : 'Generate Workout Plan'}
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gap: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ color: 'var(--accent)' }}>Your Workout Plan</h3>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div className="grid gap-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-display text-lg font-bold text-ink-hi">Your Workout Plan</h3>
+                                <div className="flex gap-2">
                                     <button
                                         onClick={handleSavePlan}
                                         disabled={saving}
-                                        className="btn-primary"
-                                        style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                                        className="btn-brand !px-4 !py-2 !text-sm"
                                     >
                                         {saving ? 'Saving...' : 'Save to My Plans'}
                                     </button>
                                     <button
                                         onClick={() => setShowForm(true)}
-                                        style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: '#888', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer' }}
+                                        className="btn-outline !px-4 !py-2 !text-sm"
                                     >
                                         Edit
                                     </button>
@@ -343,31 +341,31 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
 
                             {plan?.weekly_schedule ? (
                                 Object.entries(plan.weekly_schedule).map(([week, days]: [string, any]) => (
-                                    <div key={week} style={{ border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
-                                        <h4 style={{ textTransform: 'capitalize', color: 'var(--primary)', marginBottom: '1rem' }}>{week.replace('_', ' ')}</h4>
-                                        <div style={{ display: 'grid', gap: '1rem' }}>
+                                    <div key={week} className="glass-card p-4">
+                                        <h4 className="font-display mb-4 capitalize text-brand">{week.replace('_', ' ')}</h4>
+                                        <div className="grid gap-4">
                                             {Object.entries(days).map(([day, routine]: [string, any]) => (
-                                                <div key={day} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '6px' }}>
-                                                    <h5 style={{ textTransform: 'capitalize', marginBottom: '0.5rem', color: '#ddd', display: 'flex', justifyContent: 'space-between' }}>
+                                                <div key={day} className="rounded-lg bg-[var(--surface-2)] p-4">
+                                                    <h5 className="mb-2 flex justify-between capitalize text-ink-hi">
                                                         <span>{day.replace('_', ' ')}</span>
-                                                        <span style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>{routine.focus}</span>
+                                                        <span className="text-[0.8rem] text-brand">{routine.focus}</span>
                                                     </h5>
 
                                                     {/* Warmup */}
                                                     {routine.warm_up && (
-                                                        <div style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: '#aaa' }}>
+                                                        <div className="mb-2 text-[0.9rem] text-ink-mid">
                                                             <strong>Warm-up:</strong> {routine.warm_up.join(', ')}
                                                         </div>
                                                     )}
 
-                                                    <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0' }}>
+                                                    <ul className="my-2 list-none p-0">
                                                         {routine.main_workout.map((exercise: any, i: number) => (
-                                                            <li key={i} style={{ marginBottom: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                                <div style={{ fontWeight: 'bold', color: 'white' }}>{exercise.exercise}</div>
-                                                                <div style={{ fontSize: '0.9rem', color: '#aaa' }}>
+                                                            <li key={i} className="mb-2 border-b border-line-soft pb-2">
+                                                                <div className="font-bold text-ink-hi">{exercise.exercise}</div>
+                                                                <div className="text-[0.9rem] text-ink-mid">
                                                                     {exercise.sets} sets x {exercise.reps} | Rest: {exercise.rest_seconds}s
                                                                 </div>
-                                                                {exercise.notes && <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: '#666' }}>Note: {exercise.notes}</div>}
+                                                                {exercise.notes && <div className="text-[0.8rem] italic text-ink-low">Note: {exercise.notes}</div>}
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -377,7 +375,7 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
                                     </div>
                                 ))
                             ) : (
-                                <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>
+                                <div className="p-8 text-center text-ink-low">
                                     No plan data available.
                                 </div>
                             )}
@@ -387,8 +385,8 @@ export default function AIWorkoutPlanner({ user }: AIWorkoutPlannerProps) {
 
                 {/* Right Column: Chat Interface (Only visible after plan generation) */}
                 {!showForm && (
-                    <div className="glass-panel" style={{ height: '600px', display: 'flex', flexDirection: 'column', position: 'sticky', top: '2rem' }}>
-                        <h3 style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>AI Coach Chat</h3>
+                    <div className="glass-card sticky top-8 flex h-[600px] flex-col overflow-hidden">
+                        <h3 className="border-b border-line-soft p-4 font-display font-bold text-ink-hi">AI Coach Chat</h3>
                         <ChatInterface
                             messages={messages}
                             onSendMessage={handleSendMessage}

@@ -1,12 +1,9 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Box, Text, Flex, VStack } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Upload, X, Check, Image as ImageIcon } from 'lucide-react';
 import { fadeInUp } from '@/lib/animations';
-
-const MotionBox = motion.create(Box);
 
 interface PhotoFile {
     file: File;
@@ -96,117 +93,74 @@ export default function IntakePhotoUpload({
     }, [photos, onPhotosSubmitted]);
 
     return (
-        <MotionBox
+        <motion.div
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
-            mx="0.5rem"
-            mb="0.75rem"
+            className="mx-2 mb-3"
         >
-            <Box
-                p="1rem"
-                borderRadius="12px"
-                bg="rgba(255, 102, 0, 0.05)"
-                border="1px solid rgba(255, 102, 0, 0.15)"
-            >
+            <div className="rounded-xl border border-brand/20 bg-brand/5 p-4">
                 {/* Header */}
-                <Flex alignItems="center" gap="0.5rem" mb="0.75rem">
-                    <Camera size={18} color="#FF6600" />
-                    <Text
-                        fontSize="0.85rem"
-                        fontWeight="600"
-                        color="var(--foreground)"
-                    >
+                <div className="mb-3 flex items-center gap-2">
+                    <Camera size={18} className="text-brand" />
+                    <span className="text-sm font-semibold text-ink-hi">
                         Physique Photos
-                    </Text>
-                </Flex>
+                    </span>
+                </div>
 
-                <Text fontSize="0.8rem" color="#aaa" mb="1rem" lineHeight="1.5">
+                <p className="mb-4 text-[0.8rem] leading-normal text-ink-mid">
                     Upload front, back, and side photos. For best results, wear minimal
                     clothing and stand with arms out in a T-shape. Photos are private
                     and only used for your training assessment.
-                </Text>
+                </p>
 
                 {/* Photo Previews */}
                 <AnimatePresence mode="popLayout">
                     {photos.length > 0 && (
-                        <Flex gap="0.5rem" mb="0.75rem" flexWrap="wrap">
+                        <div className="mb-3 flex flex-wrap gap-2">
                             {photos.map((photo, idx) => (
-                                <MotionBox
+                                <motion.div
                                     key={photo.preview}
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.8 }}
-                                    position="relative"
-                                    w="80px"
-                                    h="80px"
-                                    borderRadius="8px"
-                                    overflow="hidden"
-                                    border="1px solid rgba(255, 102, 0, 0.3)"
-                                    flexShrink={0}
+                                    className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-brand/30"
                                 >
                                     <img
                                         src={photo.preview}
                                         alt={photo.label}
                                         data-testid={`photo-preview-${idx}`}
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover',
-                                        }}
+                                        className="h-full w-full object-cover"
                                     />
                                     {/* Label */}
-                                    <Box
-                                        position="absolute"
-                                        bottom="0"
-                                        left="0"
-                                        right="0"
-                                        bg="rgba(0, 0, 0, 0.7)"
-                                        px="0.25rem"
-                                        py="0.1rem"
-                                    >
-                                        <Text fontSize="0.55rem" color="#fff" textAlign="center">
+                                    <div className="absolute inset-x-0 bottom-0 bg-black/70 px-1 py-[0.1rem]">
+                                        <span className="block text-center text-[0.55rem] text-white">
                                             {photo.label}
-                                        </Text>
-                                    </Box>
+                                        </span>
+                                    </div>
                                     {/* Remove button */}
                                     <button
                                         onClick={() => removePhoto(idx)}
                                         data-testid={`remove-photo-${idx}`}
-                                        style={{
-                                            position: 'absolute',
-                                            top: '2px',
-                                            right: '2px',
-                                            background: 'rgba(0, 0, 0, 0.6)',
-                                            border: 'none',
-                                            borderRadius: '50%',
-                                            width: '20px',
-                                            height: '20px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            color: '#fff',
-                                            padding: 0,
-                                        }}
+                                        className="absolute right-0.5 top-0.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border-none bg-black/60 p-0 text-white"
                                     >
                                         <X size={12} />
                                     </button>
-                                </MotionBox>
+                                </motion.div>
                             ))}
-                        </Flex>
+                        </div>
                     )}
                 </AnimatePresence>
 
                 {/* Error message */}
                 {error && (
-                    <Text fontSize="0.75rem" color="#FF4444" mb="0.5rem">
+                    <p className="mb-2 text-xs text-destructive">
                         {error}
-                    </Text>
+                    </p>
                 )}
 
                 {/* Upload area */}
-                <VStack gap="0.5rem">
+                <div className="flex flex-col items-stretch gap-2">
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -214,7 +168,7 @@ export default function IntakePhotoUpload({
                         multiple
                         onChange={handleFileSelect}
                         data-testid="photo-file-input"
-                        style={{ display: 'none' }}
+                        className="hidden"
                     />
 
                     {photos.length < 6 && (
@@ -222,22 +176,7 @@ export default function IntakePhotoUpload({
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
                             data-testid="add-photos-btn"
-                            style={{
-                                width: '100%',
-                                padding: '0.65rem',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px dashed rgba(255, 102, 0, 0.3)',
-                                borderRadius: '8px',
-                                color: 'var(--neon-orange)',
-                                fontSize: '0.8rem',
-                                fontWeight: '500',
-                                cursor: isUploading ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.4rem',
-                                opacity: isUploading ? 0.5 : 1,
-                            }}
+                            className="flex w-full cursor-pointer items-center justify-center gap-[0.4rem] rounded-lg border border-dashed border-brand/30 bg-[var(--surface-1)] px-3 py-[0.65rem] text-[0.8rem] font-medium text-brand transition-colors hover:border-brand/50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {photos.length === 0 ? (
                                 <>
@@ -254,23 +193,12 @@ export default function IntakePhotoUpload({
                     )}
 
                     {/* Action buttons */}
-                    <Flex gap="0.5rem" w="100%">
+                    <div className="flex w-full gap-2">
                         <button
                             onClick={onSkip}
                             disabled={isUploading}
                             data-testid="skip-photos-btn"
-                            style={{
-                                flex: 1,
-                                padding: '0.6rem',
-                                background: 'transparent',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '8px',
-                                color: '#888',
-                                fontSize: '0.8rem',
-                                fontWeight: '500',
-                                cursor: isUploading ? 'not-allowed' : 'pointer',
-                                opacity: isUploading ? 0.5 : 1,
-                            }}
+                            className="btn-outline flex-1 !px-4 !py-2.5 !text-[0.8rem] disabled:!cursor-not-allowed disabled:opacity-50"
                         >
                             Skip for Now
                         </button>
@@ -280,21 +208,7 @@ export default function IntakePhotoUpload({
                                 onClick={handleSubmit}
                                 disabled={isUploading}
                                 data-testid="submit-photos-btn"
-                                style={{
-                                    flex: 1,
-                                    padding: '0.6rem',
-                                    background: isUploading ? 'rgba(255, 102, 0, 0.3)' : '#FF6600',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    color: '#0B0B15',
-                                    fontSize: '0.8rem',
-                                    fontWeight: '600',
-                                    cursor: isUploading ? 'not-allowed' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.3rem',
-                                }}
+                                className="btn-brand flex-1 !px-4 !py-2.5 !text-[0.8rem]"
                             >
                                 {isUploading ? (
                                     'Uploading...'
@@ -306,9 +220,9 @@ export default function IntakePhotoUpload({
                                 )}
                             </button>
                         )}
-                    </Flex>
-                </VStack>
-            </Box>
-        </MotionBox>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
     );
 }

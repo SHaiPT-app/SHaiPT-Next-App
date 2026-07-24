@@ -94,12 +94,12 @@ export function WorkoutCalendar({
     const goToCurrentWeek = () => setWeekOffset(0);
 
     return (
-        <div className="bg-gray-900/50 rounded-xl border border-gray-800 overflow-hidden">
+        <div className="glass-card overflow-hidden">
             {/* Week Navigation */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-line-soft">
                 <button
                     onClick={goToPreviousWeek}
-                    className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg hover:bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi transition-colors"
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -108,26 +108,26 @@ export function WorkoutCalendar({
                     onClick={goToCurrentWeek}
                     className="flex flex-col items-center"
                 >
-                    <span className="text-sm font-medium text-white">{weekRange}</span>
+                    <span className="text-sm font-medium text-ink-hi">{weekRange}</span>
                     {weekOffset !== 0 && (
-                        <span className="text-xs text-cyan-400">Tap to go to today</span>
+                        <span className="text-xs text-brand">Tap to go to today</span>
                     )}
                 </button>
 
                 <button
                     onClick={goToNextWeek}
-                    className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg hover:bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi transition-colors"
                 >
                     <ChevronRight className="w-5 h-5" />
                 </button>
             </div>
 
             {/* Day Headers */}
-            <div className="grid grid-cols-7 border-b border-gray-800">
+            <div className="grid grid-cols-7 border-b border-line-soft">
                 {DAYS_OF_WEEK.map((day) => (
                     <div
                         key={day}
-                        className="py-2 text-center text-xs font-medium text-gray-500"
+                        className="py-2 text-center text-xs font-medium text-ink-low"
                     >
                         {day}
                     </div>
@@ -147,18 +147,18 @@ export function WorkoutCalendar({
                             disabled={!day.session || day.isFuture}
                             className={`
                                 relative p-3 flex flex-col items-center gap-1
-                                transition-colors border-r border-b border-gray-800 last:border-r-0
-                                ${day.isToday ? 'bg-cyan-500/10' : ''}
-                                ${selectedDay === day.dayNumber ? 'bg-cyan-500/20' : ''}
-                                ${!day.session || day.isFuture ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800/50 cursor-pointer'}
+                                transition-colors border-r border-b border-line-soft last:border-r-0
+                                ${day.isToday ? 'bg-[var(--brand-glow-soft)]' : ''}
+                                ${selectedDay === day.dayNumber ? 'bg-brand/20' : ''}
+                                ${!day.session || day.isFuture ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[var(--surface-2)] cursor-pointer'}
                             `}
                         >
                             {/* Date Number */}
                             <span
                                 className={`
                                     text-lg font-bold
-                                    ${day.isToday ? 'text-cyan-400' : 'text-white'}
-                                    ${day.isPast && !day.isToday ? 'text-gray-400' : ''}
+                                    ${day.isToday ? 'text-brand' : 'text-ink-hi'}
+                                    ${day.isPast && !day.isToday ? 'text-ink-mid' : ''}
                                 `}
                             >
                                 {day.date.getDate()}
@@ -171,12 +171,12 @@ export function WorkoutCalendar({
                                         <Check className="w-4 h-4 text-green-400" />
                                     </div>
                                 ) : day.isRestDay ? (
-                                    <div className="w-6 h-6 rounded-full bg-gray-700/50 flex items-center justify-center">
-                                        <Coffee className="w-4 h-4 text-gray-400" />
+                                    <div className="w-6 h-6 rounded-full bg-[var(--surface-2)] flex items-center justify-center">
+                                        <Coffee className="w-4 h-4 text-ink-mid" />
                                     </div>
                                 ) : day.session ? (
-                                    <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                                        <Dumbbell className="w-4 h-4 text-cyan-400" />
+                                    <div className="w-6 h-6 rounded-full bg-[var(--brand-glow-soft)] flex items-center justify-center">
+                                        <Dumbbell className="w-4 h-4 text-brand" />
                                     </div>
                                 ) : (
                                     <div className="w-6 h-6" />
@@ -186,7 +186,7 @@ export function WorkoutCalendar({
                             {/* Today Indicator */}
                             {day.isToday && (
                                 <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
-                                    <div className="w-1 h-1 rounded-full bg-cyan-400" />
+                                    <div className="w-1 h-1 rounded-full bg-brand shadow-[0_0_6px_var(--brand-glow)]" />
                                 </div>
                             )}
                         </motion.button>
@@ -195,24 +195,24 @@ export function WorkoutCalendar({
             </div>
 
             {/* Legend */}
-            <div className="flex items-center justify-center gap-6 py-3 border-t border-gray-800 bg-gray-900/30">
+            <div className="flex items-center justify-center gap-6 py-3 border-t border-line-soft bg-[var(--surface-2)]">
                 <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center">
                         <Check className="w-3 h-3 text-green-400" />
                     </div>
-                    <span className="text-xs text-gray-400">Completed</span>
+                    <span className="text-xs text-ink-mid">Completed</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                        <Dumbbell className="w-3 h-3 text-cyan-400" />
+                    <div className="w-4 h-4 rounded-full bg-[var(--brand-glow-soft)] flex items-center justify-center">
+                        <Dumbbell className="w-3 h-3 text-brand" />
                     </div>
-                    <span className="text-xs text-gray-400">Scheduled</span>
+                    <span className="text-xs text-ink-mid">Scheduled</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-gray-700/50 flex items-center justify-center">
-                        <Coffee className="w-3 h-3 text-gray-400" />
+                    <div className="w-4 h-4 rounded-full bg-[var(--surface-2)] flex items-center justify-center">
+                        <Coffee className="w-3 h-3 text-ink-mid" />
                     </div>
-                    <span className="text-xs text-gray-400">Rest Day</span>
+                    <span className="text-xs text-ink-mid">Rest Day</span>
                 </div>
             </div>
         </div>

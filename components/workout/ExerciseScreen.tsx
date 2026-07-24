@@ -114,19 +114,19 @@ export function ExerciseScreen({
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex-shrink-0 border-b border-gray-800 bg-gray-900/95 backdrop-blur-sm">
+            <div className="flex-shrink-0 border-b border-line-soft bg-[var(--surface-1)] backdrop-blur-xl">
                 {/* Navigation */}
                 <div className="flex items-center justify-between px-4 py-3">
                     <button
                         onClick={() => onNavigate('prev')}
                         disabled={exerciseIndex === 0}
-                        className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)] disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                         <ChevronLeft className="w-6 h-6" />
                     </button>
 
                     <div className="text-center">
-                        <span className="text-sm text-gray-400">
+                        <span className="text-sm text-ink-mid">
                             Exercise {exerciseIndex + 1} of {totalExercises}
                         </span>
                         <div className="flex items-center justify-center gap-1 mt-1">
@@ -135,8 +135,8 @@ export function ExerciseScreen({
                                     key={i}
                                     className={`w-2 h-2 rounded-full transition-colors ${
                                         i < exerciseIndex ? 'bg-green-400' :
-                                        i === exerciseIndex ? 'bg-cyan-400' :
-                                        'bg-gray-700'
+                                        i === exerciseIndex ? 'bg-brand shadow-[0_0_8px_var(--brand-glow)]' :
+                                        'bg-[var(--line-strong)]'
                                     }`}
                                 />
                             ))}
@@ -146,7 +146,7 @@ export function ExerciseScreen({
                     <button
                         onClick={() => onNavigate('next')}
                         disabled={exerciseIndex === totalExercises - 1}
-                        className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)] disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                         <ChevronRight className="w-6 h-6" />
                     </button>
@@ -156,16 +156,16 @@ export function ExerciseScreen({
                 <div className="px-4 pb-3">
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
-                            <h2 className="text-xl font-bold text-white">
+                            <h2 className="text-xl font-bold text-ink-hi">
                                 {exercise.name}
                             </h2>
                             <div className="flex items-center gap-3 mt-1">
-                                <span className="text-sm text-gray-400">
+                                <span className="text-sm text-ink-mid">
                                     {loggedSets.length}/{targetSets.length} sets
                                 </span>
-                                <div className="flex-1 max-w-32 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                <div className="flex-1 max-w-32 h-1.5 bg-[var(--surface-2)] rounded-full overflow-hidden">
                                     <motion.div
-                                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                                        className="h-full bg-[image:var(--brand-gradient)]"
                                         initial={{ width: 0 }}
                                         animate={{ width: `${progress}%` }}
                                     />
@@ -179,14 +179,14 @@ export function ExerciseScreen({
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setShowExerciseInfo(true)}
-                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"
+                                className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)]"
                             >
                                 <Info className="w-5 h-5" />
                             </button>
                             <div className="relative" ref={menuRef}>
                                 <button
                                     onClick={() => setShowMenu(!showMenu)}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"
+                                    className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)]"
                                 >
                                     <MoreVertical className="w-5 h-5" />
                                 </button>
@@ -195,14 +195,14 @@ export function ExerciseScreen({
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="absolute right-0 top-full mt-1 w-48 bg-gray-800 rounded-lg border border-gray-700 shadow-xl z-20"
+                                        className="absolute right-0 top-full mt-1 w-48 bg-[var(--surface-2)] backdrop-blur-xl rounded-lg border border-line-strong shadow-xl z-20"
                                     >
                                         <button
                                             onClick={() => {
                                                 setShowMenu(false);
                                                 onSwapExercise();
                                             }}
-                                            className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-lg flex items-center gap-2"
+                                            className="w-full px-4 py-2.5 text-left text-sm text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)] rounded-lg flex items-center gap-2"
                                         >
                                             <Repeat className="w-4 h-4" />
                                             Swap Exercise
@@ -220,7 +220,7 @@ export function ExerciseScreen({
                 {/* Exercise GIF */}
                 {exercise.gif_url && (
                     <div className="flex justify-center">
-                        <div className="w-full max-w-xs aspect-square rounded-xl overflow-hidden bg-gray-800">
+                        <div className="w-full max-w-xs aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-line-soft">
                             <img
                                 src={exercise.gif_url}
                                 alt={exercise.name}
@@ -275,9 +275,9 @@ export function ExerciseScreen({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         onClick={onFinishWorkout}
-                        className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500
+                        className="w-full py-4 rounded-xl bg-[image:var(--brand-gradient)]
                                  text-white font-bold flex items-center justify-center gap-2
-                                 shadow-lg shadow-cyan-500/20"
+                                 shadow-[0_4px_24px_var(--brand-glow)]"
                     >
                         <CheckCircle2 className="w-5 h-5" />
                         Finish Workout
@@ -287,7 +287,7 @@ export function ExerciseScreen({
                 {/* Logged Sets History */}
                 {loggedSets.length > 0 && (
                     <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-gray-400">Completed Sets</h3>
+                        <h3 className="text-sm font-medium text-ink-mid">Completed Sets</h3>
                         {loggedSets.map((set, index) => (
                             <SetCard
                                 key={index}
@@ -305,7 +305,7 @@ export function ExerciseScreen({
                 )}
 
                 {/* Notes Section */}
-                <div className="pt-4 border-t border-gray-800">
+                <div className="pt-4 border-t border-line-soft">
                     <ExerciseNotes
                         notes={exerciseNotes}
                         onSave={onSaveNotes}
@@ -328,10 +328,10 @@ export function ExerciseScreen({
                             animate={{ y: 0 }}
                             exit={{ y: 100 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-lg max-h-[80vh] bg-gray-900 rounded-t-2xl sm:rounded-2xl border border-gray-800 overflow-hidden"
+                            className="w-full max-w-lg max-h-[80vh] bg-[var(--surface-1)] backdrop-blur-xl rounded-t-2xl sm:rounded-2xl border border-line-soft overflow-hidden"
                         >
-                            <div className="p-4 border-b border-gray-800">
-                                <h3 className="text-lg font-bold text-white">{exercise.name}</h3>
+                            <div className="p-4 border-b border-line-soft">
+                                <h3 className="text-lg font-bold text-ink-hi">{exercise.name}</h3>
                             </div>
 
                             <div className="p-4 overflow-y-auto">
@@ -347,12 +347,12 @@ export function ExerciseScreen({
 
                                 <div className="space-y-4">
                                     <div>
-                                        <h4 className="text-sm font-medium text-gray-400 mb-1">Target Muscles</h4>
+                                        <h4 className="text-sm font-medium text-ink-mid mb-1">Target Muscles</h4>
                                         <div className="flex flex-wrap gap-2">
                                             {exercise.target_muscles.map((muscle) => (
                                                 <span
                                                     key={muscle}
-                                                    className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 text-sm"
+                                                    className="px-2 py-1 rounded bg-[var(--brand-glow-soft)] text-brand text-sm"
                                                 >
                                                     {muscle}
                                                 </span>
@@ -362,12 +362,12 @@ export function ExerciseScreen({
 
                                     {exercise.secondary_muscles && exercise.secondary_muscles.length > 0 && (
                                         <div>
-                                            <h4 className="text-sm font-medium text-gray-400 mb-1">Secondary Muscles</h4>
+                                            <h4 className="text-sm font-medium text-ink-mid mb-1">Secondary Muscles</h4>
                                             <div className="flex flex-wrap gap-2">
                                                 {exercise.secondary_muscles.map((muscle) => (
                                                     <span
                                                         key={muscle}
-                                                        className="px-2 py-1 rounded bg-gray-800 text-gray-400 text-sm"
+                                                        className="px-2 py-1 rounded bg-[var(--surface-2)] text-ink-mid text-sm"
                                                     >
                                                         {muscle}
                                                     </span>
@@ -377,12 +377,12 @@ export function ExerciseScreen({
                                     )}
 
                                     <div>
-                                        <h4 className="text-sm font-medium text-gray-400 mb-1">Equipment</h4>
+                                        <h4 className="text-sm font-medium text-ink-mid mb-1">Equipment</h4>
                                         <div className="flex flex-wrap gap-2">
                                             {exercise.equipments.map((equipment) => (
                                                 <span
                                                     key={equipment}
-                                                    className="px-2 py-1 rounded bg-gray-800 text-gray-400 text-sm"
+                                                    className="px-2 py-1 rounded bg-[var(--surface-2)] text-ink-mid text-sm"
                                                 >
                                                     {equipment}
                                                 </span>
@@ -392,10 +392,10 @@ export function ExerciseScreen({
                                 </div>
                             </div>
 
-                            <div className="p-4 border-t border-gray-800">
+                            <div className="p-4 border-t border-line-soft">
                                 <button
                                     onClick={() => setShowExerciseInfo(false)}
-                                    className="w-full py-2.5 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                    className="btn-outline w-full"
                                 >
                                     Close
                                 </button>

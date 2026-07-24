@@ -48,7 +48,7 @@ export function SetCard({
                     flex items-center gap-3 px-3 py-2 rounded-lg
                     ${isCompleted
                         ? 'bg-green-500/10 border border-green-500/30'
-                        : 'bg-gray-800/50 border border-gray-700'
+                        : 'bg-[var(--surface-1)] border border-line-soft'
                     }
                 `}
             >
@@ -58,7 +58,7 @@ export function SetCard({
                         ? 'bg-yellow-500/20 text-yellow-400'
                         : isCompleted
                             ? 'bg-green-500/20 text-green-400'
-                            : 'bg-gray-700 text-gray-400'
+                            : 'bg-[var(--surface-2)] text-ink-mid'
                     }
                 `}>
                     {loggedSet?.set_type === 'warmup' ? 'W' : setNumber}
@@ -66,23 +66,23 @@ export function SetCard({
 
                 {loggedSet ? (
                     <div className="flex-1 flex items-center gap-4 text-sm">
-                        <span className="text-white font-medium">
+                        <span className="text-ink-hi font-medium">
                             {loggedSet.weight} {loggedSet.weight_unit}
                         </span>
-                        <span className="text-gray-400">
+                        <span className="text-ink-mid">
                             {loggedSet.reps} reps
                         </span>
                         {loggedSet.rpe && (
-                            <span className="text-cyan-400 text-xs">
+                            <span className="text-brand text-xs">
                                 RPE {loggedSet.rpe}
                             </span>
                         )}
                         {isPR && (
-                            <Trophy className="w-4 h-4 text-yellow-400" />
+                            <Trophy className="w-4 h-4 text-brand-hot" />
                         )}
                     </div>
                 ) : (
-                    <div className="flex-1 flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex-1 flex items-center gap-4 text-sm text-ink-low">
                         <span>{targetSet?.weight || '--'}</span>
                         <span>{targetSet?.reps || '--'} reps</span>
                     </div>
@@ -101,7 +101,7 @@ export function SetCard({
                 relative rounded-xl overflow-hidden
                 ${isCompleted
                     ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30'
-                    : 'bg-gray-900/50 border border-gray-800'
+                    : 'bg-[var(--surface-1)] border border-line-soft'
                 }
             `}
         >
@@ -114,7 +114,7 @@ export function SetCard({
 
             {/* Intensifier Badge */}
             {loggedSet?.intensifier && loggedSet.intensifier !== 'none' && (
-                <div className="absolute top-0 left-0 px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-br-lg">
+                <div className="absolute top-0 left-0 px-2 py-0.5 bg-[var(--brand-glow-soft)] text-brand text-xs rounded-br-lg">
                     {getIntensifierLabel(loggedSet.intensifier)}
                 </div>
             )}
@@ -127,7 +127,7 @@ export function SetCard({
                             w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold
                             ${isCompleted
                                 ? 'bg-green-500/20 text-green-400'
-                                : 'bg-gray-800 text-gray-400'
+                                : 'bg-[var(--surface-2)] text-ink-mid'
                             }
                         `}>
                             {setNumber}
@@ -136,32 +136,32 @@ export function SetCard({
                         {loggedSet ? (
                             <div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xl font-bold text-white">
+                                    <span className="text-xl font-bold text-ink-hi">
                                         {loggedSet.weight}
-                                        <span className="text-sm text-gray-400 ml-1">
+                                        <span className="text-sm text-ink-mid ml-1">
                                             {loggedSet.weight_unit}
                                         </span>
                                     </span>
-                                    <span className="text-gray-500">×</span>
-                                    <span className="text-xl font-bold text-white">
+                                    <span className="text-ink-low">×</span>
+                                    <span className="text-xl font-bold text-ink-hi">
                                         {loggedSet.reps}
-                                        <span className="text-sm text-gray-400 ml-1">reps</span>
+                                        <span className="text-sm text-ink-mid ml-1">reps</span>
                                     </span>
                                     {isPR && (
-                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/20">
-                                            <Trophy className="w-3 h-3 text-yellow-400" />
-                                            <span className="text-xs text-yellow-400 font-medium">PR!</span>
+                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--brand-glow-soft)]">
+                                            <Trophy className="w-3 h-3 text-brand-hot" />
+                                            <span className="text-xs text-brand-hot font-medium">PR!</span>
                                         </div>
                                     )}
                                 </div>
                                 {loggedSet.rpe && (
-                                    <span className="text-sm text-cyan-400">
+                                    <span className="text-sm text-brand">
                                         RPE {loggedSet.rpe}
                                     </span>
                                 )}
                             </div>
                         ) : (
-                            <div className="text-gray-500">
+                            <div className="text-ink-low">
                                 <span className="text-lg">
                                     {targetSet?.weight || '--'} × {targetSet?.reps || '--'}
                                 </span>
@@ -185,7 +185,7 @@ export function SetCard({
                         {loggedSet && onEdit && (
                             <button
                                 onClick={onEdit}
-                                className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800"
+                                className="p-2 rounded-lg text-ink-low hover:text-ink-hi hover:bg-[var(--surface-2)]"
                             >
                                 <Edit2 className="w-4 h-4" />
                             </button>
@@ -194,7 +194,7 @@ export function SetCard({
                         {loggedSet && onDelete && (
                             <button
                                 onClick={onDelete}
-                                className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10"
+                                className="p-2 rounded-lg text-ink-low hover:text-red-400 hover:bg-red-500/10"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -204,13 +204,13 @@ export function SetCard({
 
                 {/* Drop Set Info */}
                 {loggedSet?.drops && loggedSet.drops.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-800">
-                        <span className="text-xs text-gray-500 mb-2 block">Drop Sets:</span>
+                    <div className="mt-3 pt-3 border-t border-line-soft">
+                        <span className="text-xs text-ink-low mb-2 block">Drop Sets:</span>
                         <div className="flex flex-wrap gap-2">
                             {loggedSet.drops.map((drop, i) => (
                                 <span
                                     key={i}
-                                    className="px-2 py-1 rounded bg-purple-500/10 text-purple-400 text-sm"
+                                    className="px-2 py-1 rounded bg-[var(--brand-glow-soft)] text-brand text-sm"
                                 >
                                     {drop.weight} × {drop.reps}
                                 </span>
@@ -221,14 +221,14 @@ export function SetCard({
 
                 {/* Notes */}
                 {loggedSet?.notes && (
-                    <div className="mt-3 pt-3 border-t border-gray-800">
-                        <p className="text-sm text-gray-400">{loggedSet.notes}</p>
+                    <div className="mt-3 pt-3 border-t border-line-soft">
+                        <p className="text-sm text-ink-mid">{loggedSet.notes}</p>
                     </div>
                 )}
 
                 {/* Rest Time */}
                 {loggedSet?.actual_rest_seconds && (
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-ink-low">
                         Rest: {Math.floor(loggedSet.actual_rest_seconds / 60)}:{(loggedSet.actual_rest_seconds % 60).toString().padStart(2, '0')}
                     </div>
                 )}

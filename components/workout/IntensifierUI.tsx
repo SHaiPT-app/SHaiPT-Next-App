@@ -42,7 +42,7 @@ export function IntensifierUI({
                         initial={{ y: 100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 100, opacity: 0 }}
-                        className="w-full max-w-lg bg-gray-900 rounded-t-2xl sm:rounded-2xl border border-gray-800 overflow-hidden"
+                        className="w-full max-w-lg bg-[var(--surface-1)] backdrop-blur-xl rounded-t-2xl sm:rounded-2xl border border-line-soft overflow-hidden"
                     >
                         {type === 'dropset' && (
                             <DropSetUI
@@ -139,24 +139,24 @@ function DropSetUI({
 
     return (
         <>
-            <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <div className="flex items-center justify-between p-4 border-b border-line-soft">
+                <h3 className="text-lg font-bold text-ink-hi flex items-center gap-2">
                     <span className="text-2xl">⬇️</span>
                     Drop Set
                 </h3>
-                <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
+                <button onClick={onClose} className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)]">
                     <X className="w-5 h-5" />
                 </button>
             </div>
 
             <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-ink-mid">
                     Perform the first set, then immediately reduce weight and continue with minimal rest.
                 </p>
 
                 {/* First Set */}
-                <div className="bg-gray-800/50 rounded-xl p-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-3">First Set</h4>
+                <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-4">
+                    <h4 className="text-sm font-medium text-ink-mid mb-3">First Set</h4>
                     <div className="flex items-center gap-4">
                         <SetInputGroup
                             label="Weight"
@@ -175,12 +175,12 @@ function DropSetUI({
 
                 {/* Drop Sets */}
                 {drops.map((drop, index) => (
-                    <div key={index} className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                    <div key={index} className="bg-[var(--brand-glow-soft)] border border-brand/30 rounded-xl p-4">
                         <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-medium text-purple-400">Drop {index + 1}</h4>
+                            <h4 className="text-sm font-medium text-brand">Drop {index + 1}</h4>
                             <button
                                 onClick={() => removeDrop(index)}
-                                className="p-1 rounded text-gray-500 hover:text-red-400"
+                                className="p-1 rounded text-ink-low hover:text-red-400"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -204,17 +204,17 @@ function DropSetUI({
 
                 <button
                     onClick={addDrop}
-                    className="w-full py-2.5 rounded-lg border border-dashed border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-lg border border-dashed border-line-strong text-ink-mid hover:text-ink-hi hover:border-brand/50 flex items-center justify-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
                     Add Drop
                 </button>
             </div>
 
-            <div className="p-4 border-t border-gray-800">
+            <div className="p-4 border-t border-line-soft">
                 <button
                     onClick={handleSubmit}
-                    className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium flex items-center justify-center gap-2"
+                    className="btn-brand w-full"
                 >
                     <Check className="w-5 h-5" />
                     Log Drop Set
@@ -262,23 +262,23 @@ function RestPauseUI({
 
     return (
         <>
-            <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <div className="flex items-center justify-between p-4 border-b border-line-soft">
+                <h3 className="text-lg font-bold text-ink-hi flex items-center gap-2">
                     <span className="text-2xl">⏸️</span>
                     Rest-Pause Set
                 </h3>
-                <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
+                <button onClick={onClose} className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)]">
                     <X className="w-5 h-5" />
                 </button>
             </div>
 
             <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-ink-mid">
                     Hit failure, rest 10-20 seconds, then continue with the same weight until failure again.
                 </p>
 
                 {/* Weight */}
-                <div className="bg-gray-800/50 rounded-xl p-4">
+                <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-4">
                     <SetInputGroup
                         label="Weight"
                         value={weight}
@@ -289,8 +289,8 @@ function RestPauseUI({
                 </div>
 
                 {/* Rest Between */}
-                <div className="bg-gray-800/50 rounded-xl p-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-2">Rest Between Segments</h4>
+                <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-4">
+                    <h4 className="text-sm font-medium text-ink-mid mb-2">Rest Between Segments</h4>
                     <div className="flex gap-2">
                         {[10, 15, 20, 30].map((seconds) => (
                             <button
@@ -298,8 +298,8 @@ function RestPauseUI({
                                 onClick={() => setRestBetween(seconds)}
                                 className={`flex-1 py-2 rounded-lg text-sm font-medium ${
                                     restBetween === seconds
-                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                        : 'bg-gray-700 text-gray-400'
+                                        ? 'bg-[var(--brand-glow-soft)] text-brand border border-brand/30'
+                                        : 'bg-[var(--surface-2)] text-ink-mid'
                                 }`}
                             >
                                 {seconds}s
@@ -310,15 +310,15 @@ function RestPauseUI({
 
                 {/* Segments */}
                 {segments.map((segment, index) => (
-                    <div key={index} className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
+                    <div key={index} className="bg-[var(--brand-glow-soft)] border border-brand/30 rounded-xl p-4">
                         <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-orange-400">
+                            <h4 className="text-sm font-medium text-brand">
                                 {index === 0 ? 'Initial' : `After ${restBetween}s rest`}
                             </h4>
                             {index > 0 && (
                                 <button
                                     onClick={() => setSegments(segments.filter((_, i) => i !== index))}
-                                    className="p-1 rounded text-gray-500 hover:text-red-400"
+                                    className="p-1 rounded text-ink-low hover:text-red-400"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -338,17 +338,17 @@ function RestPauseUI({
 
                 <button
                     onClick={addSegment}
-                    className="w-full py-2.5 rounded-lg border border-dashed border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-lg border border-dashed border-line-strong text-ink-mid hover:text-ink-hi hover:border-brand/50 flex items-center justify-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
                     Add Segment
                 </button>
             </div>
 
-            <div className="p-4 border-t border-gray-800">
+            <div className="p-4 border-t border-line-soft">
                 <button
                     onClick={handleSubmit}
-                    className="w-full py-3 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium flex items-center justify-center gap-2"
+                    className="btn-brand w-full"
                 >
                     <Check className="w-5 h-5" />
                     Log Rest-Pause Set ({segments.reduce((s, seg) => s + seg.reps, 0)} total reps)
@@ -391,23 +391,23 @@ function ClusterSetUI({
 
     return (
         <>
-            <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <div className="flex items-center justify-between p-4 border-b border-line-soft">
+                <h3 className="text-lg font-bold text-ink-hi flex items-center gap-2">
                     <span className="text-2xl">🔗</span>
                     Cluster Set
                 </h3>
-                <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
+                <button onClick={onClose} className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)]">
                     <X className="w-5 h-5" />
                 </button>
             </div>
 
             <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-ink-mid">
                     Break a heavy set into mini-sets with short inter-set rests. Great for strength work.
                 </p>
 
                 {/* Weight */}
-                <div className="bg-gray-800/50 rounded-xl p-4">
+                <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-4">
                     <SetInputGroup
                         label="Weight"
                         value={weight}
@@ -418,8 +418,8 @@ function ClusterSetUI({
                 </div>
 
                 {/* Rest Between */}
-                <div className="bg-gray-800/50 rounded-xl p-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-2">Inter-Cluster Rest</h4>
+                <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-4">
+                    <h4 className="text-sm font-medium text-ink-mid mb-2">Inter-Cluster Rest</h4>
                     <div className="flex gap-2">
                         {[15, 20, 30, 45].map((seconds) => (
                             <button
@@ -427,8 +427,8 @@ function ClusterSetUI({
                                 onClick={() => setRestBetween(seconds)}
                                 className={`flex-1 py-2 rounded-lg text-sm font-medium ${
                                     restBetween === seconds
-                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                        : 'bg-gray-700 text-gray-400'
+                                        ? 'bg-[var(--brand-glow-soft)] text-brand border border-brand/30'
+                                        : 'bg-[var(--surface-2)] text-ink-mid'
                                 }`}
                             >
                                 {seconds}s
@@ -442,14 +442,14 @@ function ClusterSetUI({
                     {clusters.map((cluster, index) => (
                         <div
                             key={index}
-                            className="flex-1 min-w-[100px] bg-blue-500/10 border border-blue-500/30 rounded-xl p-3"
+                            className="flex-1 min-w-[100px] bg-[var(--brand-glow-soft)] border border-brand/30 rounded-xl p-3"
                         >
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs text-blue-400">Cluster {index + 1}</span>
+                                <span className="text-xs text-brand">Cluster {index + 1}</span>
                                 {clusters.length > 2 && (
                                     <button
                                         onClick={() => setClusters(clusters.filter((_, i) => i !== index))}
-                                        className="text-gray-500 hover:text-red-400"
+                                        className="text-ink-low hover:text-red-400"
                                     >
                                         <X className="w-3 h-3" />
                                     </button>
@@ -462,18 +462,18 @@ function ClusterSetUI({
                                         updated[index] = { reps: Math.max(1, cluster.reps - 1) };
                                         setClusters(updated);
                                     }}
-                                    className="w-8 h-8 rounded bg-gray-700 text-gray-400"
+                                    className="w-8 h-8 rounded bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi"
                                 >
                                     <Minus className="w-4 h-4 mx-auto" />
                                 </button>
-                                <span className="text-xl font-bold text-white w-8 text-center">{cluster.reps}</span>
+                                <span className="text-xl font-bold text-ink-hi w-8 text-center">{cluster.reps}</span>
                                 <button
                                     onClick={() => {
                                         const updated = [...clusters];
                                         updated[index] = { reps: cluster.reps + 1 };
                                         setClusters(updated);
                                     }}
-                                    className="w-8 h-8 rounded bg-gray-700 text-gray-400"
+                                    className="w-8 h-8 rounded bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi"
                                 >
                                     <Plus className="w-4 h-4 mx-auto" />
                                 </button>
@@ -482,17 +482,17 @@ function ClusterSetUI({
                     ))}
                     <button
                         onClick={() => setClusters([...clusters, { reps: 3 }])}
-                        className="w-[100px] h-full min-h-[80px] rounded-xl border border-dashed border-gray-700 text-gray-500 hover:text-white hover:border-gray-600 flex items-center justify-center"
+                        className="w-[100px] h-full min-h-[80px] rounded-xl border border-dashed border-line-strong text-ink-low hover:text-ink-hi hover:border-brand/50 flex items-center justify-center"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
             </div>
 
-            <div className="p-4 border-t border-gray-800">
+            <div className="p-4 border-t border-line-soft">
                 <button
                     onClick={handleSubmit}
-                    className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-medium flex items-center justify-center gap-2"
+                    className="btn-brand w-full"
                 >
                     <Check className="w-5 h-5" />
                     Log Cluster Set ({clusters.reduce((s, c) => s + c.reps, 0)} total reps)
@@ -526,18 +526,18 @@ function SupersetUI({
 
     return (
         <>
-            <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <div className="flex items-center justify-between p-4 border-b border-line-soft">
+                <h3 className="text-lg font-bold text-ink-hi flex items-center gap-2">
                     <span className="text-2xl">🔄</span>
                     Superset
                 </h3>
-                <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
+                <button onClick={onClose} className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)]">
                     <X className="w-5 h-5" />
                 </button>
             </div>
 
             <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-ink-mid">
                     Pair this exercise with another for back-to-back sets with no rest between exercises.
                 </p>
 
@@ -548,8 +548,8 @@ function SupersetUI({
                             onClick={() => setSelectedExercise(exercise.id)}
                             className={`w-full p-3 rounded-xl text-left transition-colors ${
                                 selectedExercise === exercise.id
-                                    ? 'bg-green-500/20 border border-green-500/30 text-green-400'
-                                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                    ? 'bg-[var(--brand-glow-soft)] border border-brand/30 text-brand'
+                                    : 'bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi'
                             }`}
                         >
                             {exercise.name}
@@ -558,17 +558,17 @@ function SupersetUI({
                 </div>
 
                 {exercises.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-ink-low">
                         No other exercises in this workout to pair with.
                     </div>
                 )}
             </div>
 
-            <div className="p-4 border-t border-gray-800">
+            <div className="p-4 border-t border-line-soft">
                 <button
                     onClick={handleSubmit}
                     disabled={!selectedExercise}
-                    className="w-full py-3 rounded-lg bg-gradient-to-r from-green-500 to-teal-500 text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="btn-brand w-full"
                 >
                     <Check className="w-5 h-5" />
                     Create Superset
@@ -594,21 +594,21 @@ function SetInputGroup({
 }) {
     return (
         <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">{label}</label>
+            <label className="text-xs text-ink-low mb-1 block">{label}</label>
             <div className="flex items-center gap-2">
                 <button
                     onClick={() => onChange(-increment)}
-                    className="w-10 h-10 rounded-lg bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center"
+                    className="w-10 h-10 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi flex items-center justify-center"
                 >
                     <Minus className="w-4 h-4" />
                 </button>
                 <div className="flex-1 text-center">
-                    <span className="text-xl font-bold text-white">{value}</span>
-                    {unit && <span className="text-sm text-gray-400 ml-1">{unit}</span>}
+                    <span className="text-xl font-bold text-ink-hi">{value}</span>
+                    {unit && <span className="text-sm text-ink-mid ml-1">{unit}</span>}
                 </div>
                 <button
                     onClick={() => onChange(increment)}
-                    className="w-10 h-10 rounded-lg bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center"
+                    className="w-10 h-10 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi flex items-center justify-center"
                 >
                     <Plus className="w-4 h-4" />
                 </button>

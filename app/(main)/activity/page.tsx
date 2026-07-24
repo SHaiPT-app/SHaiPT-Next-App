@@ -148,72 +148,43 @@ export default function ActivityPage() {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh'
-            }}>
+            <div className="flex min-h-screen items-center justify-center">
                 <div className="spinner"></div>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: '1.5rem', paddingBottom: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+        <div className="mx-auto max-w-[600px] p-6 pb-8">
             {/* Header */}
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '2rem',
-                    marginBottom: '0.5rem',
-                    color: 'var(--primary)'
-                }}>
+            <div className="mb-8">
+                <h1 className="display text-gradient-brand mb-2 text-[2rem]">
                     Activity
                 </h1>
-                <p style={{ color: '#888', fontSize: '0.9rem' }}>
+                <p className="text-sm text-ink-mid">
                     See what your community is up to
                 </p>
             </div>
 
             {/* Filter Tabs */}
-            <div style={{
-                display: 'flex',
-                gap: '0.5rem',
-                marginBottom: '1.5rem',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '12px',
-                padding: '0.25rem'
-            }}>
+            <div className="mb-6 flex gap-2 rounded-xl border border-line-soft bg-[var(--surface-1)] p-1">
                 <button
                     onClick={() => setFilter('all')}
-                    style={{
-                        flex: 1,
-                        padding: '0.75rem',
-                        background: filter === 'all' ? 'var(--primary)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '10px',
-                        color: filter === 'all' ? 'white' : '#888',
-                        cursor: 'pointer',
-                        fontWeight: filter === 'all' ? '600' : '400',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`flex-1 cursor-pointer rounded-lg py-3 transition-all ${
+                        filter === 'all'
+                            ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                            : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                    }`}
                 >
                     All
                 </button>
                 <button
                     onClick={() => setFilter('following')}
-                    style={{
-                        flex: 1,
-                        padding: '0.75rem',
-                        background: filter === 'following' ? 'var(--primary)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '10px',
-                        color: filter === 'following' ? 'white' : '#888',
-                        cursor: 'pointer',
-                        fontWeight: filter === 'following' ? '600' : '400',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`flex-1 cursor-pointer rounded-lg py-3 transition-all ${
+                        filter === 'following'
+                            ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                            : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                    }`}
                 >
                     Following
                 </button>
@@ -232,7 +203,7 @@ export default function ActivityPage() {
                     description="Complete a workout to share your progress with the community!"
                 />
             ) : !error && (
-                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                <div className="grid gap-6">
                     {posts.map(post => (
                         <PostCard
                             key={post.id}
@@ -284,27 +255,17 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
     };
 
     return (
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+        <div className="glass-card p-6">
             {/* Post Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--primary), #ff6b35)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '600',
-                    fontSize: '1.1rem'
-                }}>
+            <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[image:var(--brand-gradient)] text-[1.1rem] font-semibold text-ink-hi">
                     {post.user?.full_name?.charAt(0) || post.user?.username?.charAt(0) || 'U'}
                 </div>
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600' }}>
+                <div className="flex-1">
+                    <div className="font-semibold text-ink-hi">
                         {post.user?.full_name || post.user?.username || 'Unknown User'}
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: '#888' }}>
+                    <div className="text-sm text-ink-low">
                         {getTimeAgo(post.created_at || '')}
                     </div>
                 </div>
@@ -313,23 +274,11 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
             {/* Post Content */}
             {post.post_type === 'pr_achieved' && (
                 <div>
-                    <div style={{
-                        background: 'linear-gradient(135deg, rgba(242, 95, 41, 0.2), rgba(255, 107, 53, 0.2))',
-                        border: '2px solid var(--primary)',
-                        borderRadius: '12px',
-                        padding: '1.5rem',
-                        marginBottom: '1rem'
-                    }}>
-                        <div style={{
-                            fontSize: '1.5rem',
-                            fontFamily: 'var(--font-orbitron)',
-                            color: 'var(--primary)',
-                            marginBottom: '0.5rem',
-                            textAlign: 'center'
-                        }}>
+                    <div className="mb-4 rounded-xl border-2 border-brand bg-[var(--brand-glow-soft)] p-6 shadow-[0_0_24px_var(--brand-glow-soft)]">
+                        <div className="font-display mb-2 text-center text-2xl font-bold text-brand">
                             NEW PR!
                         </div>
-                        <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                        <p className="mb-2 text-center text-[1.1rem]">
                             {post.content}
                         </p>
                     </div>
@@ -338,32 +287,28 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
 
             {post.post_type === 'workout_completed' && post.workout_log && (
                 <div>
-                    <p style={{ marginBottom: '1rem' }}>{post.content}</p>
+                    <p className="mb-4">{post.content}</p>
 
                     {/* Workout Summary */}
-                    <div className="glass-panel" style={{
-                        padding: '1rem',
-                        background: 'rgba(242, 95, 41, 0.05)',
-                        border: '1px solid rgba(242, 95, 41, 0.2)'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+                    <div className="glass-card !border-brand/20 !bg-[var(--brand-glow-soft)] p-4">
+                        <div className="flex justify-around text-center">
                             <div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
+                                <div className="text-2xl font-semibold text-brand">
                                     {post.workout_log.exercise_logs?.length || 0}
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#888' }}>Exercises</div>
+                                <div className="text-xs text-ink-low">Exercises</div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
+                                <div className="text-2xl font-semibold text-brand">
                                     {post.workout_log.exercise_logs?.reduce((sum, log) => sum + (log.sets?.length || log.total_sets || 0), 0) || 0}
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#888' }}>Sets</div>
+                                <div className="text-xs text-ink-low">Sets</div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
+                                <div className="text-2xl font-semibold text-brand">
                                     {Math.floor(((post.workout_log.total_duration_seconds || 0) / 60))}m
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#888' }}>Duration</div>
+                                <div className="text-xs text-ink-low">Duration</div>
                             </div>
                         </div>
                     </div>
@@ -371,26 +316,12 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
             )}
 
             {/* Actions */}
-            <div style={{
-                display: 'flex',
-                gap: '1.5rem',
-                marginTop: '1rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
+            <div className="mt-4 flex gap-6 border-t border-line-soft pt-4">
                 <button
                     onClick={() => onLike(post.id)}
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        color: post.is_liked ? 'var(--primary)' : '#888',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.9rem',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`flex cursor-pointer items-center gap-2 bg-transparent text-sm transition-colors ${
+                        post.is_liked ? 'text-brand' : 'text-ink-mid hover:text-brand'
+                    }`}
                 >
                     <svg
                         width="18"
@@ -407,16 +338,7 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
 
                 <button
                     onClick={() => setShowComments(!showComments)}
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#888',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.9rem'
-                    }}
+                    className="flex cursor-pointer items-center gap-2 bg-transparent text-sm text-ink-mid transition-colors hover:text-brand"
                 >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -427,31 +349,21 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
 
             {/* Comments Section */}
             {showComments && (
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div className="mt-4 border-t border-line-soft pt-4">
                     {/* Existing Comments */}
                     {post.comments && post.comments.length > 0 && (
-                        <div style={{ marginBottom: '1rem' }}>
+                        <div className="mb-4">
                             {post.comments.map(comment => (
-                                <div key={comment.id} style={{ marginBottom: '0.75rem' }}>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <div style={{
-                                            width: '24px',
-                                            height: '24px',
-                                            borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, var(--primary), #ff6b35)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '0.7rem',
-                                            flexShrink: 0
-                                        }}>
+                                <div key={comment.id} className="mb-3">
+                                    <div className="flex gap-2">
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[image:var(--brand-gradient)] text-[0.7rem] text-ink-hi">
                                             {comment.user?.full_name?.charAt(0) || 'U'}
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>
+                                        <div className="flex-1">
+                                            <span className="text-sm font-semibold text-ink-hi">
                                                 {comment.user?.full_name || comment.user?.username}
                                             </span>
-                                            <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}>{comment.content}</p>
+                                            <p className="my-1 text-sm text-ink-mid">{comment.content}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -460,28 +372,18 @@ function PostCard({ post, currentUserId, onLike, onComment }: PostCardProps) {
                     )}
 
                     {/* Comment Form */}
-                    <form onSubmit={handleSubmitComment} style={{ display: 'flex', gap: '0.5rem' }}>
+                    <form onSubmit={handleSubmitComment} className="flex gap-2">
                         <input
                             type="text"
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
                             placeholder="Add a comment..."
-                            className="input-field"
-                            style={{ flex: 1 }}
+                            className="input-field flex-1"
                         />
                         <button
                             type="submit"
                             disabled={!commentText.trim()}
-                            style={{
-                                padding: '0.5rem 1rem',
-                                background: commentText.trim() ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
-                                border: 'none',
-                                borderRadius: '8px',
-                                color: 'white',
-                                cursor: commentText.trim() ? 'pointer' : 'not-allowed',
-                                fontWeight: '600',
-                                transition: 'all 0.2s'
-                            }}
+                            className="btn-brand !px-5 !py-2 !text-sm"
                         >
                             Post
                         </button>

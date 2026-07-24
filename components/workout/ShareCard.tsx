@@ -97,7 +97,7 @@ export function ShareCard({ summary, userName, isOpen, onClose }: ShareCardProps
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white"
+                    className="absolute top-4 right-4 icon-btn"
                 >
                     <X className="w-5 h-5" />
                 </button>
@@ -105,52 +105,52 @@ export function ShareCard({ summary, userName, isOpen, onClose }: ShareCardProps
                 {/* Share Card Preview */}
                 <div
                     ref={cardRef}
-                    className="bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 rounded-2xl overflow-hidden"
+                    className="bg-[image:linear-gradient(135deg,var(--surface-0),var(--card))] rounded-2xl border border-line-soft overflow-hidden"
                     style={{ padding: '24px' }}
                 >
                     {/* Header */}
                     <div className="text-center mb-6">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center mx-auto mb-3">
+                        <div className="w-12 h-12 rounded-xl bg-[image:var(--brand-gradient)] shadow-[0_0_24px_var(--brand-glow-soft)] flex items-center justify-center mx-auto mb-3">
                             <span className="text-2xl">💪</span>
                         </div>
-                        <h2 className="text-xl font-bold text-white">{summary.sessionName}</h2>
-                        <p className="text-gray-400 text-sm mt-1">by {userName}</p>
+                        <h2 className="font-display text-xl font-bold text-ink-hi">{summary.sessionName}</h2>
+                        <p className="text-ink-mid text-sm mt-1">by {userName}</p>
                     </div>
 
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
-                        <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                            <p className="text-2xl font-bold text-cyan-400">
+                        <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-3 text-center">
+                            <p className="font-display text-2xl font-bold text-brand">
                                 {formatDuration(summary.totalDurationSeconds)}
                             </p>
-                            <p className="text-xs text-gray-500">Duration</p>
+                            <p className="text-xs text-ink-low">Duration</p>
                         </div>
-                        <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                            <p className="text-2xl font-bold text-green-400">
+                        <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-3 text-center">
+                            <p className="font-display text-2xl font-bold text-brand-hot">
                                 {summary.totalVolume.toLocaleString()}
                             </p>
-                            <p className="text-xs text-gray-500">Volume ({summary.volumeUnit})</p>
+                            <p className="text-xs text-ink-low">Volume ({summary.volumeUnit})</p>
                         </div>
-                        <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                            <p className="text-2xl font-bold text-orange-400">
+                        <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-3 text-center">
+                            <p className="font-display text-2xl font-bold text-brand">
                                 {summary.totalSets}
                             </p>
-                            <p className="text-xs text-gray-500">Sets</p>
+                            <p className="text-xs text-ink-low">Sets</p>
                         </div>
-                        <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                            <p className="text-2xl font-bold text-purple-400">
+                        <div className="bg-[var(--surface-2)] border border-line-soft rounded-xl p-3 text-center">
+                            <p className="font-display text-2xl font-bold text-brand-hot">
                                 {summary.exerciseCount}
                             </p>
-                            <p className="text-xs text-gray-500">Exercises</p>
+                            <p className="text-xs text-ink-low">Exercises</p>
                         </div>
                     </div>
 
                     {/* PRs */}
                     {summary.prsAchieved.length > 0 && (
-                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6">
+                        <div className="bg-[var(--brand-glow-soft)] border border-brand/30 rounded-xl p-3 mb-6">
                             <div className="flex items-center justify-center gap-2">
                                 <span className="text-xl">🏆</span>
-                                <span className="text-yellow-400 font-bold">
+                                <span className="text-brand-hot font-bold">
                                     {summary.prsAchieved.length} New PR{summary.prsAchieved.length > 1 ? 's' : ''}!
                                 </span>
                             </div>
@@ -159,14 +159,14 @@ export function ShareCard({ summary, userName, isOpen, onClose }: ShareCardProps
 
                     {/* Footer */}
                     <div className="text-center">
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-ink-low text-sm">
                             {new Date(summary.completedAt).toLocaleDateString('en-US', {
                                 weekday: 'long',
                                 month: 'short',
                                 day: 'numeric',
                             })}
                         </p>
-                        <p className="text-cyan-400 text-xs mt-2 font-medium">
+                        <p className="text-brand text-xs mt-2 font-semibold">
                             Trained with SHaiPT
                         </p>
                     </div>
@@ -177,7 +177,7 @@ export function ShareCard({ summary, userName, isOpen, onClose }: ShareCardProps
                     <button
                         onClick={handleDownload}
                         disabled={isGenerating}
-                        className="flex-1 py-3 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="btn-outline flex-1 disabled:opacity-50"
                     >
                         <Download className="w-5 h-5" />
                         Save
@@ -185,7 +185,7 @@ export function ShareCard({ summary, userName, isOpen, onClose }: ShareCardProps
                     <button
                         onClick={handleShare}
                         disabled={isGenerating}
-                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="btn-brand flex-1"
                     >
                         {copied ? (
                             <>

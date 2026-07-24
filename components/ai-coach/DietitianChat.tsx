@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Box, Text, Flex } from '@chakra-ui/react';
 import { Send } from 'lucide-react';
 import type { CoachPersona } from '@/data/coaches';
 import { dietitianPersona } from '@/data/coaches';
@@ -259,136 +258,73 @@ export default function DietitianChat({
     const currentPersona = isCoachHandoff ? coach : dietitianPersona;
 
     return (
-        <Flex
-            h="100%"
-            w="100%"
-            overflow="hidden"
-            alignItems="center"
-            justifyContent="center"
-            bg="#0a0a12"
-            position="relative"
-        >
+        <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[var(--surface-0)]">
             {/* Portrait frame */}
-            <Box
-                position="relative"
-                h="100%"
-                w="100%"
-                maxW="480px"
-                overflow="hidden"
-            >
+            <div className="relative h-full w-full max-w-[480px] overflow-hidden">
                 {/* Background image */}
-                <Box
-                    position="absolute"
-                    inset="0"
-                    zIndex={0}
-                    style={{
-                        backgroundImage: `url(${dietitianPersona.chatBgUrl})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center top',
-                    }}
+                <div
+                    className="absolute inset-0 z-0 bg-cover bg-[position:center_top]"
+                    style={{ backgroundImage: `url(${dietitianPersona.chatBgUrl})` }}
                 />
 
                 {/* Content layer */}
-                <Flex
-                    direction="column"
-                    position="absolute"
-                    inset="0"
-                    zIndex={1}
-                    justifyContent="space-between"
-                    px="10%"
-                    pt="2.5%"
-                    pb="2.5%"
-                >
+                <div className="absolute inset-0 z-[1] flex flex-col justify-between px-[10%] pb-[2.5%] pt-[2.5%]">
                     {/* TOP: Persona info + message */}
-                    <Box>
-                        <Box
-                            bg="rgba(255, 255, 255, 0.88)"
-                            borderRadius="14px"
-                            p="0.85rem"
-                            maxHeight="35vh"
-                            overflowY="auto"
-                            backdropFilter="blur(6px)"
-                            style={{ WebkitBackdropFilter: 'blur(6px)' }}
-                        >
-                            <Flex alignItems="center" gap="0.5rem" mb="0.5rem">
-                                <Box
-                                    w="32px"
-                                    h="32px"
-                                    borderRadius="50%"
-                                    overflow="hidden"
-                                    border="2px solid var(--neon-orange)"
-                                    flexShrink={0}
-                                    style={isLoading ? {
-                                        animation: 'pulse 1.5s ease-in-out infinite',
-                                    } : undefined}
+                    <div>
+                        <div className="glass-card max-h-[35vh] overflow-y-auto p-[0.85rem]">
+                            <div className="mb-2 flex items-center gap-2">
+                                <div
+                                    className={`h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border-2 border-brand ${
+                                        isLoading ? 'animate-pulse' : ''
+                                    }`}
                                 >
                                     <img
                                         src={currentPersona.avatarUrl}
                                         alt={currentPersona.fullName}
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        className="h-full w-full object-cover"
                                         onError={(e) => {
                                             const target = e.target as HTMLImageElement;
                                             target.style.display = 'none';
                                             if (target.parentElement) {
-                                                target.parentElement.style.background = 'linear-gradient(135deg, var(--neon-orange), #E55C00)';
-                                                target.parentElement.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:1rem;font-weight:700;color:#fff">${currentPersona.fullName.charAt(0)}</span>`;
+                                                target.parentElement.style.background = 'var(--brand-gradient)';
+                                                target.parentElement.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:1rem;font-weight:700;color:var(--ink-hi)">${currentPersona.fullName.charAt(0)}</span>`;
                                             }
                                         }}
                                     />
-                                </Box>
-                                <Box>
-                                    <Text
-                                        fontWeight="700"
-                                        fontSize="0.85rem"
-                                        color="#1a1a1a"
-                                        lineHeight="1.2"
-                                    >
+                                </div>
+                                <div>
+                                    <p className="text-[0.85rem] font-bold leading-[1.2] text-ink-hi">
                                         {currentPersona.displayName}
-                                    </Text>
-                                    <Text fontSize="0.7rem" fontWeight={isLoading ? '600' : '400'} color={isLoading ? 'var(--neon-orange)' : '#888'}>
+                                    </p>
+                                    <p className={`text-[0.7rem] ${isLoading ? 'font-semibold text-brand' : 'font-normal text-ink-low'}`}>
                                         {isLoading ? 'Thinking...' : isCoachHandoff ? 'AI Coach' : 'Nutrition Interview'}
-                                    </Text>
-                                </Box>
-                            </Flex>
+                                    </p>
+                                </div>
+                            </div>
 
                             {lastAssistantMsg ? (
-                                <Text
-                                    className="coach-handwriting"
-                                    color="#1a1a1a"
-                                    whiteSpace="pre-wrap"
-                                >
+                                <p className="coach-handwriting whitespace-pre-wrap text-ink-hi">
                                     {lastAssistantMsg.content}
-                                </Text>
+                                </p>
                             ) : isLoading ? (
-                                <Flex alignItems="center" gap="0.4rem" py="0.5rem">
-                                    <Text
-                                        className="coach-handwriting"
-                                        color="#1a1a1a"
-                                        fontSize="1rem"
-                                        fontWeight="600"
-                                    >
+                                <div className="flex items-center gap-[0.4rem] py-2">
+                                    <p className="coach-handwriting text-base font-semibold text-ink-hi">
                                         Dr. Nadia is thinking
-                                    </Text>
+                                    </p>
                                     <span className="thinking-dots">
                                         <span></span>
                                         <span></span>
                                         <span></span>
                                     </span>
-                                </Flex>
+                                </div>
                             ) : null}
-                        </Box>
-                    </Box>
+                        </div>
+                    </div>
 
                     {/* BOTTOM: Input */}
-                    <Box>
-                        <Box
-                            bg="rgba(255, 255, 255, 0.88)"
-                            borderRadius="14px"
-                            p="0.75rem"
-                            backdropFilter="blur(6px)"
-                            style={{ WebkitBackdropFilter: 'blur(6px)' }}
-                        >
-                            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div>
+                        <div className="glass-card p-3">
+                            <form onSubmit={handleSubmit} className="flex gap-2">
                                 <input
                                     ref={inputRef}
                                     value={input}
@@ -396,43 +332,23 @@ export default function DietitianChat({
                                     placeholder="Tell Dr. Nadia about your nutrition..."
                                     disabled={isLoading}
                                     data-testid="dietitian-chat-input"
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.6rem 0.7rem',
-                                        fontSize: '0.85rem',
-                                        background: '#f5f5f5',
-                                        border: '1px solid #e0e0e0',
-                                        borderRadius: '10px',
-                                        color: '#1a1a1a',
-                                        outline: 'none',
-                                        opacity: isLoading ? 0.5 : 1,
-                                    }}
+                                    className={`flex-1 rounded-[10px] border border-line-soft bg-[var(--surface-1)] px-[0.7rem] py-[0.6rem] text-[0.85rem] text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand ${
+                                        isLoading ? 'opacity-50' : ''
+                                    }`}
                                 />
                                 <button
                                     type="submit"
                                     disabled={isLoading || !input.trim()}
                                     data-testid="dietitian-chat-send"
-                                    style={{
-                                        padding: '0.6rem',
-                                        background: isLoading || !input.trim()
-                                            ? 'rgba(255, 102, 0, 0.3)'
-                                            : '#FF6600',
-                                        color: '#fff',
-                                        border: 'none',
-                                        borderRadius: '10px',
-                                        cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
+                                    className="flex cursor-pointer items-center justify-center rounded-[10px] border-none bg-brand p-[0.6rem] text-white transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     <Send size={18} />
                                 </button>
                             </form>
-                        </Box>
-                    </Box>
-                </Flex>
-            </Box>
-        </Flex>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }

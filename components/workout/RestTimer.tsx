@@ -125,7 +125,7 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                                     cy="24"
                                     r="20"
                                     fill="none"
-                                    stroke="#374151"
+                                    stroke="var(--line-strong)"
                                     strokeWidth="4"
                                 />
                                 <circle
@@ -133,7 +133,7 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                                     cy="24"
                                     r="20"
                                     fill="none"
-                                    stroke="#06b6d4"
+                                    stroke="var(--brand)"
                                     strokeWidth="4"
                                     strokeLinecap="round"
                                     strokeDasharray={125.6}
@@ -141,13 +141,13 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                                     className="transition-all duration-1000"
                                 />
                             </svg>
-                            <span className="absolute inset-0 flex items-center justify-center text-xs font-mono text-white">
+                            <span className="absolute inset-0 flex items-center justify-center text-xs font-display text-ink-hi">
                                 {formatTime(timer.restSecondsRemaining)}
                             </span>
                         </div>
                         <button
                             onClick={skipRestTimer}
-                            className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white"
+                            className="p-2 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi"
                         >
                             <SkipForward className="w-4 h-4" />
                         </button>
@@ -155,7 +155,7 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                 ) : (
                     <button
                         onClick={() => startRestTimer(preferences?.default_rest_seconds || 90)}
-                        className="px-3 py-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white text-sm"
+                        className="px-3 py-2 rounded-lg bg-[var(--brand-glow-soft)] text-brand hover:bg-brand/20 text-sm font-medium"
                     >
                         Start Rest
                     </button>
@@ -165,11 +165,11 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
     }
 
     return (
-        <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-4">
+        <div className="glass-card p-4">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-gray-400">Rest Timer</h3>
+                <h3 className="text-sm font-medium text-ink-mid">Rest Timer</h3>
                 {timer.isResting && (
-                    <span className="text-xs text-cyan-400">
+                    <span className="text-xs text-brand">
                         {timer.isResting ? 'Resting...' : 'Ready'}
                     </span>
                 )}
@@ -184,7 +184,7 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                             cy="64"
                             r="56"
                             fill="none"
-                            stroke="#1f2937"
+                            stroke="var(--line-strong)"
                             strokeWidth="8"
                         />
                         <motion.circle
@@ -192,7 +192,8 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                             cy="64"
                             r="56"
                             fill="none"
-                            stroke="#06b6d4"
+                            stroke="var(--brand)"
+                            className="drop-shadow-[0_0_6px_var(--brand-glow)]"
                             strokeWidth="8"
                             strokeLinecap="round"
                             strokeDasharray={351.86}
@@ -203,10 +204,10 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                         />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-mono font-bold text-white">
+                        <span className="font-display text-3xl font-bold text-ink-hi">
                             {formatTime(timer.restSecondsRemaining)}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-ink-low">
                             of {formatTime(timer.totalRestSeconds)}
                         </span>
                     </div>
@@ -217,14 +218,14 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
             <div className="flex items-center justify-center gap-2 mb-4">
                 <button
                     onClick={() => adjustTime(-15)}
-                    className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                    className="p-2 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)]"
                 >
                     <Minus className="w-4 h-4" />
                 </button>
-                <span className="text-sm text-gray-500 w-12 text-center">15s</span>
+                <span className="text-sm text-ink-low w-12 text-center">15s</span>
                 <button
                     onClick={() => adjustTime(15)}
-                    className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                    className="p-2 rounded-lg bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)]"
                 >
                     <Plus className="w-4 h-4" />
                 </button>
@@ -236,13 +237,13 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                     <>
                         <button
                             onClick={pauseRestTimer}
-                            className="p-3 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                            className="p-3 rounded-full bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi hover:bg-[var(--brand-glow-soft)]"
                         >
                             <Pause className="w-5 h-5" />
                         </button>
                         <button
                             onClick={skipRestTimer}
-                            className="p-3 rounded-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
+                            className="p-3 rounded-full bg-[var(--brand-glow-soft)] text-brand hover:bg-brand/20"
                         >
                             <SkipForward className="w-5 h-5" />
                         </button>
@@ -250,7 +251,7 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                 ) : timer.restSecondsRemaining > 0 ? (
                     <button
                         onClick={resumeRestTimer}
-                        className="p-3 rounded-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
+                        className="p-3 rounded-full bg-[var(--brand-glow-soft)] text-brand hover:bg-brand/20"
                     >
                         <Play className="w-5 h-5" />
                     </button>
@@ -266,8 +267,8 @@ export function RestTimer({ onComplete, compact = false }: RestTimerProps) {
                         className={`
                             px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
                             ${timer.totalRestSeconds === seconds
-                                ? 'bg-cyan-500/20 text-cyan-400'
-                                : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                                ? 'bg-[var(--brand-glow-soft)] text-brand'
+                                : 'bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi'
                             }
                         `}
                     >

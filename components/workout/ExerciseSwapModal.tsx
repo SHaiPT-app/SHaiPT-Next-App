@@ -109,29 +109,29 @@ export function ExerciseSwapModal({
                         initial={{ y: 100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 100, opacity: 0 }}
-                        className="w-full max-w-2xl h-[90vh] sm:h-[80vh] bg-gray-900 rounded-t-2xl sm:rounded-2xl border border-gray-800 overflow-hidden flex flex-col"
+                        className="w-full max-w-2xl h-[90vh] sm:h-[80vh] bg-[var(--surface-1)] backdrop-blur-xl rounded-t-2xl sm:rounded-2xl border border-line-soft overflow-hidden flex flex-col"
                     >
                         {/* Header */}
-                        <div className="flex-shrink-0 p-4 border-b border-gray-800">
+                        <div className="flex-shrink-0 p-4 border-b border-line-soft">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-white">Swap Exercise</h3>
+                                <h3 className="text-lg font-bold text-ink-hi">Swap Exercise</h3>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"
+                                    className="p-2 rounded-lg text-ink-mid hover:text-ink-hi hover:bg-[var(--surface-2)]"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
 
                             {/* Current Exercise */}
-                            <div className="p-3 bg-gray-800/50 rounded-xl mb-4">
-                                <p className="text-xs text-gray-500 mb-1">Current Exercise</p>
-                                <p className="font-medium text-white">{currentExercise.name}</p>
+                            <div className="p-3 bg-[var(--surface-2)] border border-line-soft rounded-xl mb-4">
+                                <p className="text-xs text-ink-low mb-1">Current Exercise</p>
+                                <p className="font-medium text-ink-hi">{currentExercise.name}</p>
                                 <div className="flex flex-wrap gap-1 mt-2">
                                     {currentExercise.target_muscles.map(muscle => (
                                         <span
                                             key={muscle}
-                                            className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs"
+                                            className="px-2 py-0.5 rounded-full bg-[var(--brand-glow-soft)] text-brand text-xs"
                                         >
                                             {muscle}
                                         </span>
@@ -145,8 +145,8 @@ export function ExerciseSwapModal({
                                     onClick={() => setActiveTab('suggested')}
                                     className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
                                         activeTab === 'suggested'
-                                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                            : 'bg-gray-800 text-gray-400'
+                                            ? 'bg-[var(--brand-glow-soft)] text-brand border border-brand/30'
+                                            : 'bg-[var(--surface-2)] text-ink-mid'
                                     }`}
                                 >
                                     <Sparkles className="w-4 h-4" />
@@ -156,8 +156,8 @@ export function ExerciseSwapModal({
                                     onClick={() => setActiveTab('browse')}
                                     className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
                                         activeTab === 'browse'
-                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                            : 'bg-gray-800 text-gray-400'
+                                            ? 'bg-[var(--brand-glow-soft)] text-brand border border-brand/30'
+                                            : 'bg-[var(--surface-2)] text-ink-mid'
                                     }`}
                                 >
                                     <Dumbbell className="w-4 h-4" />
@@ -167,13 +167,13 @@ export function ExerciseSwapModal({
 
                             {/* Search */}
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-low" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search exercises..."
-                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--surface-2)] border border-line-strong rounded-lg text-ink-hi placeholder:text-ink-low focus:outline-none focus:border-brand"
                                 />
                             </div>
 
@@ -183,7 +183,7 @@ export function ExerciseSwapModal({
                                     <select
                                         value={selectedMuscle || ''}
                                         onChange={(e) => setSelectedMuscle(e.target.value || null)}
-                                        className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none"
+                                        className="px-3 py-1.5 bg-[var(--surface-2)] border border-line-strong rounded-lg text-sm text-ink-mid focus:outline-none focus:border-brand"
                                     >
                                         <option value="">All Muscles</option>
                                         {relevantFilters.muscles.map(muscle => (
@@ -194,7 +194,7 @@ export function ExerciseSwapModal({
                                     <select
                                         value={selectedEquipment || ''}
                                         onChange={(e) => setSelectedEquipment(e.target.value || null)}
-                                        className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none"
+                                        className="px-3 py-1.5 bg-[var(--surface-2)] border border-line-strong rounded-lg text-sm text-ink-mid focus:outline-none focus:border-brand"
                                     >
                                         <option value="">All Equipment</option>
                                         {relevantFilters.equipment.map(eq => (
@@ -213,10 +213,10 @@ export function ExerciseSwapModal({
                                         <button
                                             key={exercise.exercise_id}
                                             onClick={() => handleSelect(exercise)}
-                                            className="w-full p-3 bg-gray-800/50 hover:bg-gray-800 rounded-xl border border-gray-700 hover:border-gray-600 transition-colors flex items-center gap-3 text-left group"
+                                            className="w-full p-3 bg-[var(--surface-1)] hover:bg-[var(--surface-2)] rounded-xl border border-line-soft hover:border-brand/40 transition-colors flex items-center gap-3 text-left group"
                                         >
                                             {exercise.gif_url ? (
-                                                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-700">
+                                                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-[var(--surface-2)]">
                                                     <img
                                                         src={exercise.gif_url}
                                                         alt={exercise.name}
@@ -224,41 +224,41 @@ export function ExerciseSwapModal({
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="w-16 h-16 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0">
-                                                    <Dumbbell className="w-6 h-6 text-gray-500" />
+                                                <div className="w-16 h-16 rounded-lg bg-[var(--surface-2)] flex items-center justify-center flex-shrink-0">
+                                                    <Dumbbell className="w-6 h-6 text-ink-low" />
                                                 </div>
                                             )}
 
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
+                                                <p className="font-medium text-ink-hi group-hover:text-brand transition-colors truncate">
                                                     {exercise.name}
                                                 </p>
                                                 <div className="flex flex-wrap gap-1 mt-1">
                                                     {exercise.target_muscles.slice(0, 2).map(muscle => (
                                                         <span
                                                             key={muscle}
-                                                            className="px-1.5 py-0.5 rounded bg-gray-700 text-gray-400 text-xs"
+                                                            className="px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-ink-mid text-xs"
                                                         >
                                                             {muscle}
                                                         </span>
                                                     ))}
                                                     {exercise.equipments[0] && (
-                                                        <span className="px-1.5 py-0.5 rounded bg-gray-700 text-gray-400 text-xs">
+                                                        <span className="px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-ink-mid text-xs">
                                                             {exercise.equipments[0]}
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-cyan-400 transition-colors flex-shrink-0" />
+                                            <ChevronRight className="w-5 h-5 text-ink-low group-hover:text-brand transition-colors flex-shrink-0" />
                                         </button>
                                     ))}
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                                    <Dumbbell className="w-12 h-12 text-gray-600 mb-3" />
-                                    <p className="text-gray-400">No exercises found</p>
-                                    <p className="text-sm text-gray-500 mt-1">
+                                    <Dumbbell className="w-12 h-12 text-ink-low mb-3" />
+                                    <p className="text-ink-mid">No exercises found</p>
+                                    <p className="text-sm text-ink-low mt-1">
                                         Try adjusting your search or filters
                                     </p>
                                 </div>

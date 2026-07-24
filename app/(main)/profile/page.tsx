@@ -77,7 +77,7 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+            <div className="flex min-h-[60vh] items-center justify-center">
                 <div className="spinner"></div>
             </div>
         );
@@ -88,118 +88,87 @@ export default function ProfilePage() {
     const streakDays = recentWorkouts.length; // Simple approximation
 
     return (
-        <div style={{ padding: '1.5rem', maxWidth: '700px', margin: '0 auto' }}>
+        <div className="mx-auto max-w-[700px] p-6">
             {/* Profile Header */}
-            <div style={{
-                textAlign: 'center',
-                marginBottom: '2rem',
-            }}>
+            <div className="mb-8 text-center">
                 {/* Avatar */}
-                <div style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    background: 'var(--primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 1rem',
-                    overflow: 'hidden',
-                    border: '3px solid rgba(255, 102, 0, 0.3)',
-                }}>
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-[3px] border-brand/30 bg-brand shadow-[0_0_24px_var(--brand-glow-soft)]">
                     {user.avatar_url ? (
                         <img
                             src={user.avatar_url}
                             alt={user.full_name || 'Profile'}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            className="h-full w-full object-cover"
                         />
                     ) : (
-                        <User size={36} color="white" />
+                        <User size={36} className="text-ink-hi" />
                     )}
                 </div>
 
-                <h1 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '1.5rem',
-                    color: 'white',
-                    marginBottom: '0.25rem',
-                }}>
+                <h1 className="display mb-1 text-2xl">
                     {user.full_name || user.username || 'Athlete'}
                 </h1>
 
                 {user.username && (
-                    <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                    <p className="mb-2 text-sm text-ink-mid">
                         @{user.username}
                     </p>
                 )}
 
                 {/* Role Badge */}
-                <span style={{
-                    display: 'inline-block',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '20px',
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    background: user.role === 'trainer'
-                        ? 'rgba(74, 222, 128, 0.15)'
-                        : 'rgba(255, 102, 0, 0.15)',
-                    color: user.role === 'trainer' ? '#4ade80' : 'var(--primary)',
-                    border: `1px solid ${user.role === 'trainer' ? 'rgba(74, 222, 128, 0.3)' : 'rgba(255, 102, 0, 0.3)'}`,
-                }}>
+                <span
+                    className={`inline-block rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.5px] ${
+                        user.role === 'trainer'
+                            ? 'border-[color-mix(in_srgb,var(--success)_30%,transparent)] bg-[color-mix(in_srgb,var(--success)_15%,transparent)] text-[var(--success)]'
+                            : 'border-brand/30 bg-[var(--brand-glow-soft)] text-brand'
+                    }`}
+                >
                     {user.role || 'Trainee'}
                 </span>
 
                 {user.bio && (
-                    <p style={{ color: '#ccc', fontSize: '0.9rem', marginTop: '0.75rem', lineHeight: 1.5 }}>
+                    <p className="mt-3 text-sm leading-normal text-ink-mid">
                         {user.bio}
                     </p>
                 )}
             </div>
 
             {/* Stats Row */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '0.75rem',
-                marginBottom: '2rem',
-            }}>
-                <div className="glass-panel" style={{ padding: '1rem', textAlign: 'center' }}>
-                    <Dumbbell size={20} color="var(--primary)" style={{ marginBottom: '0.4rem' }} />
-                    <div style={{ fontSize: '1.3rem', fontWeight: '700', color: 'white' }}>
+            <div className="mb-8 grid grid-cols-3 gap-3">
+                <div className="glass-card p-4 text-center">
+                    <Dumbbell size={20} className="mb-1.5 text-brand" />
+                    <div className="text-[1.3rem] font-bold text-ink-hi">
                         {recentWorkouts.length}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#888', textTransform: 'uppercase' }}>
+                    <div className="text-[0.7rem] uppercase text-ink-low">
                         Recent Workouts
                     </div>
                 </div>
-                <div className="glass-panel" style={{ padding: '1rem', textAlign: 'center' }}>
-                    <Flame size={20} color="#f59e0b" style={{ marginBottom: '0.4rem' }} />
-                    <div style={{ fontSize: '1.3rem', fontWeight: '700', color: 'white' }}>
+                <div className="glass-card p-4 text-center">
+                    <Flame size={20} className="mb-1.5 text-[var(--warning)]" />
+                    <div className="text-[1.3rem] font-bold text-ink-hi">
                         {streakDays}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#888', textTransform: 'uppercase' }}>
+                    <div className="text-[0.7rem] uppercase text-ink-low">
                         Streak Days
                     </div>
                 </div>
-                <div className="glass-panel" style={{ padding: '1rem', textAlign: 'center' }}>
-                    <Target size={20} color="#4ade80" style={{ marginBottom: '0.4rem' }} />
-                    <div style={{ fontSize: '1.3rem', fontWeight: '700', color: 'white' }}>
+                <div className="glass-card p-4 text-center">
+                    <Target size={20} className="mb-1.5 text-[var(--success)]" />
+                    <div className="text-[1.3rem] font-bold text-ink-hi">
                         {user.fitness_goals?.length || 0}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#888', textTransform: 'uppercase' }}>
+                    <div className="text-[0.7rem] uppercase text-ink-low">
                         Goals
                     </div>
                 </div>
             </div>
 
             {/* Personal Info */}
-            <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'white', marginBottom: '1rem' }}>
+            <div className="glass-card mb-4 p-5">
+                <h3 className="eyebrow mb-4">
                     Personal Info
                 </h3>
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                <div className="grid gap-3">
                     {user.height_cm && (
                         <InfoRow label="Height" value={`${user.height_cm} cm`} />
                     )}
@@ -211,17 +180,14 @@ export default function ProfilePage() {
                     )}
                     <InfoRow label="Gender" value={user.gender || 'Not set'} />
                     {user.fitness_goals && user.fitness_goals.length > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <span style={{ color: '#888', fontSize: '0.85rem' }}>Goals</span>
-                            <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
+                        <div className="flex items-start justify-between">
+                            <span className="text-sm text-ink-low">Goals</span>
+                            <div className="flex max-w-[60%] flex-wrap justify-end gap-1.5">
                                 {user.fitness_goals.map(goal => (
-                                    <span key={goal} style={{
-                                        fontSize: '0.75rem',
-                                        padding: '0.15rem 0.5rem',
-                                        borderRadius: '4px',
-                                        background: 'rgba(255, 102, 0, 0.1)',
-                                        color: 'var(--primary)',
-                                    }}>
+                                    <span
+                                        key={goal}
+                                        className="rounded bg-[var(--brand-glow-soft)] px-2 py-0.5 text-xs text-brand"
+                                    >
                                         {goal}
                                     </span>
                                 ))}
@@ -233,32 +199,16 @@ export default function ProfilePage() {
 
             {/* Coaching Info */}
             {user.role === 'trainee' && activeCoaches.length > 0 && (
-                <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'white', marginBottom: '0.75rem' }}>
+                <div className="glass-card mb-4 p-5">
+                    <h3 className="eyebrow mb-3">
                         Active Coaches
                     </h3>
                     {activeCoaches.map(coach => (
-                        <div key={coach.id} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.75rem',
-                            padding: '0.5rem 0',
-                        }}>
-                            <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                background: '#4ade80',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.8rem',
-                                fontWeight: '700',
-                                color: 'white',
-                            }}>
+                        <div key={coach.id} className="flex items-center gap-3 py-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--success)] text-[0.8rem] font-bold text-ink-hi">
                                 {(coach.full_name || 'C')[0]}
                             </div>
-                            <span style={{ color: '#ccc', fontSize: '0.9rem' }}>
+                            <span className="text-sm text-ink-mid">
                                 {coach.full_name || coach.username}
                             </span>
                         </div>
@@ -267,21 +217,18 @@ export default function ProfilePage() {
             )}
 
             {user.role === 'trainer' && (
-                <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'white', marginBottom: '0.5rem' }}>
+                <div className="glass-card mb-4 p-5">
+                    <h3 className="eyebrow mb-2">
                         Trainer Info
                     </h3>
                     <InfoRow label="Active Clients" value={String(clientCount)} />
                     {user.specialties && user.specialties.length > 0 && (
-                        <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
                             {user.specialties.map(s => (
-                                <span key={s} style={{
-                                    fontSize: '0.75rem',
-                                    padding: '0.15rem 0.5rem',
-                                    borderRadius: '4px',
-                                    background: 'rgba(74, 222, 128, 0.1)',
-                                    color: '#4ade80',
-                                }}>
+                                <span
+                                    key={s}
+                                    className="rounded bg-[color-mix(in_srgb,var(--success)_10%,transparent)] px-2 py-0.5 text-xs text-[var(--success)]"
+                                >
                                     {s}
                                 </span>
                             ))}
@@ -292,22 +239,19 @@ export default function ProfilePage() {
 
             {/* Recent Activity */}
             {recentWorkouts.length > 0 && (
-                <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'white', marginBottom: '0.75rem' }}>
+                <div className="glass-card mb-4 p-5">
+                    <h3 className="eyebrow mb-3">
                         Recent Workouts
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="flex flex-col gap-2">
                         {recentWorkouts.map(log => (
-                            <div key={log.id} style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                padding: '0.5rem 0',
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                                fontSize: '0.85rem',
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Calendar size={14} color="#888" />
-                                    <span style={{ color: '#ccc' }}>
+                            <div
+                                key={log.id}
+                                className="flex justify-between border-b border-line-soft py-2 text-sm"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Calendar size={14} className="text-ink-low" />
+                                    <span className="text-ink-mid">
                                         {new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', {
                                             month: 'short',
                                             day: 'numeric',
@@ -315,7 +259,7 @@ export default function ProfilePage() {
                                     </span>
                                 </div>
                                 {log.total_duration_seconds && (
-                                    <span style={{ color: 'var(--primary)' }}>
+                                    <span className="text-brand">
                                         {Math.floor(log.total_duration_seconds / 60)} min
                                     </span>
                                 )}
@@ -328,22 +272,7 @@ export default function ProfilePage() {
             {/* Edit Profile Button */}
             <button
                 onClick={() => router.push('/settings')}
-                style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '10px',
-                    color: '#ccc',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s',
-                }}
+                className="btn-outline w-full !py-3 !text-sm"
             >
                 <Settings size={18} />
                 Edit Profile
@@ -354,9 +283,9 @@ export default function ProfilePage() {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: '#888', fontSize: '0.85rem' }}>{label}</span>
-            <span style={{ color: '#ccc', fontSize: '0.85rem', fontWeight: '500' }}>{value}</span>
+        <div className="flex items-center justify-between">
+            <span className="text-sm text-ink-low">{label}</span>
+            <span className="text-sm font-medium text-ink-mid">{value}</span>
         </div>
     );
 }

@@ -65,7 +65,7 @@ export function PRCelebration({ prs, isOpen, onClose, onShare }: PRCelebrationPr
                             height={windowSize.height}
                             recycle={false}
                             numberOfPieces={200}
-                            colors={['#fbbf24', '#f59e0b', '#d97706', '#fcd34d', '#fef3c7']}
+                            colors={['#FF8A00', '#FF6600', '#E04E00', '#FF8533', '#FF3D00']}
                         />
                     )}
 
@@ -82,19 +82,19 @@ export function PRCelebration({ prs, isOpen, onClose, onShare }: PRCelebrationPr
                             transition={{ type: 'spring', delay: 0.2 }}
                             className="flex justify-center mb-6"
                         >
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl shadow-yellow-500/30">
+                            <div className="w-24 h-24 rounded-full bg-[image:var(--brand-gradient)] flex items-center justify-center shadow-[0_0_40px_var(--brand-glow)]">
                                 <Trophy className="w-12 h-12 text-white" />
                             </div>
                         </motion.div>
 
                         {/* Content */}
-                        <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                        <div className="glass-card overflow-hidden">
                             <div className="p-6 text-center">
                                 <motion.h2
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.3 }}
-                                    className="text-2xl font-bold text-white mb-2"
+                                    className="display text-2xl font-bold text-ink-hi mb-2"
                                 >
                                     New Personal Record{prs.length > 1 ? 's' : ''}!
                                 </motion.h2>
@@ -102,7 +102,7 @@ export function PRCelebration({ prs, isOpen, onClose, onShare }: PRCelebrationPr
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.4 }}
-                                    className="text-gray-400"
+                                    className="text-ink-mid"
                                 >
                                     You crushed it today!
                                 </motion.p>
@@ -115,20 +115,20 @@ export function PRCelebration({ prs, isOpen, onClose, onShare }: PRCelebrationPr
                                         initial={{ opacity: 0, x: -30 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: 0.5 + index * 0.1 }}
-                                        className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/30"
+                                        className="flex items-center justify-between p-4 bg-[var(--brand-glow-soft)] rounded-xl border border-brand/30"
                                     >
                                         <div>
-                                            <p className="font-semibold text-white">{pr.exerciseName}</p>
-                                            <p className="text-sm text-yellow-400 capitalize">{pr.prType} PR</p>
+                                            <p className="font-semibold text-ink-hi">{pr.exerciseName}</p>
+                                            <p className="text-sm text-brand-hot capitalize">{pr.prType} PR</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-2xl font-bold text-yellow-400">
+                                            <p className="font-display text-2xl font-bold text-brand-hot">
                                                 {pr.newValue}
                                                 <span className="text-sm ml-1">
                                                     {pr.prType === 'weight' ? 'lbs' : pr.prType === 'reps' ? 'reps' : ''}
                                                 </span>
                                             </p>
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-xs text-ink-low">
                                                 +{Math.round(((pr.newValue - pr.previousValue) / pr.previousValue) * 100)}% from {pr.previousValue}
                                             </p>
                                         </div>
@@ -136,17 +136,17 @@ export function PRCelebration({ prs, isOpen, onClose, onShare }: PRCelebrationPr
                                 ))}
                             </div>
 
-                            <div className="p-4 border-t border-gray-800 flex gap-3">
+                            <div className="p-4 border-t border-line-soft flex gap-3">
                                 <button
                                     onClick={onClose}
-                                    className="flex-1 py-3 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 font-medium"
+                                    className="btn-outline flex-1"
                                 >
                                     Continue
                                 </button>
                                 {onShare && (
                                     <button
                                         onClick={onShare}
-                                        className="flex-1 py-3 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-medium flex items-center justify-center gap-2"
+                                        className="btn-brand flex-1"
                                     >
                                         <Share2 className="w-4 h-4" />
                                         Share

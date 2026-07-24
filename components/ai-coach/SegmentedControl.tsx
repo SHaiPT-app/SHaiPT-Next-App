@@ -42,11 +42,12 @@ export default function SegmentedControl({
     return (
         <div
             ref={containerRef}
-            className="segmented-control"
-            style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}
+            className={`relative flex rounded-[10px] border border-line-soft bg-[var(--surface-1)] p-[3px] ${
+                disabled ? 'pointer-events-none opacity-50' : ''
+            }`}
         >
             <div
-                className="segmented-control-indicator"
+                className="absolute bottom-[3px] top-[3px] rounded-lg bg-[image:var(--brand-gradient)] shadow-[0_0_16px_var(--brand-glow-soft)] transition-[left,width] duration-[250ms] ease-in-out"
                 style={{ left: indicatorStyle.left, width: indicatorStyle.width }}
             />
             {tabs.map(tab => (
@@ -54,10 +55,11 @@ export default function SegmentedControl({
                     key={tab.id}
                     data-seg-tab
                     data-active={tab.id === activeTab ? 'true' : 'false'}
-                    className="segmented-control-tab"
+                    className={`relative z-[1] flex flex-1 cursor-pointer items-center justify-center gap-[0.35rem] rounded-lg border-none bg-transparent px-4 py-2 text-center font-display text-[0.8rem] font-semibold transition-colors duration-200 ${
+                        tab.id === activeTab ? 'text-white' : 'text-ink-low hover:text-ink-mid'
+                    }`}
                     onClick={() => onTabChange(tab.id)}
                     disabled={disabled}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
                 >
                     {tab.icon}
                     {tab.label}

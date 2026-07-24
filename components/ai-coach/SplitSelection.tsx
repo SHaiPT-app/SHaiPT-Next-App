@@ -1,11 +1,8 @@
 'use client';
 
-import { Box, Text, Flex, VStack } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
 import { Check, Star } from 'lucide-react';
-
-const MotionBox = motion.create(Box);
 
 export interface SplitOption {
     id: string;
@@ -31,33 +28,22 @@ export default function SplitSelection({
     isLoading,
 }: SplitSelectionProps) {
     return (
-        <MotionBox
+        <motion.div
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
-            p="1rem"
+            className="p-4"
             data-testid="split-selection"
         >
-            <Box
-                p="1rem"
-                borderRadius="12px"
-                bg="rgba(255, 102, 0, 0.05)"
-                border="1px solid rgba(255, 102, 0, 0.2)"
-            >
-                <Text
-                    fontFamily="var(--font-orbitron)"
-                    fontSize="0.9rem"
-                    fontWeight="600"
-                    color="var(--neon-orange)"
-                    mb="0.5rem"
-                >
+            <div className="rounded-xl border border-brand/20 bg-brand/5 p-4">
+                <h3 className="font-display mb-2 text-[0.9rem] font-semibold text-ink-hi">
                     Choose Your Training Split
-                </Text>
-                <Text fontSize="0.8rem" color="#888" mb="1rem">
+                </h3>
+                <p className="mb-4 text-[0.8rem] text-ink-mid">
                     Based on your profile, here are the best options. Select one to generate your plan.
-                </Text>
+                </p>
 
-                <VStack gap="0.5rem" align="stretch">
+                <div className="flex flex-col items-stretch gap-2">
                     {splits.map((split) => {
                         const isSelected = selectedSplit === split.id;
                         return (
@@ -65,97 +51,58 @@ export default function SplitSelection({
                                 key={split.id}
                                 onClick={() => onSelectSplit(split.id)}
                                 data-testid={`split-option-${split.id}`}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.75rem 1rem',
-                                    background: isSelected
-                                        ? 'rgba(255, 102, 0, 0.15)'
-                                        : 'rgba(255, 255, 255, 0.03)',
-                                    border: isSelected
-                                        ? '2px solid #FF6600'
-                                        : '1px solid rgba(255, 255, 255, 0.08)',
-                                    borderRadius: '10px',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    color: 'var(--foreground)',
-                                    transition: 'all 0.2s',
-                                    width: '100%',
-                                }}
+                                className={`flex w-full cursor-pointer items-center gap-3 rounded-[10px] border px-4 py-3 text-left transition-all duration-200 ${
+                                    isSelected
+                                        ? 'border-brand bg-[var(--brand-glow-soft)] shadow-[0_0_24px_var(--brand-glow-soft)] ring-1 ring-brand'
+                                        : 'border-line-soft bg-[var(--surface-1)] hover:border-line-strong'
+                                }`}
                             >
                                 {/* Selection indicator */}
-                                <Box
-                                    w="20px"
-                                    h="20px"
-                                    borderRadius="50%"
-                                    border={isSelected ? '2px solid #FF6600' : '2px solid rgba(255, 255, 255, 0.2)'}
-                                    display="flex"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    flexShrink={0}
-                                    bg={isSelected ? '#FF6600' : 'transparent'}
+                                <span
+                                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                                        isSelected
+                                            ? 'border-brand bg-[image:var(--brand-gradient)]'
+                                            : 'border-line-strong bg-transparent'
+                                    }`}
                                 >
-                                    {isSelected && <Check size={12} color="#0B0B15" />}
-                                </Box>
+                                    {isSelected && <Check size={12} className="text-white" />}
+                                </span>
 
-                                <Box flex={1}>
-                                    <Flex alignItems="center" gap="0.5rem">
-                                        <Text fontWeight="600" fontSize="0.9rem">
+                                <span className="flex-1">
+                                    <span className="flex items-center gap-2">
+                                        <span className="text-[0.9rem] font-semibold text-ink-hi">
                                             {split.name}
-                                        </Text>
+                                        </span>
                                         {split.recommended && (
-                                            <Flex
-                                                alignItems="center"
-                                                gap="0.2rem"
-                                                px="0.4rem"
-                                                py="0.1rem"
-                                                borderRadius="4px"
-                                                bg="rgba(255, 102, 0, 0.2)"
-                                            >
-                                                <Star size={10} color="#FF6600" fill="#FF6600" />
-                                                <Text fontSize="0.65rem" color="#FF6600" fontWeight="600">
+                                            <span className="flex items-center gap-[0.2rem] rounded bg-[var(--brand-glow-soft)] px-[0.4rem] py-[0.1rem]">
+                                                <Star size={10} className="fill-brand text-brand" />
+                                                <span className="text-[0.65rem] font-semibold text-brand">
                                                     Recommended
-                                                </Text>
-                                            </Flex>
+                                                </span>
+                                            </span>
                                         )}
-                                    </Flex>
-                                    <Text fontSize="0.8rem" color="#888" mt="0.15rem">
+                                    </span>
+                                    <span className="mt-[0.15rem] block text-[0.8rem] text-ink-mid">
                                         {split.description}
-                                    </Text>
-                                    <Text fontSize="0.7rem" color="#666" mt="0.1rem">
+                                    </span>
+                                    <span className="mt-[0.1rem] block text-[0.7rem] text-ink-low">
                                         {split.days_per_week} days/week
-                                    </Text>
-                                </Box>
+                                    </span>
+                                </span>
                             </button>
                         );
                     })}
-                </VStack>
+                </div>
 
                 <button
                     onClick={onConfirm}
                     disabled={!selectedSplit || isLoading}
                     data-testid="confirm-split-btn"
-                    style={{
-                        width: '100%',
-                        marginTop: '1rem',
-                        padding: '0.75rem',
-                        background: !selectedSplit || isLoading
-                            ? 'rgba(255, 102, 0, 0.3)'
-                            : '#FF6600',
-                        color: !selectedSplit || isLoading ? '#888' : '#0B0B15',
-                        border: 'none',
-                        borderRadius: '10px',
-                        fontSize: '0.9rem',
-                        fontWeight: '700',
-                        fontFamily: 'var(--font-orbitron)',
-                        cursor: !selectedSplit || isLoading ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                    }}
+                    className="btn-brand mt-4 w-full font-display !text-[0.9rem]"
                 >
                     {isLoading ? 'Generating Plan...' : 'Generate My Plan'}
                 </button>
-            </Box>
-        </MotionBox>
+            </div>
+        </motion.div>
     );
 }
