@@ -1,6 +1,4 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ChakraProvider } from '@chakra-ui/react';
-import { system } from '@/lib/theme';
 import IntakeForm from '@/components/ai-coach/IntakeForm';
 import type { IntakeFormData } from '@/lib/types';
 
@@ -24,11 +22,7 @@ const EMPTY_FORM: IntakeFormData = {
 };
 
 function renderWithProviders(ui: React.ReactElement) {
-    return render(
-        <ChakraProvider value={system}>
-            {ui}
-        </ChakraProvider>
-    );
+    return render(ui);
 }
 
 describe('IntakeForm', () => {

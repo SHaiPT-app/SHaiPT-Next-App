@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Orbitron, Caveat } from "next/font/google";
-import { Provider } from "@/components/ui/provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -94,7 +93,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${caveat.variable}`}>
-        <Provider defaultTheme="dark">{children}</Provider>
+        {children}
       </body>
     </html>
   );

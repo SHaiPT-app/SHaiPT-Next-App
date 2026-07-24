@@ -230,55 +230,41 @@ export default function FeedPage() {
 
     if (loading && !user) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+            <div className="flex min-h-screen items-center justify-center">
                 <div className="spinner" />
             </div>
         );
     }
 
     return (
-        <div style={{ padding: '1.5rem', paddingBottom: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+        <div className="mx-auto max-w-[600px] p-6 pb-8">
             {/* Header */}
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '2rem',
-                    marginBottom: '0.5rem',
-                    color: 'var(--primary)'
-                }}>
+            <div className="mb-8">
+                <h1 className="display text-gradient-brand mb-2 text-[2rem]">
                     Feed
                 </h1>
-                <p style={{ color: '#888', fontSize: '0.9rem' }}>
+                <p className="text-sm text-ink-mid">
                     See what your community is up to
                 </p>
             </div>
 
             {/* Filter Tabs */}
-            <div style={{
-                display: 'flex',
-                gap: '0.5rem',
-                marginBottom: '1.5rem',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '12px',
-                padding: '0.25rem'
-            }} role="tablist" aria-label="Feed filter">
+            <div
+                className="mb-6 flex gap-2 rounded-xl border border-line-soft bg-[var(--surface-1)] p-1"
+                role="tablist"
+                aria-label="Feed filter"
+            >
                 {(['all', 'following'] as const).map(tab => (
                     <button
                         key={tab}
                         role="tab"
                         aria-selected={filter === tab}
                         onClick={() => setFilter(tab)}
-                        style={{
-                            flex: 1,
-                            padding: '0.75rem',
-                            background: filter === tab ? 'var(--primary)' : 'transparent',
-                            border: 'none',
-                            borderRadius: '10px',
-                            color: filter === tab ? 'white' : '#888',
-                            cursor: 'pointer',
-                            fontWeight: filter === tab ? '600' : '400',
-                            transition: 'all 0.2s'
-                        }}
+                        className={`flex-1 cursor-pointer rounded-lg py-3 text-sm transition-all ${
+                            filter === tab
+                                ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                        }`}
                     >
                         {tab === 'all' ? 'All' : 'Following'}
                     </button>
@@ -287,29 +273,18 @@ export default function FeedPage() {
 
             {/* Suggested Users */}
             {suggestedUsers.length > 0 && (
-                <div className="glass-panel" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '0.9rem', color: '#888', marginBottom: '0.75rem' }}>
+                <div className="glass-card mb-6 p-4">
+                    <h3 className="eyebrow mb-3">
                         Suggested Users
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div className="flex flex-col gap-3">
                         {suggestedUsers.map(suggestedUser => (
-                            <div key={suggestedUser.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, var(--primary), #ff6b35)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontWeight: '600',
-                                    fontSize: '0.85rem',
-                                    flexShrink: 0
-                                }}>
+                            <div key={suggestedUser.id} className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[image:var(--brand-gradient)] text-[0.85rem] font-semibold text-ink-hi">
                                     {suggestedUser.full_name?.charAt(0) || suggestedUser.username?.charAt(0) || 'U'}
                                 </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontWeight: '600', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <div className="min-w-0 flex-1">
+                                    <div className="truncate text-[0.9rem] font-semibold text-ink-hi">
                                         {suggestedUser.full_name || suggestedUser.username || 'Unknown'}
                                     </div>
                                 </div>
@@ -317,18 +292,7 @@ export default function FeedPage() {
                                     onClick={() => handleFollow(suggestedUser.id)}
                                     disabled={followLoading.has(suggestedUser.id)}
                                     aria-label={`Follow ${suggestedUser.full_name || suggestedUser.username}`}
-                                    style={{
-                                        padding: '0.4rem 0.75rem',
-                                        background: 'var(--primary)',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        color: 'white',
-                                        cursor: followLoading.has(suggestedUser.id) ? 'not-allowed' : 'pointer',
-                                        fontWeight: '600',
-                                        fontSize: '0.8rem',
-                                        opacity: followLoading.has(suggestedUser.id) ? 0.6 : 1,
-                                        transition: 'all 0.2s'
-                                    }}
+                                    className="btn-brand !px-3 !py-1.5 !text-[0.8rem]"
                                 >
                                     {followLoading.has(suggestedUser.id) ? '...' : 'Follow'}
                                 </button>
@@ -340,20 +304,20 @@ export default function FeedPage() {
 
             {/* Posts Feed */}
             {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+                <div className="flex justify-center p-12">
                     <div className="spinner" />
                 </div>
             ) : posts.length === 0 ? (
-                <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
-                    <p style={{ color: '#888', marginBottom: '0.5rem' }}>No activity yet</p>
-                    <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                <div className="glass-card p-12 text-center">
+                    <p className="mb-2 text-ink-mid">No activity yet</p>
+                    <p className="text-sm text-ink-low">
                         {filter === 'following'
                             ? 'Follow users to see their activity here!'
                             : 'Complete a workout to share your progress!'}
                     </p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                <div className="grid gap-6">
                     {posts.map(post => (
                         <PostCard
                             key={post.id}
@@ -440,26 +404,15 @@ function PostCard({
     };
 
     return (
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+        <div className="glass-card p-6">
             {/* Post Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--primary), #ff6b35)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '600',
-                    fontSize: '1.1rem',
-                    flexShrink: 0
-                }}>
+            <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[image:var(--brand-gradient)] text-[1.1rem] font-semibold text-ink-hi">
                     {post.user?.full_name?.charAt(0) || post.user?.username?.charAt(0) || 'U'}
                 </div>
-                <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontWeight: '600' }}>
+                <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-ink-hi">
                             {post.user?.full_name || post.user?.username || 'Unknown User'}
                         </span>
                         {!isOwnPost && (
@@ -467,32 +420,22 @@ function PostCard({
                                 onClick={() => isFollowing ? onUnfollow(post.user_id) : onFollow(post.user_id)}
                                 disabled={followLoading}
                                 aria-label={isFollowing ? `Unfollow ${post.user?.full_name || post.user?.username}` : `Follow ${post.user?.full_name || post.user?.username}`}
-                                style={{
-                                    padding: '0.15rem 0.5rem',
-                                    background: isFollowing ? 'rgba(255, 255, 255, 0.1)' : 'var(--primary)',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    color: 'white',
-                                    cursor: followLoading ? 'not-allowed' : 'pointer',
-                                    fontSize: '0.7rem',
-                                    fontWeight: '600',
-                                    opacity: followLoading ? 0.6 : 1,
-                                    transition: 'all 0.2s'
-                                }}
+                                className={`cursor-pointer rounded-md px-2 py-0.5 text-[0.7rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
+                                    isFollowing
+                                        ? 'border border-[var(--line-strong)] bg-[var(--surface-2)] text-ink-mid hover:text-ink-hi'
+                                        : 'bg-brand text-ink-hi shadow-[0_0_12px_var(--brand-glow-soft)] hover:bg-brand-hot'
+                                }`}
                             >
                                 {followLoading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}
                             </button>
                         )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#888' }}>
+                    <div className="flex items-center gap-2 text-[0.85rem] text-ink-mid">
                         <span>{getTimeAgo(post.created_at || '')}</span>
-                        <span style={{
-                            fontSize: '0.7rem',
-                            padding: '0.1rem 0.4rem',
-                            borderRadius: '4px',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            color: '#666'
-                        }} data-testid="visibility-badge">
+                        <span
+                            className="rounded bg-[var(--surface-2)] px-1.5 py-[1px] text-[0.7rem] text-ink-low"
+                            data-testid="visibility-badge"
+                        >
                             {getVisibilityLabel(post.visibility)}
                         </span>
                     </div>
@@ -500,51 +443,23 @@ function PostCard({
 
                 {/* Post menu for own posts */}
                 {isOwnPost && (
-                    <div style={{ position: 'relative' }}>
+                    <div className="relative">
                         <button
                             onClick={() => setShowMenu(!showMenu)}
                             aria-label="Post options"
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#888',
-                                cursor: 'pointer',
-                                padding: '0.25rem',
-                                fontSize: '1.2rem'
-                            }}
+                            className="cursor-pointer bg-transparent p-1 text-[1.2rem] text-ink-mid transition-colors hover:text-ink-hi"
                         >
                             &#8942;
                         </button>
                         {showMenu && (
-                            <div style={{
-                                position: 'absolute',
-                                right: 0,
-                                top: '100%',
-                                background: '#1e1e2e',
-                                borderRadius: '8px',
-                                padding: '0.25rem',
-                                minWidth: '120px',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                                zIndex: 10
-                            }}>
+                            <div className="absolute right-0 top-full z-10 min-w-[120px] rounded-xl border border-[var(--line-soft)] bg-[var(--surface-1)] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
                                 <button
                                     onClick={() => {
                                         onDeletePost(post.id);
                                         setShowMenu(false);
                                     }}
                                     data-testid="delete-post-btn"
-                                    style={{
-                                        display: 'block',
-                                        width: '100%',
-                                        padding: '0.5rem 0.75rem',
-                                        background: 'none',
-                                        border: 'none',
-                                        color: '#ff4444',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        borderRadius: '6px',
-                                        fontSize: '0.85rem'
-                                    }}
+                                    className="block w-full cursor-pointer rounded-lg bg-transparent px-3 py-2 text-left text-[0.85rem] text-destructive transition-colors hover:bg-destructive/10"
                                 >
                                     Delete Post
                                 </button>
@@ -557,23 +472,11 @@ function PostCard({
             {/* Post Content */}
             {post.post_type === 'pr_achieved' && (
                 <div>
-                    <div style={{
-                        background: 'linear-gradient(135deg, rgba(242, 95, 41, 0.2), rgba(255, 107, 53, 0.2))',
-                        border: '2px solid var(--primary)',
-                        borderRadius: '12px',
-                        padding: '1.5rem',
-                        marginBottom: '1rem'
-                    }}>
-                        <div style={{
-                            fontSize: '1.5rem',
-                            fontFamily: 'var(--font-orbitron)',
-                            color: 'var(--primary)',
-                            marginBottom: '0.5rem',
-                            textAlign: 'center'
-                        }}>
+                    <div className="mb-4 rounded-xl border-2 border-brand bg-[var(--brand-glow-soft)] p-6">
+                        <div className="font-display mb-2 text-center text-2xl font-bold text-brand">
                             NEW PR!
                         </div>
-                        <p style={{ textAlign: 'center', fontSize: '1.1rem' }}>
+                        <p className="text-center text-[1.1rem] text-ink-hi">
                             {post.content}
                         </p>
                     </div>
@@ -582,33 +485,29 @@ function PostCard({
 
             {post.post_type === 'workout_completed' && (
                 <div>
-                    <p style={{ marginBottom: '1rem' }}>{post.content}</p>
+                    <p className="mb-4 text-ink-hi">{post.content}</p>
                     {post.workout_log && (
-                        <div className="glass-panel" style={{
-                            padding: '1rem',
-                            background: 'rgba(242, 95, 41, 0.05)',
-                            border: '1px solid rgba(242, 95, 41, 0.2)'
-                        }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+                        <div className="rounded-2xl border border-brand/30 bg-[var(--brand-glow-soft)] p-4">
+                            <div className="flex justify-around text-center">
                                 <div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
+                                    <div className="font-display text-2xl font-semibold text-brand">
                                         {post.workout_log.exercise_logs?.length || 0}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#888' }}>Exercises</div>
+                                    <div className="text-xs text-ink-mid">Exercises</div>
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
+                                    <div className="font-display text-2xl font-semibold text-brand">
                                         {post.workout_log.exercise_logs?.reduce(
                                             (sum, log) => sum + (log.sets?.length || log.total_sets || 0), 0
                                         ) || 0}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#888' }}>Sets</div>
+                                    <div className="text-xs text-ink-mid">Sets</div>
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
+                                    <div className="font-display text-2xl font-semibold text-brand">
                                         {Math.floor((post.workout_log.total_duration_seconds || 0) / 60)}m
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#888' }}>Duration</div>
+                                    <div className="text-xs text-ink-mid">Duration</div>
                                 </div>
                             </div>
                         </div>
@@ -617,31 +516,17 @@ function PostCard({
             )}
 
             {post.post_type === 'manual' && (
-                <p style={{ marginBottom: '1rem' }}>{post.content}</p>
+                <p className="mb-4 text-ink-hi">{post.content}</p>
             )}
 
             {/* Actions */}
-            <div style={{
-                display: 'flex',
-                gap: '1.5rem',
-                marginTop: '1rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
+            <div className="mt-4 flex gap-6 border-t border-[var(--line-soft)] pt-4">
                 <button
                     onClick={() => onLike(post.id)}
                     aria-label={post.is_liked ? 'Unlike post' : 'Like post'}
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        color: post.is_liked ? 'var(--primary)' : '#888',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.9rem',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`flex cursor-pointer items-center gap-2 bg-transparent text-[0.9rem] transition-colors ${
+                        post.is_liked ? 'text-brand' : 'text-ink-mid hover:text-brand'
+                    }`}
                 >
                     <svg
                         width="18"
@@ -660,16 +545,7 @@ function PostCard({
                 <button
                     onClick={() => setShowComments(!showComments)}
                     aria-label="Toggle comments"
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#888',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.9rem'
-                    }}
+                    className="flex cursor-pointer items-center gap-2 bg-transparent text-[0.9rem] text-ink-mid transition-colors hover:text-ink-hi"
                 >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -680,43 +556,26 @@ function PostCard({
 
             {/* Comments Section */}
             {showComments && (
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div className="mt-4 border-t border-[var(--line-soft)] pt-4">
                     {post.comments && post.comments.length > 0 && (
-                        <div style={{ marginBottom: '1rem' }}>
+                        <div className="mb-4">
                             {post.comments.map(comment => (
-                                <div key={comment.id} style={{ marginBottom: '0.75rem' }}>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <div style={{
-                                            width: '24px',
-                                            height: '24px',
-                                            borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, var(--primary), #ff6b35)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '0.7rem',
-                                            flexShrink: 0
-                                        }}>
+                                <div key={comment.id} className="mb-3">
+                                    <div className="flex gap-2">
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[image:var(--brand-gradient)] text-[0.7rem] font-semibold text-ink-hi">
                                             {comment.user?.full_name?.charAt(0) || 'U'}
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>
+                                        <div className="flex-1">
+                                            <span className="text-[0.85rem] font-semibold text-ink-hi">
                                                 {comment.user?.full_name || comment.user?.username}
                                             </span>
-                                            <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}>{comment.content}</p>
+                                            <p className="my-1 text-[0.9rem] text-ink-mid">{comment.content}</p>
                                         </div>
                                         {comment.user_id === currentUserId && (
                                             <button
                                                 onClick={() => onDeleteComment(comment.id)}
                                                 aria-label="Delete comment"
-                                                style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    color: '#666',
-                                                    cursor: 'pointer',
-                                                    fontSize: '0.75rem',
-                                                    padding: '0.25rem'
-                                                }}
+                                                className="cursor-pointer bg-transparent p-1 text-xs text-ink-low transition-colors hover:text-destructive"
                                             >
                                                 x
                                             </button>
@@ -728,29 +587,19 @@ function PostCard({
                     )}
 
                     {/* Comment Form */}
-                    <form onSubmit={handleSubmitComment} style={{ display: 'flex', gap: '0.5rem' }}>
+                    <form onSubmit={handleSubmitComment} className="flex gap-2">
                         <input
                             type="text"
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
                             placeholder="Add a comment..."
-                            className="input-field"
-                            style={{ flex: 1 }}
+                            className="min-w-0 flex-1 rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 py-2.5 text-sm text-ink-hi placeholder:text-ink-low outline-none focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                             aria-label="Comment input"
                         />
                         <button
                             type="submit"
                             disabled={!commentText.trim()}
-                            style={{
-                                padding: '0.5rem 1rem',
-                                background: commentText.trim() ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
-                                border: 'none',
-                                borderRadius: '8px',
-                                color: 'white',
-                                cursor: commentText.trim() ? 'pointer' : 'not-allowed',
-                                fontWeight: '600',
-                                transition: 'all 0.2s'
-                            }}
+                            className="btn-brand !px-4 !py-2 !text-sm"
                         >
                             Post
                         </button>

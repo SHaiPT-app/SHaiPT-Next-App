@@ -2,15 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Text, Heading, VStack, Flex } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
 import { db } from '@/lib/supabaseDb';
 import type { Profile } from '@/lib/types';
 import { Send } from 'lucide-react';
-
-const MotionBox = motion.create(Box);
-const MotionFlex = motion.create(Flex);
 
 interface Message {
     id: string;
@@ -321,280 +317,133 @@ export default function OnboardingPage() {
 
     if (!user) {
         return (
-            <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                minH="100vh"
-                bg="var(--background)"
-            >
-                <Text color="gray.500">Loading...</Text>
-            </Box>
+            <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
+                <p className="text-ink-low">Loading...</p>
+            </div>
         );
     }
 
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            h="100vh"
-            bg="var(--background)"
-            overflow="hidden"
-        >
+        <div className="flex h-screen flex-col overflow-hidden bg-[var(--background)]">
             {/* Header */}
-            <MotionBox
+            <motion.div
                 variants={fadeInUp}
                 initial="hidden"
                 animate="visible"
-                px={{ base: '1rem', md: '2rem' }}
-                py="1rem"
-                borderBottom="1px solid var(--glass-border)"
+                className="border-b border-[var(--line-soft)] px-4 py-4 md:px-8"
             >
-                <Box maxW="900px" mx="auto" w="100%">
-                    <Heading
-                        as="h1"
-                        fontSize={{ base: '1.25rem', md: '1.5rem' }}
-                        fontFamily="var(--font-orbitron)"
-                        color="var(--primary)"
-                        mb="0.25rem"
-                    >
+                <div className="mx-auto w-full max-w-[900px]">
+                    <h1 className="display text-gradient-brand mb-1 text-xl md:text-2xl">
                         AI Onboarding
-                    </Heading>
-                    <Text color="gray.500" fontSize="sm">
+                    </h1>
+                    <p className="text-sm text-ink-mid">
                         Let your AI Coach get to know you
-                    </Text>
-                </Box>
-            </MotionBox>
+                    </p>
+                </div>
+            </motion.div>
 
             {/* Messages */}
-            <Box
-                flex={1}
-                overflowY="auto"
-                px={{ base: '1rem', md: '2rem' }}
-                py="1.5rem"
-            >
-                <VStack
-                    maxW="900px"
-                    mx="auto"
-                    w="100%"
-                    gap="1rem"
-                    align="stretch"
-                >
+            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+                <div className="mx-auto flex w-full max-w-[900px] flex-col gap-4">
                     <AnimatePresence mode="popLayout">
                         {messages.map((message) => (
-                            <MotionFlex
+                            <motion.div
                                 key={message.id}
                                 variants={fadeInUp}
                                 initial="hidden"
                                 animate="visible"
                                 exit="hidden"
-                                gap="0.75rem"
-                                alignItems="flex-start"
+                                className="flex items-start gap-3"
                             >
                                 {/* Avatar */}
-                                <Box
-                                    w="36px"
-                                    h="36px"
-                                    borderRadius="50%"
-                                    bg={
+                                <div
+                                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base ${
                                         message.role === 'user'
-                                            ? 'linear-gradient(135deg, var(--primary), #ff6b35)'
-                                            : 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                                    }
-                                    display="flex"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    flexShrink={0}
-                                    fontSize="1rem"
+                                            ? 'bg-[image:var(--brand-gradient)]'
+                                            : 'bg-[linear-gradient(135deg,#6366f1,#8b5cf6)]'
+                                    }`}
                                 >
                                     {message.role === 'user' ? '\u{1F464}' : '\u{1F916}'}
-                                </Box>
+                                </div>
 
                                 {/* Message content */}
-                                <Box
-                                    flex={1}
-                                    p="1rem"
-                                    borderRadius="12px"
-                                    bg={
+                                <div
+                                    className={`flex-1 rounded-xl border p-4 ${
                                         message.role === 'user'
-                                            ? 'rgba(255, 102, 0, 0.1)'
-                                            : 'rgba(255, 255, 255, 0.05)'
-                                    }
-                                    border="1px solid"
-                                    borderColor={
-                                        message.role === 'user'
-                                            ? 'rgba(255, 102, 0, 0.2)'
-                                            : 'var(--glass-border)'
-                                    }
+                                            ? 'border-brand/20 bg-[var(--brand-glow-soft)]'
+                                            : 'border-[var(--line-soft)] bg-[var(--surface-1)]'
+                                    }`}
                                 >
-                                    <Text
-                                        fontSize="0.7rem"
-                                        color="gray.500"
-                                        mb="0.25rem"
-                                        fontWeight="600"
-                                        textTransform="uppercase"
-                                        letterSpacing="0.05em"
-                                    >
+                                    <p className="mb-1 text-[0.7rem] font-semibold uppercase tracking-wider text-ink-low">
                                         {message.role === 'user' ? 'You' : 'AI Coach'}
-                                    </Text>
-                                    <Text
-                                        whiteSpace="pre-wrap"
-                                        lineHeight="1.6"
-                                        color="var(--foreground)"
-                                        fontSize="0.95rem"
-                                    >
+                                    </p>
+                                    <p className="whitespace-pre-wrap text-[0.95rem] leading-relaxed text-ink-hi">
                                         {message.content}
-                                    </Text>
-                                </Box>
-                            </MotionFlex>
+                                    </p>
+                                </div>
+                            </motion.div>
                         ))}
                     </AnimatePresence>
 
                     {/* Loading indicator */}
                     {isLoading && (
-                        <MotionFlex
+                        <motion.div
                             variants={fadeInUp}
                             initial="hidden"
                             animate="visible"
-                            gap="0.75rem"
-                            alignItems="flex-start"
+                            className="flex items-start gap-3"
                         >
-                            <Box
-                                w="36px"
-                                h="36px"
-                                borderRadius="50%"
-                                bg="linear-gradient(135deg, #6366f1, #8b5cf6)"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                                flexShrink={0}
-                                fontSize="1rem"
-                            >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#6366f1,#8b5cf6)] text-base">
                                 {'\u{1F916}'}
-                            </Box>
-                            <Box
-                                p="1rem"
-                                borderRadius="12px"
-                                bg="rgba(255, 255, 255, 0.05)"
-                                border="1px solid var(--glass-border)"
-                            >
-                                <Box display="flex" gap="0.3rem" alignItems="center">
-                                    <Box
-                                        as="span"
-                                        w="6px"
-                                        h="6px"
-                                        borderRadius="50%"
-                                        bg="var(--primary)"
-                                        display="inline-block"
-                                        animation="pulse 1.4s ease-in-out infinite"
-                                    />
-                                    <Box
-                                        as="span"
-                                        w="6px"
-                                        h="6px"
-                                        borderRadius="50%"
-                                        bg="var(--primary)"
-                                        display="inline-block"
-                                        animation="pulse 1.4s ease-in-out 0.2s infinite"
-                                    />
-                                    <Box
-                                        as="span"
-                                        w="6px"
-                                        h="6px"
-                                        borderRadius="50%"
-                                        bg="var(--primary)"
-                                        display="inline-block"
-                                        animation="pulse 1.4s ease-in-out 0.4s infinite"
-                                    />
-                                </Box>
-                            </Box>
-                        </MotionFlex>
+                            </div>
+                            <div className="rounded-xl border border-[var(--line-soft)] bg-[var(--surface-1)] p-4">
+                                <span className="thinking-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </span>
+                            </div>
+                        </motion.div>
                     )}
 
                     <div ref={messagesEndRef} />
-                </VStack>
-            </Box>
+                </div>
+            </div>
 
             {/* Input / Complete */}
-            <Box
-                px={{ base: '1rem', md: '2rem' }}
-                py="1rem"
-                borderTop="1px solid var(--glass-border)"
-            >
-                <Box maxW="900px" mx="auto" w="100%">
+            <div className="border-t border-[var(--line-soft)] px-4 py-4 md:px-8">
+                <div className="mx-auto w-full max-w-[900px]">
                     {isComplete ? (
-                        <MotionBox
+                        <motion.div
                             variants={fadeInUp}
                             initial="hidden"
                             animate="visible"
                         >
                             {isGeneratingPlans ? (
-                                <Box
+                                <div
                                     data-testid="generating-plans"
-                                    p="1.5rem"
-                                    borderRadius="12px"
-                                    bg="rgba(255, 102, 0, 0.05)"
-                                    border="1px solid rgba(255, 102, 0, 0.2)"
-                                    textAlign="center"
+                                    className="rounded-xl border border-brand/20 bg-[var(--brand-glow-soft)] p-6 text-center"
                                 >
-                                    <Box
-                                        display="flex"
-                                        gap="0.3rem"
-                                        alignItems="center"
-                                        justifyContent="center"
-                                        mb="0.75rem"
-                                    >
-                                        <Box
-                                            as="span"
-                                            w="8px"
-                                            h="8px"
-                                            borderRadius="50%"
-                                            bg="var(--primary)"
-                                            display="inline-block"
-                                            animation="pulse 1.4s ease-in-out infinite"
-                                        />
-                                        <Box
-                                            as="span"
-                                            w="8px"
-                                            h="8px"
-                                            borderRadius="50%"
-                                            bg="var(--primary)"
-                                            display="inline-block"
-                                            animation="pulse 1.4s ease-in-out 0.2s infinite"
-                                        />
-                                        <Box
-                                            as="span"
-                                            w="8px"
-                                            h="8px"
-                                            borderRadius="50%"
-                                            bg="var(--primary)"
-                                            display="inline-block"
-                                            animation="pulse 1.4s ease-in-out 0.4s infinite"
-                                        />
-                                    </Box>
-                                    <Text
-                                        color="var(--primary)"
-                                        fontFamily="var(--font-orbitron)"
-                                        fontSize="0.9rem"
-                                        fontWeight="600"
-                                    >
+                                    <div className="mb-3 flex items-center justify-center">
+                                        <span className="thinking-dots">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </span>
+                                    </div>
+                                    <p className="font-display text-sm font-semibold text-brand">
                                         Generating your personalized plans...
-                                    </Text>
-                                    <Text color="gray.500" fontSize="0.8rem" mt="0.25rem">
+                                    </p>
+                                    <p className="mt-1 text-xs text-ink-low">
                                         Creating your training and nutrition plans
-                                    </Text>
-                                </Box>
+                                    </p>
+                                </div>
                             ) : generationError ? (
-                                <Box data-testid="generation-error">
-                                    <Text
-                                        color="red.400"
-                                        fontSize="0.85rem"
-                                        mb="0.75rem"
-                                        textAlign="center"
-                                    >
+                                <div data-testid="generation-error">
+                                    <p className="mb-3 text-center text-sm text-red-400">
                                         {generationError}
-                                    </Text>
-                                    <Box display="flex" gap="0.75rem">
+                                    </p>
+                                    <div className="flex gap-3">
                                         <button
                                             onClick={() =>
                                                 generatePlans(
@@ -604,72 +453,31 @@ export default function OnboardingPage() {
                                                 )
                                             }
                                             data-testid="retry-button"
-                                            style={{
-                                                flex: 1,
-                                                padding: '1rem',
-                                                background: 'var(--primary)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                fontSize: '1rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                            }}
+                                            className="btn-brand flex-1"
                                         >
                                             Retry
                                         </button>
                                         <button
                                             onClick={handleContinue}
                                             data-testid="skip-button"
-                                            style={{
-                                                flex: 1,
-                                                padding: '1rem',
-                                                background: 'transparent',
-                                                color: 'var(--foreground)',
-                                                border: '1px solid var(--glass-border)',
-                                                borderRadius: '12px',
-                                                fontSize: '1rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                            }}
+                                            className="btn-outline flex-1"
                                         >
                                             Skip for now
                                         </button>
-                                    </Box>
-                                </Box>
+                                    </div>
+                                </div>
                             ) : (
                                 <button
                                     onClick={handleContinue}
                                     data-testid="continue-button"
-                                    style={{
-                                        width: '100%',
-                                        padding: '1rem',
-                                        background: 'var(--primary)',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '12px',
-                                        fontSize: '1rem',
-                                        fontWeight: '600',
-                                        fontFamily: 'var(--font-orbitron)',
-                                        cursor: 'pointer',
-                                        transition: 'opacity 0.2s',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.opacity = '0.9';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.opacity = '1';
-                                    }}
+                                    className="btn-brand font-display w-full"
                                 >
                                     Continue to Dashboard
                                 </button>
                             )}
-                        </MotionBox>
+                        </motion.div>
                     ) : (
-                        <form
-                            onSubmit={handleSubmit}
-                            style={{ display: 'flex', gap: '0.75rem' }}
-                        >
+                        <form onSubmit={handleSubmit} className="flex gap-3">
                             <input
                                 ref={inputRef}
                                 value={input}
@@ -677,51 +485,20 @@ export default function OnboardingPage() {
                                 placeholder="Type your response..."
                                 disabled={isLoading}
                                 data-testid="chat-input"
-                                style={{
-                                    flex: 1,
-                                    padding: '0.875rem 1rem',
-                                    fontSize: '1rem',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    border: '1px solid var(--glass-border)',
-                                    borderRadius: '12px',
-                                    color: 'var(--foreground)',
-                                    outline: 'none',
-                                    transition: 'border-color 0.2s',
-                                }}
-                                onFocus={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--glass-border)';
-                                }}
+                                className="flex-1 rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 py-3 text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)] disabled:opacity-60"
                             />
                             <button
                                 type="submit"
                                 disabled={isLoading || !input.trim()}
                                 data-testid="send-button"
-                                style={{
-                                    padding: '0.875rem 1.25rem',
-                                    background: isLoading || !input.trim()
-                                        ? 'rgba(255, 102, 0, 0.3)'
-                                        : 'var(--primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    cursor: isLoading || !input.trim()
-                                        ? 'not-allowed'
-                                        : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'background 0.2s',
-                                }}
+                                className="btn-brand !px-5"
                             >
                                 <Send size={20} />
                             </button>
                         </form>
                     )}
-                </Box>
-            </Box>
-        </Box>
+                </div>
+            </div>
+        </div>
     );
 }

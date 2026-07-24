@@ -5,49 +5,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { Profile } from '@/lib/types';
 
-// Mock Chakra UI
-jest.mock('@chakra-ui/react', () => {
-    const React = require('react');
-    const createComponent = (displayName: string) => {
-        const Comp = React.forwardRef((props: Record<string, unknown>, ref: React.Ref<unknown>) => {
-            const { children, as: Component = 'div', ...rest } = props;
-            // Filter out Chakra-specific props
-            const htmlProps: Record<string, unknown> = {};
-            const chakraProps = [
-                'px', 'py', 'mb', 'mt', 'mr', 'ml', 'gap', 'bg', 'borderRadius',
-                'borderBottom', 'borderTop', 'borderColor', 'border',
-                'alignItems', 'justifyContent', 'flexShrink', 'flexDirection',
-                'overflowY', 'textTransform', 'letterSpacing', 'lineClamp',
-                'lineHeight', 'whiteSpace', 'fontFamily', 'fontWeight',
-                'fontSize', 'maxH', 'maxW', 'width', 'height', 'w', 'h',
-                'position', 'bottom', 'right', 'top', 'left', 'zIndex',
-                'backdropFilter', 'boxShadow', 'color', 'display',
-                'animation', 'flex', 'textAlign', 'align',
-            ];
-            for (const [key, val] of Object.entries(rest)) {
-                if (!chakraProps.includes(key)) {
-                    htmlProps[key] = val;
-                }
-            }
-            return React.createElement(
-                typeof Component === 'string' ? Component : 'div',
-                { ...htmlProps, ref },
-                children
-            );
-        });
-        Comp.displayName = displayName;
-        return Comp;
-    };
-
-    return {
-        Box: createComponent('Box'),
-        Flex: createComponent('Flex'),
-        VStack: createComponent('VStack'),
-        Text: createComponent('Text'),
-        Heading: createComponent('Heading'),
-    };
-});
-
 // Mock framer-motion
 jest.mock('framer-motion', () => {
     const React = require('react');

@@ -2,38 +2,21 @@
 
 import Image from 'next/image';
 import LoginForm from '@/components/LoginForm';
-import { Box } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
 
-const MotionBox = motion.create(Box);
-
 export default function LoginPage() {
     return (
-        <Box
-            as="main"
-            minH="100vh"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            bg="#15151F"
-            p="1rem"
-            position="relative"
-            overflow="hidden"
-        >
+        <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#15151F] p-4">
             {/* Ambient brand glow */}
             <div className="glow-orb -top-[15%] left-[15%] h-[45vw] w-[45vw]" />
             <div className="glow-orb glow-orb--pink -bottom-[15%] right-[10%] h-[35vw] w-[35vw]" />
 
-            <MotionBox
+            <motion.div
                 variants={fadeInUp}
                 initial="hidden"
                 animate="visible"
-                mb="2rem"
-                textAlign="center"
-                position="relative"
-                zIndex={1}
+                className="relative z-[1] mb-8 text-center"
             >
                 <div className="mb-4 flex justify-center">
                     <Image
@@ -51,11 +34,11 @@ export default function LoginPage() {
                 <p className="text-base text-ink-mid md:text-lg">
                     AI-Powered Personal Training
                 </p>
-            </MotionBox>
+            </motion.div>
 
-            <Box position="relative" zIndex={1} w="100%" display="flex" justifyContent="center">
+            <div className="relative z-[1] flex w-full justify-center">
                 <LoginForm />
-            </Box>
-        </Box>
+            </div>
+        </main>
     );
 }

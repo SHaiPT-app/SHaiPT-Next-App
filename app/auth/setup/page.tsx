@@ -3,13 +3,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/supabaseDb';
-import { Box, Text, Input, Button, VStack, Heading, Flex } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { fadeInUp, tapScale } from '@/lib/animations';
 import { User } from 'lucide-react';
-
-const MotionBox = motion.create(Box);
-const MotionButton = motion.create(Button);
 
 function UsernameSetupForm() {
     const router = useRouter();
@@ -74,91 +70,67 @@ function UsernameSetupForm() {
     }
 
     return (
-        <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minH="100vh"
-            p="1rem"
-            bg="#15151F"
-        >
-            <MotionBox
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#15151F] p-4">
+            {/* Ambient brand glow */}
+            <div className="glow-orb -top-[15%] left-[15%] h-[45vw] w-[45vw]" />
+            <div className="glow-orb glow-orb--pink -bottom-[15%] right-[10%] h-[35vw] w-[35vw]" />
+
+            <motion.div
                 variants={fadeInUp}
                 initial="hidden"
                 animate="visible"
-                bg="rgba(255, 255, 255, 0.05)"
-                backdropFilter="blur(10px)"
-                border="1px solid rgba(255, 255, 255, 0.1)"
-                borderRadius="16px"
-                p={{ base: '1.5rem', md: '2rem' }}
-                w="100%"
-                maxW="420px"
-                boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
+                className="glass-card relative z-[1] w-full max-w-[420px] p-6 md:p-8"
             >
-                <VStack gap="1rem" align="stretch">
-                    <Heading as="h2" size="lg" textAlign="center" color="white">
+                <div className="flex flex-col gap-4">
+                    <h2 className="font-display text-center text-2xl font-bold tracking-tight text-ink-hi">
                         Complete Your Profile
-                    </Heading>
-                    <Text textAlign="center" color="gray.500" fontSize="sm">
+                    </h2>
+                    <p className="text-center text-sm text-ink-mid">
                         Choose a username and your role to get started
-                    </Text>
+                    </p>
 
                     {/* Role toggle */}
-                    <Flex
-                        bg="var(--secondary)"
-                        borderRadius="8px"
-                        p="4px"
-                    >
-                        <Button
+                    <div className="flex rounded-xl border border-[var(--line-soft)] bg-[var(--surface-2)] p-1">
+                        <button
                             type="button"
                             onClick={() => setRole('trainee')}
-                            flex={1}
-                            h="40px"
-                            bg={role === 'trainee' ? 'var(--primary)' : 'transparent'}
-                            color={role === 'trainee' ? 'white' : 'var(--foreground)'}
-                            borderRadius="6px"
-                            fontWeight="500"
-                            _hover={{ opacity: 0.9 }}
-                            transition="all 0.2s"
+                            className={`h-10 flex-1 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                                role === 'trainee'
+                                    ? 'bg-[image:var(--brand-gradient)] text-white shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                    : 'bg-transparent text-ink-mid hover:text-ink-hi'
+                            }`}
                         >
                             Trainee
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             type="button"
                             onClick={() => setRole('trainer')}
-                            flex={1}
-                            h="40px"
-                            bg={role === 'trainer' ? 'var(--primary)' : 'transparent'}
-                            color={role === 'trainer' ? 'white' : 'var(--foreground)'}
-                            borderRadius="6px"
-                            fontWeight="500"
-                            _hover={{ opacity: 0.9 }}
-                            transition="all 0.2s"
+                            className={`h-10 flex-1 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                                role === 'trainer'
+                                    ? 'bg-[image:var(--brand-gradient)] text-white shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                    : 'bg-transparent text-ink-mid hover:text-ink-hi'
+                            }`}
                         >
                             Trainer
-                        </Button>
-                    </Flex>
+                        </button>
+                    </div>
 
                     <form onSubmit={handleSubmit}>
-                        <VStack gap="0.75rem" align="stretch">
+                        <div className="flex flex-col gap-3">
                             {/* Email (disabled) */}
-                            <Input
+                            <input
                                 type="email"
                                 value={email || ''}
                                 disabled
-                                bg="rgba(255,255,255,0.05)"
-                                border="1px solid var(--glass-border)"
-                                color="gray.500"
-                                borderRadius="8px"
-                                h="48px"
+                                className="h-12 w-full rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 text-ink-low outline-none disabled:cursor-not-allowed disabled:opacity-60"
                             />
 
                             {/* Username */}
-                            <Box position="relative">
-                                <Box position="absolute" left="12px" top="50%" transform="translateY(-50%)" color="gray.500" zIndex={1}>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-ink-low">
                                     <User size={18} />
-                                </Box>
-                                <Input
+                                </span>
+                                <input
                                     type="text"
                                     placeholder="Choose a username"
                                     value={username}
@@ -168,81 +140,47 @@ function UsernameSetupForm() {
                                     maxLength={20}
                                     pattern="^[a-zA-Z0-9_]+$"
                                     title="Username can only contain letters, numbers, and underscores"
-                                    bg="var(--secondary)"
-                                    border="1px solid var(--glass-border)"
-                                    color="var(--foreground)"
-                                    borderRadius="8px"
-                                    pl="40px"
-                                    h="48px"
-                                    _focus={{ outline: '2px solid var(--primary)', borderColor: 'transparent' }}
-                                    _placeholder={{ color: 'gray.500' }}
+                                    className="h-12 w-full rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] pl-10 pr-4 text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                                 />
-                            </Box>
+                            </div>
 
                             {error && (
-                                <Box
-                                    bg="rgba(239, 68, 68, 0.1)"
-                                    border="1px solid rgba(239, 68, 68, 0.2)"
-                                    borderRadius="8px"
-                                    p="0.75rem"
-                                    textAlign="center"
-                                >
-                                    <Text color="red.400" fontSize="sm">{error}</Text>
+                                <div className="rounded-xl border border-[var(--error)]/20 bg-[var(--error)]/10 p-3 text-center">
+                                    <p className="text-sm text-red-400">{error}</p>
                                     {error.includes('log in') && (
-                                        <Button
+                                        <button
                                             type="button"
-                                            variant="plain"
                                             onClick={() => router.push('/login')}
-                                            color="var(--primary)"
-                                            textDecoration="underline"
-                                            fontSize="sm"
-                                            p="0"
-                                            mt="0.25rem"
-                                            h="auto"
-                                            minH="auto"
+                                            className="mt-1 cursor-pointer border-none bg-transparent p-0 text-sm text-brand underline"
                                         >
                                             Go to Login
-                                        </Button>
+                                        </button>
                                     )}
-                                </Box>
+                                </div>
                             )}
 
-                            <MotionButton
+                            <motion.button
                                 type="submit"
                                 {...tapScale}
-                                w="100%"
-                                h="48px"
-                                bg="var(--primary)"
-                                color="white"
-                                borderRadius="8px"
-                                fontWeight="600"
-                                fontSize="md"
                                 disabled={loading || !username}
-                                _hover={{ opacity: 0.9 }}
-                                _disabled={{ opacity: 0.6, cursor: 'not-allowed' }}
+                                className="btn-brand h-12 w-full"
                             >
                                 {loading ? 'Creating Profile...' : 'Complete Setup'}
-                            </MotionButton>
-                        </VStack>
+                            </motion.button>
+                        </div>
                     </form>
-                </VStack>
-            </MotionBox>
-        </Box>
+                </div>
+            </motion.div>
+        </div>
     );
 }
 
 export default function UsernameSetup() {
     return (
         <Suspense fallback={
-            <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                minH="100vh"
-                bg="#15151F"
-            >
-                <Text color="gray.500">Loading...</Text>
-            </Box>
+            <div className="flex min-h-screen items-center justify-center bg-[#15151F]">
+                <p className="text-ink-low">Loading...</p>
+            </div>
         }>
             <UsernameSetupForm />
         </Suspense>

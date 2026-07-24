@@ -328,14 +328,14 @@ export default function TrainerDashboard({ user }: { user: User }) {
     });
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem' }}>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-[300px_1fr]">
             {/* Sidebar: Client List */}
-            <div className="glass-panel" style={{ padding: '1.5rem', height: 'fit-content' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
-                    <h3 style={{ margin: 0 }}>Clients</h3>
+            <div className="glass-card h-fit p-6">
+                <div className="mb-4 flex items-center justify-between border-b border-line-soft pb-3">
+                    <h3 className="display m-0 text-lg">Clients</h3>
                     <button
                         onClick={() => setShowAddClient(true)}
-                        style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '1.2rem' }}
+                        className="icon-btn !h-8 !w-8 !text-lg"
                         title="Add Client"
                     >
                         +
@@ -343,7 +343,7 @@ export default function TrainerDashboard({ user }: { user: User }) {
                 </div>
 
                 {showAddClient && (
-                    <div style={{ marginBottom: '1rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', position: 'relative' }}>
+                    <div className="relative mb-4 rounded-xl border border-line-soft bg-[var(--surface-2)] p-3">
                         <input
                             type="text"
                             placeholder="Search trainee by username..."
@@ -352,23 +352,12 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                 setAddClientUsername(e.target.value);
                                 searchTrainees(e.target.value);
                             }}
-                            style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                            className="mb-2 w-full rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 py-3 text-sm text-ink-hi placeholder:text-ink-low outline-none focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                         />
 
                         {/* Dropdown with search results */}
                         {showDropdown && searchResults.length > 0 && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: '0.5rem',
-                                right: '0.5rem',
-                                background: 'rgba(0,0,0,0.9)',
-                                border: '1px solid var(--glass-border)',
-                                borderRadius: '4px',
-                                zIndex: 1000,
-                                maxHeight: '200px',
-                                overflowY: 'auto'
-                            }}>
+                            <div className="absolute left-3 right-3 top-full z-[1000] max-h-[200px] overflow-y-auto rounded-xl border border-[var(--line-strong)] bg-[var(--surface-0)] shadow-[0_16px_48px_rgba(0,0,0,0.45)]">
                                 {searchResults.map(trainee => (
                                     <div
                                         key={trainee.id}
@@ -376,26 +365,20 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                             setAddClientUsername(trainee.username || '');
                                             handleAddClient(trainee.username || '');
                                         }}
-                                        style={{
-                                            padding: '0.75rem',
-                                            cursor: 'pointer',
-                                            borderBottom: '1px solid var(--glass-border)'
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                        className="cursor-pointer border-b border-line-soft p-3 transition-colors last:border-b-0 hover:bg-[var(--brand-glow-soft)]"
                                     >
-                                        <div style={{ fontWeight: 'bold' }}>{trainee.username}</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#888' }}>{trainee.email}</div>
+                                        <div className="text-sm font-semibold text-ink-hi">{trainee.username}</div>
+                                        <div className="text-xs text-ink-low">{trainee.email}</div>
                                     </div>
                                 ))}
                             </div>
                         )}
 
-                        {addClientError && <p style={{ color: 'red', fontSize: '0.75rem', marginBottom: '0.5rem' }}>{addClientError}</p>}
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {addClientError && <p className="mb-2 text-xs text-destructive">{addClientError}</p>}
+                        <div className="flex gap-2">
                             <button
                                 onClick={() => handleAddClient(addClientUsername)}
-                                style={{ flex: 1, padding: '0.25rem', background: 'var(--primary)', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer' }}
+                                className="btn-brand flex-1 !px-3 !py-1.5 !text-[0.8rem]"
                                 disabled={!addClientUsername}
                             >
                                 Add
@@ -406,12 +389,12 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                 setAddClientUsername('');
                                 setSearchResults([]);
                                 setShowDropdown(false);
-                            }} style={{ flex: 1, padding: '0.25rem', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: '4px', color: '#ccc', cursor: 'pointer' }}>Cancel</button>
+                            }} className="btn-outline flex-1 !px-3 !py-1.5 !text-[0.8rem]">Cancel</button>
                         </div>
                     </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="flex flex-col gap-2">
                     {trainees.map(trainee => (
                         <button
                             key={trainee.id}
@@ -419,28 +402,23 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                 setSelectedTrainee(trainee);
                                 setCreatingPlan(false);
                             }}
-                            style={{
-                                textAlign: 'left',
-                                padding: '0.75rem',
-                                background: selectedTrainee?.id === trainee.id ? 'var(--primary)' : 'transparent',
-                                border: 'none',
-                                borderRadius: '8px',
-                                color: selectedTrainee?.id === trainee.id ? 'white' : 'var(--foreground)',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
+                            className={`w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-sm transition-all ${
+                                selectedTrainee?.id === trainee.id
+                                    ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                    : 'bg-transparent font-normal text-ink-mid hover:bg-[var(--surface-2)] hover:text-ink-hi'
+                            }`}
                         >
                             {trainee.username}
                         </button>
                     ))}
-                    {trainees.length === 0 && <p style={{ color: '#888', fontSize: '0.875rem' }}>No clients found.</p>}
+                    {trainees.length === 0 && <p className="text-sm text-ink-low">No clients found.</p>}
                 </div>
             </div>
 
             {/* Main Content */}
             <div>
                 {!selectedTrainee ? (
-                    <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+                    <div className="glass-card p-12 text-center text-ink-mid">
                         Select a client to view or create plans.
                     </div>
                 ) : isCreating || editingPlan ? (
@@ -452,30 +430,29 @@ export default function TrainerDashboard({ user }: { user: User }) {
                         plan={editingPlan || undefined}
                     />
                 ) : (
-                    <div className="glass-panel" style={{ padding: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h2>Plans for {selectedTrainee.username}</h2>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div className="glass-card p-8">
+                        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+                            <h2 className="display m-0 text-xl">Plans for {selectedTrainee.username}</h2>
+                            <div className="flex flex-wrap items-center gap-3">
                                 <select
                                     value={sortOrder}
                                     onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
-                                    style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)' }}
+                                    className="cursor-pointer rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 py-2 text-sm text-ink-hi outline-none focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                                 >
                                     <option value="newest">Newest First</option>
                                     <option value="oldest">Oldest First</option>
                                 </select>
-                                <button className="btn-primary" onClick={() => { setEditingPlan(null); setCreatingPlan(true); }}>
+                                <button className="btn-brand !px-4 !py-2 !text-[0.8rem]" onClick={() => { setEditingPlan(null); setCreatingPlan(true); }}>
                                     + Create New Plan
                                 </button>
                                 <button
-                                    className="btn-primary"
+                                    className="btn-soft !px-4 !py-2 !text-[0.8rem]"
                                     onClick={openAssignPlan}
-                                    style={{ background: 'var(--accent)' }}
                                 >
                                     Assign Plan
                                 </button>
                                 <button
-                                    className="btn-primary"
+                                    className="btn-outline !px-4 !py-2 !text-[0.8rem]"
                                     onClick={() => openAIToolkit(selectedTrainee)}
                                 >
                                     AI Toolkit
@@ -483,60 +460,57 @@ export default function TrainerDashboard({ user }: { user: User }) {
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div className="flex flex-col gap-4">
                             {sortedPlans.map(plan => (
-                                <div key={plan.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                <div key={plan.id} className="rounded-xl border border-line-soft bg-[var(--surface-2)] p-5">
+                                    <div className="mb-2 flex items-start justify-between gap-3">
                                         <div>
-                                            <h3 style={{ marginBottom: '0.25rem' }}>{plan.name}</h3>
-                                            <p style={{ color: '#888', fontSize: '0.875rem' }}>Created: {new Date(plan.created_at || '').toLocaleDateString()}</p>
+                                            <h3 className="mb-1 text-base font-semibold text-ink-hi">{plan.name}</h3>
+                                            <p className="text-sm text-ink-low">Created: {new Date(plan.created_at || '').toLocaleDateString()}</p>
                                         </div>
                                         <button
                                             onClick={() => setEditingPlan(plan)}
-                                            style={{ background: 'transparent', border: '1px solid var(--glass-border)', padding: '0.25rem 0.75rem', borderRadius: '4px', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.875rem' }}
+                                            className="btn-outline shrink-0 !px-3 !py-1 !text-[0.8rem]"
                                         >
                                             Edit
                                         </button>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <div className="flex flex-wrap gap-2">
                                         {(plan.exercises || []).map((ex: any, i: number) => (
-                                            <span key={i} style={{ background: 'var(--secondary)', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.875rem', border: '1px solid var(--glass-border)' }}>
+                                            <span key={i} className="rounded-full border border-line-soft bg-[var(--surface-1)] px-3 py-1 text-[0.8rem] text-ink-mid">
                                                 {ex.name}
                                             </span>
                                         ))}
                                     </div>
                                 </div>
                             ))}
-                            {plans.length === 0 && <p style={{ color: '#888' }}>No plans assigned yet.</p>}
+                            {plans.length === 0 && <p className="text-sm text-ink-low">No plans assigned yet.</p>}
                         </div>
                     </div>
                 )}
             </div>
             {/* Assign Plan Modal */}
             {showAssignPlan && selectedTrainee && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-                }}>
-                    <div className="glass-panel" style={{ width: '500px', padding: '2rem', border: '1px solid var(--accent)' }}>
-                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent)' }}>Assign Training Plan</h3>
-                        <p style={{ marginBottom: '1.5rem', color: '#ccc' }}>
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 p-4">
+                    <div className="glass-card w-full max-w-[500px] !border-brand/30 p-8">
+                        <h3 className="mb-6 font-display text-lg font-bold text-brand">Assign Training Plan</h3>
+                        <p className="mb-6 text-sm text-ink-mid">
                             Assign a training plan to <strong>{selectedTrainee.display_name || selectedTrainee.username}</strong>.
                         </p>
 
                         {assignError && (
-                            <div style={{ padding: '0.75rem', marginBottom: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', fontSize: '0.875rem' }}>
+                            <div className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
                                 {assignError}
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                        <div className="mb-8 flex flex-col gap-4">
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888' }}>Training Plan</label>
+                                <label className="mb-2 block text-sm text-ink-mid">Training Plan</label>
                                 <select
                                     value={selectedPlanId}
                                     onChange={(e) => setSelectedPlanId(e.target.value)}
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)' }}
+                                    className="w-full cursor-pointer rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 py-3 text-ink-hi outline-none focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                                 >
                                     <option value="">Select a plan...</option>
                                     {trainerPlans.map(plan => (
@@ -544,44 +518,43 @@ export default function TrainerDashboard({ user }: { user: User }) {
                                     ))}
                                 </select>
                                 {trainerPlans.length === 0 && (
-                                    <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem' }}>No training plans found. Create one first.</p>
+                                    <p className="mt-2 text-[0.8rem] text-ink-low">No training plans found. Create one first.</p>
                                 )}
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888' }}>Start Date</label>
+                                    <label className="mb-2 block text-sm text-ink-mid">Start Date</label>
                                     <input
                                         type="date"
                                         value={assignStartDate}
                                         onChange={(e) => setAssignStartDate(e.target.value)}
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)' }}
+                                        className="w-full rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 py-3 text-ink-hi outline-none [color-scheme:dark] focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#888' }}>End Date</label>
+                                    <label className="mb-2 block text-sm text-ink-mid">End Date</label>
                                     <input
                                         type="date"
                                         value={assignEndDate}
                                         onChange={(e) => setAssignEndDate(e.target.value)}
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)' }}
+                                        className="w-full rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 py-3 text-ink-hi outline-none [color-scheme:dark] focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div className="flex gap-4">
                             <button
-                                className="btn-primary"
+                                className="btn-brand flex-1"
                                 onClick={handleAssignPlan}
                                 disabled={assigningPlan || !selectedPlanId}
-                                style={{ flex: 1 }}
                             >
                                 {assigningPlan ? 'Assigning...' : 'Assign Plan'}
                             </button>
                             <button
                                 onClick={() => setShowAssignPlan(false)}
-                                style={{ flex: 1, background: 'transparent', border: '1px solid #666', color: 'white', borderRadius: '8px', cursor: 'pointer' }}
+                                className="btn-outline flex-1"
                             >
                                 Cancel
                             </button>
@@ -591,75 +564,74 @@ export default function TrainerDashboard({ user }: { user: User }) {
             )}
             {/* AI Toolkit Modal */}
             {showAIToolkit && selectedTrainee && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-                }}>
-                    <div className="glass-panel" style={{ width: '500px', padding: '2rem', border: '1px solid var(--accent)' }}>
-                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent)' }}>AI Toolkit (Bro Version)</h3>
-                        <p style={{ marginBottom: '2rem', color: '#ccc' }}>
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 p-4">
+                    <div className="glass-card w-full max-w-[500px] !border-brand/30 p-8">
+                        <h3 className="mb-6 font-display text-lg font-bold text-brand">AI Toolkit (Bro Version)</h3>
+                        <p className="mb-8 text-sm text-ink-mid">
                             Manage AI feature access for <strong>{selectedTrainee.display_name || selectedTrainee.username}</strong>.
                         </p>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                        <div className="mb-8 flex flex-col gap-4">
+                            <div className="flex items-center justify-between gap-4 rounded-xl border border-line-soft bg-[var(--surface-2)] p-4">
                                 <div>
-                                    <div style={{ fontWeight: 'bold' }}>AI Workout Planner</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Generates personalized workout plans</div>
+                                    <div className="font-semibold text-ink-hi">AI Workout Planner</div>
+                                    <div className="text-[0.8rem] text-ink-low">Generates personalized workout plans</div>
                                 </div>
-                                <label className="switch">
+                                <label className="relative inline-flex shrink-0 cursor-pointer items-center">
                                     <input
                                         type="checkbox"
+                                        className="peer sr-only"
                                         checked={selectedTraineeFeatures.workout_planner}
                                         onChange={() => toggleFeature('workout_planner')}
                                     />
-                                    <span className="slider round"></span>
+                                    <span className="relative h-6 w-11 rounded-full border border-[var(--line-strong)] bg-[var(--surface-1)] transition-colors after:absolute after:left-[3px] after:top-1/2 after:h-[18px] after:w-[18px] after:-translate-y-1/2 after:rounded-full after:bg-ink-low after:transition-transform after:content-[''] peer-checked:border-brand peer-checked:bg-brand peer-checked:shadow-[0_0_16px_var(--brand-glow-soft)] peer-checked:after:translate-x-5 peer-checked:after:bg-white"></span>
                                 </label>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                            <div className="flex items-center justify-between gap-4 rounded-xl border border-line-soft bg-[var(--surface-2)] p-4">
                                 <div>
-                                    <div style={{ fontWeight: 'bold' }}>AI Dietitian</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Creates meal plans and answers nutrition queries</div>
+                                    <div className="font-semibold text-ink-hi">AI Dietitian</div>
+                                    <div className="text-[0.8rem] text-ink-low">Creates meal plans and answers nutrition queries</div>
                                 </div>
-                                <label className="switch">
+                                <label className="relative inline-flex shrink-0 cursor-pointer items-center">
                                     <input
                                         type="checkbox"
+                                        className="peer sr-only"
                                         checked={selectedTraineeFeatures.dietitian}
                                         onChange={() => toggleFeature('dietitian')}
                                     />
-                                    <span className="slider round"></span>
+                                    <span className="relative h-6 w-11 rounded-full border border-[var(--line-strong)] bg-[var(--surface-1)] transition-colors after:absolute after:left-[3px] after:top-1/2 after:h-[18px] after:w-[18px] after:-translate-y-1/2 after:rounded-full after:bg-ink-low after:transition-transform after:content-[''] peer-checked:border-brand peer-checked:bg-brand peer-checked:shadow-[0_0_16px_var(--brand-glow-soft)] peer-checked:after:translate-x-5 peer-checked:after:bg-white"></span>
                                 </label>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                            <div className="flex items-center justify-between gap-4 rounded-xl border border-line-soft bg-[var(--surface-2)] p-4">
                                 <div>
-                                    <div style={{ fontWeight: 'bold' }}>AI Form Checker</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Analyzes exercise form from videos</div>
+                                    <div className="font-semibold text-ink-hi">AI Form Checker</div>
+                                    <div className="text-[0.8rem] text-ink-low">Analyzes exercise form from videos</div>
                                 </div>
-                                <label className="switch">
+                                <label className="relative inline-flex shrink-0 cursor-pointer items-center">
                                     <input
                                         type="checkbox"
+                                        className="peer sr-only"
                                         checked={selectedTraineeFeatures.form_checker}
                                         onChange={() => toggleFeature('form_checker')}
                                     />
-                                    <span className="slider round"></span>
+                                    <span className="relative h-6 w-11 rounded-full border border-[var(--line-strong)] bg-[var(--surface-1)] transition-colors after:absolute after:left-[3px] after:top-1/2 after:h-[18px] after:w-[18px] after:-translate-y-1/2 after:rounded-full after:bg-ink-low after:transition-transform after:content-[''] peer-checked:border-brand peer-checked:bg-brand peer-checked:shadow-[0_0_16px_var(--brand-glow-soft)] peer-checked:after:translate-x-5 peer-checked:after:bg-white"></span>
                                 </label>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div className="flex gap-4">
                             <button
-                                className="btn-primary"
+                                className="btn-brand flex-1"
                                 onClick={saveFeatures}
                                 disabled={updatingFeatures}
-                                style={{ flex: 1 }}
                             >
                                 {updatingFeatures ? 'Saving...' : 'Save Changes'}
                             </button>
                             <button
                                 onClick={() => setShowAIToolkit(false)}
-                                style={{ flex: 1, background: 'transparent', border: '1px solid #666', color: 'white', borderRadius: '8px', cursor: 'pointer' }}
+                                className="btn-outline flex-1"
                             >
                                 Cancel
                             </button>

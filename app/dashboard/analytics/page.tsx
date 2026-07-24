@@ -208,72 +208,39 @@ export default function AnalyticsDashboardPage() {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh',
-                background: '#0B0B15',
-            }}>
+            <div className="flex min-h-screen items-center justify-center">
                 <div className="spinner" />
             </div>
         );
     }
 
     return (
-        <div style={{
-            padding: '1.5rem',
-            paddingBottom: '6rem',
-            maxWidth: '900px',
-            margin: '0 auto',
-            minHeight: '100vh',
-        }}>
+        <div className="mx-auto min-h-screen max-w-[900px] p-6 pb-24">
             {/* Header */}
-            <div style={{ marginBottom: '2rem' }}>
+            <div className="mb-8">
                 <button
                     onClick={() => router.back()}
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#888',
-                        cursor: 'pointer',
-                        fontSize: '0.9rem',
-                        marginBottom: '0.5rem',
-                        padding: 0,
-                    }}
+                    className="mb-2 cursor-pointer border-none bg-transparent p-0 text-sm text-ink-mid transition-colors hover:text-ink-hi"
                 >
                     &larr; Back
                 </button>
-                <h1 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '1.75rem',
-                    color: '#FF6600',
-                    margin: 0,
-                }}>
+                <h1 className="display text-gradient-brand m-0 text-[1.75rem]">
                     Analytics
                 </h1>
-                <p style={{ color: '#888', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                <p className="mt-1 text-sm text-ink-mid">
                     Workout history and personal records
                 </p>
             </div>
 
             {/* Personal Records Section */}
-            <section style={{ marginBottom: '3rem' }}>
-                <h2 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '1.15rem',
-                    color: 'white',
-                    marginBottom: '1.25rem',
-                }}>
+            <section className="mb-12">
+                <h2 className="display mb-5 text-xl">
                     Personal Records
                 </h2>
 
                 {prDisplayItems.length === 0 ? (
-                    <div
-                        className="glass-panel"
-                        style={{ padding: '3rem', textAlign: 'center' }}
-                    >
-                        <p style={{ color: '#888' }}>
+                    <div className="glass-card p-12 text-center">
+                        <p className="text-ink-mid">
                             No personal records yet. Complete workouts to start tracking PRs.
                         </p>
                     </div>
@@ -282,124 +249,68 @@ export default function AnalyticsDashboardPage() {
                         variants={staggerContainer}
                         initial="hidden"
                         animate="visible"
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                            gap: '1rem',
-                        }}
+                        className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
                     >
                         {prDisplayItems.map((pr) => (
                             <motion.div
                                 key={pr.exercise_id}
                                 variants={fadeInUp}
-                                className="glass-panel"
-                                style={{
-                                    padding: '1.25rem',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                    border: pr.is_recent
-                                        ? '1px solid rgba(255, 102, 0, 0.3)'
-                                        : undefined,
-                                }}
+                                className={`glass-card relative overflow-hidden p-5 ${
+                                    pr.is_recent
+                                        ? '!border-brand/30 shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                        : ''
+                                }`}
                             >
                                 {/* PR Badge for recent records */}
                                 {pr.is_recent && (
                                     <div
                                         data-testid="pr-badge"
-                                        style={{
-                                            position: 'absolute',
-                                            top: '0.75rem',
-                                            right: '0.75rem',
-                                            background: 'rgba(255, 102, 0, 0.15)',
-                                            color: '#FF6600',
-                                            padding: '0.2rem 0.6rem',
-                                            borderRadius: '12px',
-                                            fontSize: '0.7rem',
-                                            fontWeight: '700',
-                                            letterSpacing: '0.05em',
-                                            textTransform: 'uppercase',
-                                        }}
+                                        className="absolute right-3 top-3 rounded-full bg-[var(--brand-glow-soft)] px-2.5 py-1 text-[0.7rem] font-bold uppercase tracking-[0.05em] text-brand"
                                     >
                                         NEW PR
                                     </div>
                                 )}
 
-                                <h3 style={{
-                                    fontSize: '0.95rem',
-                                    fontWeight: '600',
-                                    color: 'white',
-                                    marginBottom: '0.75rem',
-                                    paddingRight: pr.is_recent ? '5rem' : '0',
-                                }}>
+                                <h3 className={`mb-3 text-[0.95rem] font-semibold text-ink-hi ${
+                                    pr.is_recent ? 'pr-20' : ''
+                                }`}>
                                     {pr.exercise_name}
                                 </h3>
 
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr 1fr 1fr',
-                                    gap: '0.5rem',
-                                }}>
+                                <div className="grid grid-cols-3 gap-2">
                                     {pr.max_weight != null && (
                                         <div>
-                                            <div style={{
-                                                fontSize: '1.25rem',
-                                                fontWeight: '700',
-                                                color: '#FF6600',
-                                            }}>
+                                            <div className="font-display text-xl font-bold text-brand">
                                                 {pr.max_weight}
                                             </div>
-                                            <div style={{
-                                                fontSize: '0.7rem',
-                                                color: '#888',
-                                                textTransform: 'uppercase',
-                                            }}>
+                                            <div className="text-[0.7rem] uppercase text-ink-low">
                                                 Max Weight
                                             </div>
                                         </div>
                                     )}
                                     {pr.max_reps != null && (
                                         <div>
-                                            <div style={{
-                                                fontSize: '1.25rem',
-                                                fontWeight: '700',
-                                                color: 'white',
-                                            }}>
+                                            <div className="font-display text-xl font-bold text-ink-hi">
                                                 {pr.max_reps}
                                             </div>
-                                            <div style={{
-                                                fontSize: '0.7rem',
-                                                color: '#888',
-                                                textTransform: 'uppercase',
-                                            }}>
+                                            <div className="text-[0.7rem] uppercase text-ink-low">
                                                 Max Reps
                                             </div>
                                         </div>
                                     )}
                                     {pr.max_volume != null && (
                                         <div>
-                                            <div style={{
-                                                fontSize: '1.25rem',
-                                                fontWeight: '700',
-                                                color: 'white',
-                                            }}>
+                                            <div className="font-display text-xl font-bold text-ink-hi">
                                                 {Math.round(pr.max_volume)}
                                             </div>
-                                            <div style={{
-                                                fontSize: '0.7rem',
-                                                color: '#888',
-                                                textTransform: 'uppercase',
-                                            }}>
+                                            <div className="text-[0.7rem] uppercase text-ink-low">
                                                 Max Volume
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
-                                <div style={{
-                                    marginTop: '0.75rem',
-                                    fontSize: '0.75rem',
-                                    color: '#666',
-                                }}>
+                                <div className="mt-3 text-xs text-ink-low">
                                     {formatDistanceToNow(parseISO(pr.achieved_at), {
                                         addSuffix: true,
                                     })}
@@ -411,23 +322,14 @@ export default function AnalyticsDashboardPage() {
             </section>
 
             {/* Charts Section */}
-            <section style={{ marginBottom: '3rem' }}>
-                <h2 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '1.15rem',
-                    color: 'white',
-                    marginBottom: '1.25rem',
-                }}>
+            <section className="mb-12">
+                <h2 className="display mb-5 text-xl">
                     Performance Charts
                 </h2>
 
-                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                <div className="grid gap-6">
                     {/* Volume Over Time & Strength Progression - side by side on desktop */}
-                    <div style={{
-                        display: 'grid',
-                        gap: '1.5rem',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                    }}>
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
                         <VolumeOverTimeChart logs={workoutLogs} />
                         <StrengthProgressionChart logs={workoutLogs} exercises={exercises} />
                     </div>
@@ -436,11 +338,7 @@ export default function AnalyticsDashboardPage() {
                     <BodyWeightTrendChart weightHistory={weightHistory} unit={weightUnit} />
 
                     {/* Heatmap & Muscle Distribution - side by side on desktop */}
-                    <div style={{
-                        display: 'grid',
-                        gap: '1.5rem',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                    }}>
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
                         <WorkoutFrequencyHeatmap logs={workoutLogs} />
                         <MuscleGroupVolumeChart logs={workoutLogs} exercises={exercises} />
                     </div>
@@ -449,21 +347,13 @@ export default function AnalyticsDashboardPage() {
 
             {/* Workout History Section */}
             <section>
-                <h2 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '1.15rem',
-                    color: 'white',
-                    marginBottom: '1.25rem',
-                }}>
+                <h2 className="display mb-5 text-xl">
                     Workout History
                 </h2>
 
                 {workoutLogs.length === 0 ? (
-                    <div
-                        className="glass-panel"
-                        style={{ padding: '3rem', textAlign: 'center' }}
-                    >
-                        <p style={{ color: '#888' }}>
+                    <div className="glass-card p-12 text-center">
+                        <p className="text-ink-mid">
                             No workouts recorded yet. Start a workout to see your history here.
                         </p>
                     </div>
@@ -472,7 +362,7 @@ export default function AnalyticsDashboardPage() {
                         variants={staggerContainer}
                         initial="hidden"
                         animate="visible"
-                        style={{ display: 'grid', gap: '0.75rem' }}
+                        className="grid gap-3"
                     >
                         {workoutLogs.map((log) => {
                             const stats = computeLogStats(log);
@@ -482,100 +372,46 @@ export default function AnalyticsDashboardPage() {
                                 <motion.div
                                     key={log.id}
                                     variants={fadeInUp}
-                                    className="glass-panel"
-                                    style={{
-                                        padding: '1.25rem',
-                                        cursor: 'pointer',
-                                        transition: 'border-color 0.2s',
-                                        border: isExpanded
-                                            ? '1px solid rgba(255, 102, 0, 0.2)'
-                                            : '1px solid transparent',
-                                    }}
+                                    className={`glass-card glass-card-hover cursor-pointer p-5 ${
+                                        isExpanded ? '!border-brand/30' : ''
+                                    }`}
                                     onClick={() => toggleExpanded(log.id)}
                                     data-testid={`workout-log-${log.id}`}
                                 >
                                     {/* Summary Row */}
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                    }}>
+                                    <div className="flex items-center justify-between">
                                         <div>
-                                            <h3 style={{
-                                                fontWeight: '600',
-                                                fontSize: '1rem',
-                                                color: 'white',
-                                                margin: 0,
-                                            }}>
+                                            <h3 className="m-0 text-base font-semibold text-ink-hi">
                                                 {format(parseISO(log.date), 'EEEE, MMM d, yyyy')}
                                             </h3>
                                             {log.notes && (
-                                                <p style={{
-                                                    color: '#888',
-                                                    fontSize: '0.85rem',
-                                                    margin: '0.25rem 0 0',
-                                                }}>
+                                                <p className="mb-0 mt-1 text-[0.85rem] text-ink-mid">
                                                     {log.notes}
                                                 </p>
                                             )}
                                         </div>
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.75rem',
-                                        }}>
-                                            <span style={{
-                                                fontSize: '0.85rem',
-                                                color: '#FF6600',
-                                                fontWeight: '500',
-                                            }}>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[0.85rem] font-medium text-brand">
                                                 {formatDuration(log.total_duration_seconds)}
                                             </span>
-                                            <span style={{
-                                                color: '#555',
-                                                fontSize: '1.2rem',
-                                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                                transition: 'transform 0.2s',
-                                                display: 'inline-block',
-                                            }}>
+                                            <span className={`inline-block text-xl text-ink-low transition-transform duration-200 ${
+                                                isExpanded ? 'rotate-180' : 'rotate-0'
+                                            }`}>
                                                 &#9662;
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Mini Stats */}
-                                    <div style={{
-                                        display: 'flex',
-                                        gap: '0.75rem',
-                                        marginTop: '0.75rem',
-                                        flexWrap: 'wrap',
-                                    }}>
-                                        <span style={{
-                                            padding: '0.2rem 0.6rem',
-                                            background: 'rgba(255, 102, 0, 0.08)',
-                                            color: '#aaa',
-                                            borderRadius: '16px',
-                                            fontSize: '0.78rem',
-                                        }}>
+                                    <div className="mt-3 flex flex-wrap gap-3">
+                                        <span className="rounded-full bg-[var(--brand-glow-soft)] px-2.5 py-0.5 text-[0.78rem] text-brand">
                                             {stats.exerciseCount} exercises
                                         </span>
-                                        <span style={{
-                                            padding: '0.2rem 0.6rem',
-                                            background: 'rgba(255, 255, 255, 0.05)',
-                                            color: '#aaa',
-                                            borderRadius: '16px',
-                                            fontSize: '0.78rem',
-                                        }}>
+                                        <span className="rounded-full bg-[var(--surface-2)] px-2.5 py-0.5 text-[0.78rem] text-ink-mid">
                                             {stats.totalSets} sets
                                         </span>
                                         {stats.totalVolume > 0 && (
-                                            <span style={{
-                                                padding: '0.2rem 0.6rem',
-                                                background: 'rgba(255, 255, 255, 0.05)',
-                                                color: '#aaa',
-                                                borderRadius: '16px',
-                                                fontSize: '0.78rem',
-                                            }}>
+                                            <span className="rounded-full bg-[var(--surface-2)] px-2.5 py-0.5 text-[0.78rem] text-ink-mid">
                                                 {stats.totalVolume.toLocaleString()} vol
                                             </span>
                                         )}
@@ -589,25 +425,15 @@ export default function AnalyticsDashboardPage() {
                                                 animate={{ height: 'auto', opacity: 1 }}
                                                 exit={{ height: 0, opacity: 0 }}
                                                 transition={{ duration: 0.25, ease: 'easeInOut' }}
-                                                style={{ overflow: 'hidden' }}
+                                                className="overflow-hidden"
                                             >
-                                                <div style={{
-                                                    marginTop: '1rem',
-                                                    paddingTop: '1rem',
-                                                    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                                                }}>
+                                                <div className="mt-4 border-t border-line-soft pt-4">
                                                     {(log.exercise_logs || []).length === 0 ? (
-                                                        <p style={{
-                                                            color: '#666',
-                                                            fontSize: '0.85rem',
-                                                        }}>
+                                                        <p className="text-[0.85rem] text-ink-low">
                                                             No exercise details recorded.
                                                         </p>
                                                     ) : (
-                                                        <div style={{
-                                                            display: 'grid',
-                                                            gap: '0.75rem',
-                                                        }}>
+                                                        <div className="grid gap-3">
                                                             {(log.exercise_logs || [])
                                                                 .sort((a, b) => a.exercise_order - b.exercise_order)
                                                                 .map((el) => {
@@ -615,35 +441,16 @@ export default function AnalyticsDashboardPage() {
                                                                     return (
                                                                         <div
                                                                             key={el.id}
-                                                                            style={{
-                                                                                padding: '0.75rem',
-                                                                                background: 'rgba(255, 255, 255, 0.03)',
-                                                                                borderRadius: '8px',
-                                                                            }}
+                                                                            className="rounded-xl bg-[var(--surface-2)] p-3"
                                                                         >
-                                                                            <div style={{
-                                                                                fontWeight: '600',
-                                                                                fontSize: '0.9rem',
-                                                                                color: '#FF6600',
-                                                                                marginBottom: '0.5rem',
-                                                                            }}>
+                                                                            <div className="mb-2 text-sm font-semibold text-brand">
                                                                                 {exercise?.name || el.exercise_id}
                                                                             </div>
 
                                                                             {/* Sets Table */}
                                                                             {el.sets && el.sets.length > 0 ? (
-                                                                                <div style={{
-                                                                                    display: 'grid',
-                                                                                    gap: '0.25rem',
-                                                                                }}>
-                                                                                    <div style={{
-                                                                                        display: 'grid',
-                                                                                        gridTemplateColumns: '2.5rem 1fr 1fr 1fr',
-                                                                                        fontSize: '0.7rem',
-                                                                                        color: '#666',
-                                                                                        textTransform: 'uppercase',
-                                                                                        padding: '0 0.25rem',
-                                                                                    }}>
+                                                                                <div className="grid gap-1">
+                                                                                    <div className="grid grid-cols-[2.5rem_1fr_1fr_1fr] px-1 text-[0.7rem] uppercase text-ink-low">
                                                                                         <span>Set</span>
                                                                                         <span>Weight</span>
                                                                                         <span>Reps</span>
@@ -652,18 +459,11 @@ export default function AnalyticsDashboardPage() {
                                                                                     {el.sets.map((s, idx) => (
                                                                                         <div
                                                                                             key={idx}
-                                                                                            style={{
-                                                                                                display: 'grid',
-                                                                                                gridTemplateColumns: '2.5rem 1fr 1fr 1fr',
-                                                                                                fontSize: '0.85rem',
-                                                                                                color: s.is_warmup ? '#666' : '#ccc',
-                                                                                                padding: '0.25rem',
-                                                                                                background: s.is_warmup
-                                                                                                    ? 'rgba(255,255,255,0.02)'
-                                                                                                    : 'transparent',
-                                                                                                borderRadius: '4px',
-                                                                                                fontStyle: s.is_warmup ? 'italic' : 'normal',
-                                                                                            }}
+                                                                                            className={`grid grid-cols-[2.5rem_1fr_1fr_1fr] rounded-md p-1 text-[0.85rem] ${
+                                                                                                s.is_warmup
+                                                                                                    ? 'bg-white/[0.02] italic text-ink-low'
+                                                                                                    : 'text-ink-mid'
+                                                                                            }`}
                                                                                         >
                                                                                             <span>{s.set_number}</span>
                                                                                             <span>{s.weight}{s.weight_unit === 'kg' ? 'kg' : 'lbs'}</span>
@@ -673,10 +473,7 @@ export default function AnalyticsDashboardPage() {
                                                                                     ))}
                                                                                 </div>
                                                                             ) : (
-                                                                                <p style={{
-                                                                                    color: '#666',
-                                                                                    fontSize: '0.8rem',
-                                                                                }}>
+                                                                                <p className="text-[0.8rem] text-ink-low">
                                                                                     No set data
                                                                                 </p>
                                                                             )}

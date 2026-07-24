@@ -64,29 +64,19 @@ export default function Dashboard() {
     }, [router]);
 
     if (!user || !authReady) {
-        return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+        return <div className="flex min-h-screen items-center justify-center p-8 text-ink-mid">Loading...</div>;
     }
 
     return (
-        <main style={{ minHeight: '100vh', padding: '2rem' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+        <main className="mx-auto min-h-screen max-w-[1400px] p-6 md:p-8">
+            <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+                <h1 className="display text-gradient-brand text-[2rem]">
                     Welcome, {user.username}
                 </h1>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="flex gap-3">
                     <button
                         onClick={() => setIsProfileOpen(true)}
-                        style={{
-                            background: 'var(--primary)',
-                            border: 'none',
-                            color: 'white',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                        }}
+                        className="btn-brand !px-4 !py-2 !text-sm"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         Profile
@@ -97,7 +87,7 @@ export default function Dashboard() {
                             // In a real app, call logout API to clear cookie
                             router.push('/');
                         }}
-                        style={{ background: 'var(--secondary)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}
+                        className="btn-outline !px-4 !py-2 !text-sm"
                     >
                         Logout
                     </button>

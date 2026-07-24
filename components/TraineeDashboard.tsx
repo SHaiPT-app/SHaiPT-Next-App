@@ -123,35 +123,25 @@ export default function TraineeDashboard({ user }: { user: User }) {
     }
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>
+        <div className="mx-auto max-w-[1200px]">
+            <div className="mb-8 flex gap-2 rounded-xl border border-line-soft bg-[var(--surface-1)] p-1">
                 <button
                     onClick={() => setActiveTab('plans')}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: activeTab === 'plans' ? 'var(--accent)' : '#888',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        padding: '0.5rem 1rem',
-                        borderBottom: activeTab === 'plans' ? '2px solid var(--accent)' : 'none'
-                    }}
+                    className={`flex-1 cursor-pointer rounded-lg py-3 text-sm transition-all ${
+                        activeTab === 'plans'
+                            ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                            : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                    }`}
                 >
                     My Workout Plans
                 </button>
                 <button
                     onClick={() => setActiveTab('coach')}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: activeTab === 'coach' ? 'var(--accent)' : '#888',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        padding: '0.5rem 1rem',
-                        borderBottom: activeTab === 'coach' ? '2px solid var(--accent)' : 'none'
-                    }}
+                    className={`flex-1 cursor-pointer rounded-lg py-3 text-sm transition-all ${
+                        activeTab === 'coach'
+                            ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                            : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                    }`}
                 >
                     AI Coach
                 </button>
@@ -160,29 +150,29 @@ export default function TraineeDashboard({ user }: { user: User }) {
             {activeTab === 'plans' ? (
                 <div className="dashboard-grid">
                     {/* Weekly AI Insights Card */}
-                    <div style={{ gridColumn: '1 / -1' }}>
+                    <div className="col-span-full">
                         <WeeklyInsightsCard userId={user.id} logs={logs} />
                     </div>
 
                     {/* View Plan Modal */}
                     {viewingPlan && (
-                        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
-                            <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', position: 'relative' }}>
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 p-4">
+                            <div className="glass-card relative max-h-[90vh] w-full max-w-[600px] overflow-y-auto !border-brand/30 p-8">
                                 <button
                                     onClick={() => setViewingPlan(null)}
-                                    style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}
+                                    className="icon-btn absolute right-4 top-4 !h-9 !w-9 !text-xl"
                                 >
                                     &times;
                                 </button>
-                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)' }}>{viewingPlan.name}</h2>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                <h2 className="mb-6 pr-10 font-display text-lg font-bold text-brand">{viewingPlan.name}</h2>
+                                <div className="flex flex-col gap-6">
                                     {(viewingPlan.exercises || []).map((ex: any, i: number) => (
-                                        <div key={i} style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                                            <h4 style={{ marginBottom: '0.5rem' }}>{ex.name}</h4>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem' }}>
+                                        <div key={i} className="rounded-xl border border-line-soft bg-[var(--surface-2)] p-4">
+                                            <h4 className="mb-2 text-sm font-semibold text-ink-hi">{ex.name}</h4>
+                                            <div className="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-2">
                                                 {ex.sets.map((set: any, j: number) => (
-                                                    <div key={j} style={{ background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}>
-                                                        <div style={{ color: '#888', fontSize: '0.75rem' }}>Set {j + 1}</div>
+                                                    <div key={j} className="rounded-lg bg-black/30 p-2 text-center text-sm text-ink-mid">
+                                                        <div className="text-xs text-ink-low">Set {j + 1}</div>
                                                         <div>{set.targetReps} reps</div>
                                                         {set.targetWeight && <div>@ {set.targetWeight}</div>}
                                                     </div>
@@ -192,12 +182,11 @@ export default function TraineeDashboard({ user }: { user: User }) {
                                     ))}
                                 </div>
                                 <button
-                                    className="btn-primary"
+                                    className="btn-brand mt-8 w-full"
                                     onClick={() => {
                                         setSelectedPlan(viewingPlan);
                                         setViewingPlan(null);
                                     }}
-                                    style={{ width: '100%', marginTop: '2rem' }}
                                 >
                                     Start Workout
                                 </button>
@@ -206,30 +195,22 @@ export default function TraineeDashboard({ user }: { user: User }) {
                     )}
 
                     {/* Assigned Plans */}
-                    <div className="glass-panel" style={{ padding: '2rem' }}>
-                        <h3 style={{ marginBottom: '1.5rem' }}>Your Plans</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div className="glass-card p-8">
+                        <h3 className="display mb-6 text-lg">Your Plans</h3>
+                        <div className="flex flex-col gap-4">
                             {plans.map(plan => (
-                                <div key={plan.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                    <h4 style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>{plan.name}</h4>
-                                    <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '1rem' }}>{(plan.exercises || []).length} Exercises</p>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div key={plan.id} className="rounded-xl border border-line-soft bg-[var(--surface-2)] p-5">
+                                    <h4 className="mb-1 text-base font-semibold text-ink-hi">{plan.name}</h4>
+                                    <p className="mb-4 text-sm text-ink-low">{(plan.exercises || []).length} Exercises</p>
+                                    <div className="grid grid-cols-2 gap-4">
                                         <button
                                             onClick={() => setViewingPlan(plan)}
-                                            style={{
-                                                padding: '0.75rem',
-                                                borderRadius: '8px',
-                                                border: '1px solid var(--primary)',
-                                                background: 'transparent',
-                                                color: 'var(--primary)',
-                                                cursor: 'pointer',
-                                                fontWeight: 'bold'
-                                            }}
+                                            className="btn-outline !px-4 !py-2.5 !text-sm"
                                         >
                                             View Plan
                                         </button>
                                         <button
-                                            className="btn-primary"
+                                            className="btn-brand !px-4 !py-2.5 !text-sm"
                                             onClick={() => setSelectedPlan(plan)}
                                         >
                                             Start
@@ -237,36 +218,29 @@ export default function TraineeDashboard({ user }: { user: User }) {
                                     </div>
                                 </div>
                             ))}
-                            {plans.length === 0 && <p style={{ color: '#888' }}>No plans assigned yet.</p>}
+                            {plans.length === 0 && <p className="text-sm text-ink-low">No plans assigned yet.</p>}
                         </div>
                     </div>
 
                     {/* Assigned Training Plans */}
                     {assignedPlans.length > 0 && (
-                        <div className="glass-panel" style={{ padding: '2rem' }}>
-                            <h3 style={{ marginBottom: '1.5rem' }}>Assigned Training Plans</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div className="glass-card p-8">
+                            <h3 className="display mb-6 text-lg">Assigned Training Plans</h3>
+                            <div className="flex flex-col gap-4">
                                 {assignedPlans
                                     .filter(a => a.is_active && a.plan)
                                     .map(assignment => (
-                                        <div key={assignment.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                                <h4 style={{ color: 'var(--accent)' }}>{assignment.plan!.name}</h4>
-                                                <span style={{
-                                                    padding: '0.25rem 0.75rem',
-                                                    borderRadius: '20px',
-                                                    fontSize: '0.75rem',
-                                                    background: 'rgba(255, 102, 0, 0.1)',
-                                                    border: '1px solid rgba(255, 102, 0, 0.2)',
-                                                    color: 'var(--primary)',
-                                                }}>
+                                        <div key={assignment.id} className="rounded-xl border border-line-soft bg-[var(--surface-2)] p-5">
+                                            <div className="mb-2 flex items-start justify-between gap-3">
+                                                <h4 className="text-base font-semibold text-ink-hi">{assignment.plan!.name}</h4>
+                                                <span className="badge-brand shrink-0 !px-3 !py-1 !text-xs">
                                                     Assigned
                                                 </span>
                                             </div>
                                             {assignment.plan!.description && (
-                                                <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '0.5rem' }}>{assignment.plan!.description}</p>
+                                                <p className="mb-2 text-sm text-ink-mid">{assignment.plan!.description}</p>
                                             )}
-                                            <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                                            <div className="text-[0.8rem] text-ink-low">
                                                 {assignment.start_date} to {assignment.end_date}
                                             </div>
                                         </div>
@@ -276,69 +250,60 @@ export default function TraineeDashboard({ user }: { user: User }) {
                     )}
 
                     {/* Recent Activity */}
-                    <div className="glass-panel" style={{ padding: '2rem' }}>
-                        <h3 style={{ marginBottom: '1.5rem' }}>Recent Activity</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div className="glass-card p-8">
+                        <h3 className="display mb-6 text-lg">Recent Activity</h3>
+                        <div className="flex flex-col gap-4">
                             {logs.map(log => (
-                                <div key={log.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <span style={{ fontWeight: 'bold' }}>{new Date(log.date).toLocaleDateString()}</span>
-                                        <span style={{ color: '#888', fontSize: '0.875rem' }}>{new Date(log.date).toLocaleTimeString()}</span>
+                                <div key={log.id} className="rounded-xl border border-line-soft bg-[var(--surface-2)] p-4">
+                                    <div className="mb-2 flex items-center justify-between">
+                                        <span className="font-semibold text-ink-hi">{new Date(log.date).toLocaleDateString()}</span>
+                                        <span className="text-sm text-ink-low">{new Date(log.date).toLocaleTimeString()}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.875rem', color: '#ccc' }}>
+                                    <div className="text-sm text-ink-mid">
                                         {log.exercises.length} exercises logged
                                     </div>
                                     {/* Show PRs if any */}
                                     {log.exercises.some(ex => ex.sets.some(s => s.isPr)) && (
-                                        <div style={{ marginTop: '0.5rem', color: 'var(--accent)', fontSize: '0.875rem', fontWeight: 'bold' }}>
+                                        <div className="mt-2 text-sm font-bold text-brand">
                                             PRs set!
                                         </div>
                                     )}
                                 </div>
                             ))}
-                            {logs.length === 0 && <p style={{ color: '#888' }}>No workouts logged yet.</p>}
+                            {logs.length === 0 && <p className="text-sm text-ink-low">No workouts logged yet.</p>}
                         </div>
                     </div>
                 </div>
             ) : (
                 <div>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', background: '#111', padding: '0.5rem', borderRadius: '8px', width: 'fit-content' }}>
+                    <div className="mb-8 flex w-fit gap-2 rounded-xl border border-line-soft bg-[var(--surface-1)] p-1">
                         <button
                             onClick={() => setCoachModule('workout')}
-                            style={{
-                                background: coachModule === 'workout' ? 'var(--accent)' : 'transparent',
-                                color: coachModule === 'workout' ? 'white' : '#888',
-                                border: 'none',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '6px',
-                                cursor: 'pointer'
-                            }}
+                            className={`cursor-pointer rounded-lg px-4 py-2 text-sm transition-all ${
+                                coachModule === 'workout'
+                                    ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                    : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                            }`}
                         >
                             Workout Planner
                         </button>
                         <button
                             onClick={() => setCoachModule('diet')}
-                            style={{
-                                background: coachModule === 'diet' ? 'var(--accent)' : 'transparent',
-                                color: coachModule === 'diet' ? 'white' : '#888',
-                                border: 'none',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '6px',
-                                cursor: 'pointer'
-                            }}
+                            className={`cursor-pointer rounded-lg px-4 py-2 text-sm transition-all ${
+                                coachModule === 'diet'
+                                    ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                    : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                            }`}
                         >
                             Dietitian
                         </button>
                         <button
                             onClick={() => setCoachModule('form')}
-                            style={{
-                                background: coachModule === 'form' ? 'var(--accent)' : 'transparent',
-                                color: coachModule === 'form' ? 'white' : '#888',
-                                border: 'none',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '6px',
-                                cursor: 'pointer'
-                            }}
+                            className={`cursor-pointer rounded-lg px-4 py-2 text-sm transition-all ${
+                                coachModule === 'form'
+                                    ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                    : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                            }`}
                         >
                             Form Checker
                         </button>

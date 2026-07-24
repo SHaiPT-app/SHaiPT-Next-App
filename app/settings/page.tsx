@@ -43,84 +43,44 @@ function EditableField({ label, value, onSave, readOnly = false, multiline = fal
     };
 
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            padding: '0.65rem 0',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-        }}>
-            <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.72rem', color: '#888', fontWeight: '500', marginBottom: '0.2rem' }}>
+        <div className="flex items-start justify-between border-b border-[var(--line-soft)] py-2.5">
+            <div className="flex-1">
+                <div className="mb-1 text-[0.72rem] font-medium text-ink-low">
                     {label}
                 </div>
                 {editing ? (
-                    <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'flex-start' }}>
+                    <div className="flex items-start gap-1.5">
                         {multiline ? (
                             <textarea
                                 value={draft}
                                 onChange={e => setDraft(e.target.value)}
                                 rows={3}
                                 autoFocus
-                                style={{
-                                    flex: 1,
-                                    padding: '0.5rem',
-                                    fontSize: '0.85rem',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    border: '1px solid var(--neon-orange)',
-                                    borderRadius: '6px',
-                                    color: 'var(--foreground)',
-                                    outline: 'none',
-                                    resize: 'vertical',
-                                    fontFamily: 'inherit',
-                                }}
+                                className="min-w-0 flex-1 resize-y rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 py-2 text-[0.85rem] text-ink-hi placeholder:text-ink-low outline-none focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                             />
                         ) : (
                             <input
                                 value={draft}
                                 onChange={e => setDraft(e.target.value)}
                                 autoFocus
-                                style={{
-                                    flex: 1,
-                                    padding: '0.5rem',
-                                    fontSize: '0.85rem',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    border: '1px solid var(--neon-orange)',
-                                    borderRadius: '6px',
-                                    color: 'var(--foreground)',
-                                    outline: 'none',
-                                }}
+                                className="min-w-0 flex-1 rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 py-2 text-[0.85rem] text-ink-hi placeholder:text-ink-low outline-none focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                             />
                         )}
                         <button
                             onClick={handleSave}
-                            style={{
-                                padding: '0.4rem',
-                                background: 'rgba(16, 185, 129, 0.2)',
-                                border: '1px solid rgba(16, 185, 129, 0.4)',
-                                borderRadius: '6px',
-                                color: '#10b981',
-                                cursor: 'pointer',
-                            }}
+                            className="cursor-pointer rounded-lg border border-[color-mix(in_srgb,var(--success)_40%,transparent)] bg-[color-mix(in_srgb,var(--success)_15%,transparent)] p-2 text-[var(--success)] transition-colors hover:bg-[color-mix(in_srgb,var(--success)_25%,transparent)]"
                         >
                             <Check size={14} />
                         </button>
                         <button
                             onClick={handleCancel}
-                            style={{
-                                padding: '0.4rem',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '6px',
-                                color: '#888',
-                                cursor: 'pointer',
-                            }}
+                            className="cursor-pointer rounded-lg border border-[var(--line-strong)] bg-[var(--surface-2)] p-2 text-ink-mid transition-colors hover:text-ink-hi"
                         >
                             <X size={14} />
                         </button>
                     </div>
                 ) : (
-                    <div style={{ fontSize: '0.85rem', color: value ? 'var(--foreground)' : '#555' }}>
+                    <div className={`text-[0.85rem] ${value ? 'text-ink-hi' : 'text-ink-low'}`}>
                         {value || '-- Not set --'}
                     </div>
                 )}
@@ -128,14 +88,7 @@ function EditableField({ label, value, onSave, readOnly = false, multiline = fal
             {!editing && !readOnly && (
                 <button
                     onClick={() => setEditing(true)}
-                    style={{
-                        padding: '0.35rem',
-                        background: 'none',
-                        border: 'none',
-                        color: '#888',
-                        cursor: 'pointer',
-                        marginTop: '0.2rem',
-                    }}
+                    className="mt-0.5 cursor-pointer bg-transparent p-1.5 text-ink-low transition-colors hover:text-brand"
                 >
                     <Pencil size={14} />
                 </button>
@@ -269,68 +222,38 @@ export default function SettingsPage() {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh',
-            }}>
+            <div className="flex min-h-screen items-center justify-center">
                 <div className="spinner"></div>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: '1.5rem', paddingBottom: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+        <div className="mx-auto max-w-[600px] p-6 pb-8">
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="mb-6 flex items-center gap-4">
                 <button
                     onClick={() => router.back()}
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--primary)',
-                        cursor: 'pointer',
-                        fontSize: '0.9rem',
-                    }}
+                    className="cursor-pointer bg-transparent text-sm text-brand transition-colors hover:text-brand-hot"
                 >
                     &larr; Back
                 </button>
-                <h1 style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '2rem',
-                    margin: 0,
-                    color: 'var(--primary)',
-                }}>
+                <h1 className="display text-gradient-brand m-0 text-[2rem]">
                     Settings
                 </h1>
             </div>
 
             {/* Tabs */}
-            <div style={{
-                display: 'flex',
-                gap: '0',
-                marginBottom: '1.5rem',
-                borderRadius: '10px',
-                overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-            }}>
+            <div className="mb-6 flex gap-1 rounded-xl border border-line-soft bg-[var(--surface-1)] p-1">
                 {TABS.map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        style={{
-                            flex: 1,
-                            padding: '0.6rem 0.5rem',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            background: activeTab === tab.id ? 'var(--neon-orange)' : 'rgba(255, 255, 255, 0.03)',
-                            color: activeTab === tab.id ? '#0B0B15' : '#888',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontFamily: 'var(--font-orbitron)',
-                            transition: 'all 0.2s',
-                        }}
+                        className={`font-display flex-1 cursor-pointer rounded-lg px-2 py-2.5 text-[0.72rem] font-semibold transition-all ${
+                            activeTab === tab.id
+                                ? 'bg-brand text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                : 'bg-transparent text-ink-mid hover:text-ink-hi'
+                        }`}
                     >
                         {tab.label}
                     </button>
@@ -341,13 +264,8 @@ export default function SettingsPage() {
             {activeTab === 'personal' && (
                 <>
                     {/* Profile fields from intake */}
-                    <section className="glass-panel" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
-                        <h2 style={{
-                            fontFamily: 'var(--font-orbitron)',
-                            fontSize: '1rem',
-                            marginBottom: '0.75rem',
-                            color: 'var(--neon-orange)',
-                        }}>
+                    <section className="glass-card mb-6 px-5 py-4">
+                        <h2 className="eyebrow mb-3">
                             Profile
                         </h2>
                         <EditableField
@@ -372,32 +290,18 @@ export default function SettingsPage() {
                         />
 
                         {/* Gender */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0.65rem 0',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                        }}>
+                        <div className="flex items-center justify-between border-b border-[var(--line-soft)] py-2.5">
                             <div>
-                                <div style={{ fontSize: '0.72rem', color: '#888', fontWeight: '500', marginBottom: '0.2rem' }}>
-                                    Gender <span style={{ color: '#f87171' }}>*</span>
+                                <div className="mb-1 text-[0.72rem] font-medium text-ink-low">
+                                    Gender <span className="text-[var(--error)]">*</span>
                                 </div>
                             </div>
                             <select
                                 value={gender}
                                 onChange={(e) => setGender(e.target.value)}
-                                className="input-field"
-                                style={{
-                                    width: 'auto',
-                                    minWidth: '120px',
-                                    padding: '0.4rem 0.6rem',
-                                    fontSize: '0.85rem',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '6px',
-                                    color: gender ? 'var(--foreground)' : '#555',
-                                }}
+                                className={`w-auto min-w-[120px] cursor-pointer rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 py-2 text-[0.85rem] outline-none transition-colors focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)] ${
+                                    gender ? 'text-ink-hi' : 'text-ink-low'
+                                }`}
                             >
                                 <option value="">Select...</option>
                                 <option value="Male">Male</option>
@@ -408,68 +312,56 @@ export default function SettingsPage() {
                     </section>
 
                     {/* Privacy Settings */}
-                    <section className="glass-panel" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
-                        <h2 style={{
-                            fontFamily: 'var(--font-orbitron)',
-                            fontSize: '1rem',
-                            marginBottom: '1rem',
-                        }}>
+                    <section className="glass-card mb-6 px-5 py-4">
+                        <h2 className="eyebrow mb-4">
                             Privacy
                         </h2>
-                        <div style={{ marginBottom: '1.25rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: '500', fontSize: '0.85rem' }}>
+                        <div className="mb-5">
+                            <label className="mb-1 block text-[0.85rem] font-medium text-ink-hi">
                                 Workout Privacy
                             </label>
-                            <p style={{ color: '#888', fontSize: '0.78rem', marginBottom: '0.5rem' }}>
+                            <p className="mb-2 text-[0.78rem] text-ink-low">
                                 Who can see your workout logs on the activity feed
                             </p>
                             <select
                                 value={workoutPrivacy}
                                 onChange={(e) => setWorkoutPrivacy(e.target.value as 'public' | 'followers' | 'private')}
-                                className="input-field"
+                                className="w-full cursor-pointer rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 py-3 text-[0.9rem] text-ink-hi outline-none focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                             >
                                 <option value="public">Public - Everyone can see</option>
                                 <option value="followers">Followers Only</option>
                                 <option value="private">Private - Only me</option>
                             </select>
                         </div>
-                        <div style={{ marginBottom: '1.25rem' }}>
-                            <label style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.75rem',
-                                cursor: 'pointer',
-                            }}>
+                        <div className="mb-5">
+                            <label className="flex cursor-pointer items-center gap-3">
                                 <input
                                     type="checkbox"
                                     checked={autoPostWorkouts}
                                     onChange={(e) => setAutoPostWorkouts(e.target.checked)}
-                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    className="peer sr-only"
                                 />
+                                <span className="relative h-6 w-11 shrink-0 rounded-full border border-[var(--line-strong)] bg-[var(--surface-2)] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-[18px] after:w-[18px] after:rounded-full after:bg-white after:transition-transform after:content-[''] peer-checked:border-brand peer-checked:bg-brand peer-checked:after:translate-x-[20px] peer-focus-visible:shadow-[0_0_0_3px_var(--brand-glow-soft)]" />
                                 <div>
-                                    <div style={{ fontWeight: '500', fontSize: '0.85rem' }}>Auto-post Workouts</div>
-                                    <div style={{ color: '#888', fontSize: '0.78rem' }}>
+                                    <div className="text-[0.85rem] font-medium text-ink-hi">Auto-post Workouts</div>
+                                    <div className="text-[0.78rem] text-ink-low">
                                         Automatically share completed workouts to activity feed
                                     </div>
                                 </div>
                             </label>
                         </div>
                         <div>
-                            <label style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.75rem',
-                                cursor: 'pointer',
-                            }}>
+                            <label className="flex cursor-pointer items-center gap-3">
                                 <input
                                     type="checkbox"
                                     checked={allowUnsolicitedMessages}
                                     onChange={(e) => setAllowUnsolicitedMessages(e.target.checked)}
-                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    className="peer sr-only"
                                 />
+                                <span className="relative h-6 w-11 shrink-0 rounded-full border border-[var(--line-strong)] bg-[var(--surface-2)] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-[18px] after:w-[18px] after:rounded-full after:bg-white after:transition-transform after:content-[''] peer-checked:border-brand peer-checked:bg-brand peer-checked:after:translate-x-[20px] peer-focus-visible:shadow-[0_0_0_3px_var(--brand-glow-soft)]" />
                                 <div>
-                                    <div style={{ fontWeight: '500', fontSize: '0.85rem' }}>Allow Direct Messages</div>
-                                    <div style={{ color: '#888', fontSize: '0.78rem' }}>
+                                    <div className="text-[0.85rem] font-medium text-ink-hi">Allow Direct Messages</div>
+                                    <div className="text-[0.78rem] text-ink-low">
                                         Let anyone send you direct messages
                                     </div>
                                 </div>
@@ -478,25 +370,21 @@ export default function SettingsPage() {
                     </section>
 
                     {/* Preferences */}
-                    <section className="glass-panel" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
-                        <h2 style={{
-                            fontFamily: 'var(--font-orbitron)',
-                            fontSize: '1rem',
-                            marginBottom: '1rem',
-                        }}>
+                    <section className="glass-card mb-6 px-5 py-4">
+                        <h2 className="eyebrow mb-4">
                             Preferences
                         </h2>
                         <div>
-                            <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: '500', fontSize: '0.85rem' }}>
+                            <label className="mb-1 block text-[0.85rem] font-medium text-ink-hi">
                                 Preferred Weight Unit
                             </label>
-                            <p style={{ color: '#888', fontSize: '0.78rem', marginBottom: '0.5rem' }}>
+                            <p className="mb-2 text-[0.78rem] text-ink-low">
                                 Default unit for logging weights
                             </p>
                             <select
                                 value={preferredWeightUnit}
                                 onChange={(e) => setPreferredWeightUnit(e.target.value as 'lbs' | 'kg')}
-                                className="input-field"
+                                className="w-full cursor-pointer rounded-xl border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 py-3 text-[0.9rem] text-ink-hi outline-none focus:border-brand/60 focus:shadow-[0_0_0_3px_var(--brand-glow-soft)]"
                             >
                                 <option value="lbs">Pounds (lbs)</option>
                                 <option value="kg">Kilograms (kg)</option>
@@ -508,13 +396,8 @@ export default function SettingsPage() {
 
             {/* Training Tab */}
             {activeTab === 'training' && (
-                <section className="glass-panel" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
-                    <h2 style={{
-                        fontFamily: 'var(--font-orbitron)',
-                        fontSize: '1rem',
-                        marginBottom: '0.75rem',
-                        color: 'var(--neon-orange)',
-                    }}>
+                <section className="glass-card mb-6 px-5 py-4">
+                    <h2 className="eyebrow mb-3">
                         Training Preferences
                     </h2>
                     <EditableField
@@ -565,13 +448,8 @@ export default function SettingsPage() {
 
             {/* Medical Tab */}
             {activeTab === 'medical' && (
-                <section className="glass-panel" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
-                    <h2 style={{
-                        fontFamily: 'var(--font-orbitron)',
-                        fontSize: '1rem',
-                        marginBottom: '0.75rem',
-                        color: 'var(--neon-orange)',
-                    }}>
+                <section className="glass-card mb-6 px-5 py-4">
+                    <h2 className="eyebrow mb-3">
                         Medical History
                     </h2>
                     <EditableField
@@ -591,60 +469,33 @@ export default function SettingsPage() {
 
             {/* Photos Tab */}
             {activeTab === 'photos' && (
-                <section className="glass-panel" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
-                    <h2 style={{
-                        fontFamily: 'var(--font-orbitron)',
-                        fontSize: '1rem',
-                        marginBottom: '0.75rem',
-                        color: 'var(--neon-orange)',
-                    }}>
+                <section className="glass-card mb-6 px-5 py-4">
+                    <h2 className="eyebrow mb-3">
                         Physique Photos
                     </h2>
                     {profilePhotos.length > 0 ? (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '0.5rem',
-                            marginBottom: '1rem',
-                        }}>
+                        <div className="mb-4 grid grid-cols-3 gap-2">
                             {profilePhotos.map((path, i) => (
                                 <div
                                     key={i}
-                                    style={{
-                                        aspectRatio: '1',
-                                        borderRadius: '8px',
-                                        overflow: 'hidden',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                    }}
+                                    className="aspect-square overflow-hidden rounded-lg bg-[var(--surface-2)]"
                                 >
                                     <img
                                         src={path}
                                         alt={`Physique photo ${i + 1}`}
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        className="h-full w-full object-cover"
                                     />
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                        <p className="mb-4 text-[0.85rem] text-ink-mid">
                             No physique photos uploaded yet. Upload them during a coach interview or use the button below.
                         </p>
                     )}
                     <button
                         onClick={() => router.push('/coach')}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.65rem 1.25rem',
-                            background: 'rgba(255, 102, 0, 0.15)',
-                            border: '1px solid rgba(255, 102, 0, 0.3)',
-                            borderRadius: '8px',
-                            color: 'var(--neon-orange)',
-                            fontSize: '0.85rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                        }}
+                        className="btn-soft !px-5 !py-2.5 !text-[0.85rem]"
                     >
                         <Camera size={16} />
                         Upload Photos via Coach Interview
@@ -656,32 +507,16 @@ export default function SettingsPage() {
             <button
                 onClick={handleSave}
                 disabled={saving}
-                className="btn-primary"
-                style={{ width: '100%' }}
+                className="btn-brand w-full"
             >
                 {saving ? 'Saving...' : 'Save Settings'}
             </button>
 
             {/* Success Toast */}
             {showSuccess && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: '2rem',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(16, 185, 129, 0.9)',
-                    color: 'white',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '50px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    zIndex: 2000,
-                    animation: 'fadeIn 0.3s ease-out',
-                }}>
+                <div className="fixed bottom-8 left-1/2 z-[2000] flex -translate-x-1/2 items-center gap-2 rounded-full bg-[var(--success)] px-6 py-3 text-white shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
                     <Check size={18} />
-                    <span style={{ fontWeight: '500' }}>Settings saved successfully!</span>
+                    <span className="font-medium">Settings saved successfully!</span>
                 </div>
             )}
         </div>

@@ -33,43 +33,6 @@ jest.mock('framer-motion', () => {
     }
 })
 
-// Mock Chakra UI
-jest.mock('@chakra-ui/react', () => {
-    const React = require('react')
-    const createComponent = (displayName: string, element = 'div') => {
-        const Component = React.forwardRef((props: Record<string, unknown>, ref: React.Ref<unknown>) => {
-            const { children, as, ...rest } = props
-            const filteredProps: Record<string, unknown> = {}
-            // Only pass valid HTML attributes
-            for (const [key, value] of Object.entries(rest)) {
-                if (['className', 'style', 'onClick', 'onChange', 'onSubmit', 'disabled',
-                    'type', 'placeholder', 'value', 'required', 'minLength', 'maxLength',
-                    'pattern', 'title', 'id', 'name', 'role', 'aria-label',
-                    'data-testid', 'href'].includes(key)) {
-                    filteredProps[key] = value
-                }
-            }
-            return React.createElement(
-                (as as string) || element,
-                { ...filteredProps, ref },
-                children
-            )
-        })
-        Component.displayName = displayName
-        return Component
-    }
-    return {
-        Box: createComponent('Box'),
-        Text: createComponent('Text', 'span'),
-        Input: createComponent('Input', 'input'),
-        Button: createComponent('Button', 'button'),
-        VStack: createComponent('VStack'),
-        HStack: createComponent('HStack'),
-        Heading: createComponent('Heading', 'h2'),
-        Flex: createComponent('Flex'),
-    }
-})
-
 // Mock lucide-react icons
 jest.mock('lucide-react', () => ({
     Eye: () => null,

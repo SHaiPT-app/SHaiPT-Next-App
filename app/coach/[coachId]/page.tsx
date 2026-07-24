@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Box, Text, Flex } from '@chakra-ui/react';
 import { ArrowLeft, Save, Dumbbell, UtensilsCrossed, MessageCircle, ClipboardList, ShieldCheck } from 'lucide-react';
 import { coaches } from '@/data/coaches';
 import GamifiedChat from '@/components/ai-coach/GamifiedChat';
@@ -780,15 +779,9 @@ export default function CoachInterviewPage() {
 
     if (!coach) {
         return (
-            <Box
-                minH="100vh"
-                bg="var(--background)"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-            >
-                <Text color="#888">Loading...</Text>
-            </Box>
+            <div className="flex min-h-screen items-center justify-center">
+                <p className="text-ink-mid">Loading...</p>
+            </div>
         );
     }
 
@@ -817,342 +810,199 @@ export default function CoachInterviewPage() {
     const showInterviewTabs = flowStage === 'interview' && !isDietitianPhase && waiverAccepted;
 
     return (
-        <Box
-            h="100dvh"
-            maxH="100dvh"
-            bg="var(--background)"
-            color="var(--foreground)"
-            display="flex"
-            flexDirection="column"
-            overflow="hidden"
-        >
+        <div className="flex h-dvh max-h-dvh flex-col overflow-hidden text-ink-hi">
             {/* Top Bar */}
-            <Flex
-                px={{ base: '0.75rem', md: '1.5rem' }}
-                py="0.75rem"
-                borderBottom="1px solid rgba(255, 255, 255, 0.1)"
-                alignItems="center"
-                justifyContent="space-between"
-                bg="rgba(15, 15, 25, 0.95)"
-                backdropFilter="blur(16px)"
-                flexShrink={0}
-                style={{ WebkitBackdropFilter: 'blur(16px)' }}
-                zIndex={10}
-            >
-                <Flex alignItems="center" gap="0.75rem">
+            <div className="z-10 flex shrink-0 items-center justify-between border-b border-[var(--line-soft)] bg-[rgba(15,15,25,0.95)] px-3 py-3 backdrop-blur-[16px] md:px-6">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.push('/coach')}
                         data-testid="back-to-coaches"
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '8px',
-                            width: '36px',
-                            height: '36px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'var(--foreground)',
-                            cursor: 'pointer',
-                        }}
+                        className="icon-btn !h-9 !w-9 shrink-0"
                     >
                         <ArrowLeft size={18} />
                     </button>
-                    <Box>
-                        <Text
-                            fontFamily="var(--font-orbitron)"
-                            fontSize="0.85rem"
-                            fontWeight="600"
-                            color="var(--neon-orange)"
-                        >
+                    <div>
+                        <p className="font-display text-[0.85rem] font-semibold text-brand">
                             {getHeaderTitle()}
-                        </Text>
-                        <Text fontSize="0.7rem" color="#888">
+                        </p>
+                        <p className="text-[0.7rem] text-ink-low">
                             {isDietitianPhase ? "Dr. Nadia 'The Fuel'" : coach.displayName}
-                        </Text>
-                    </Box>
-                </Flex>
+                        </p>
+                    </div>
+                </div>
 
-                <Flex alignItems="center" gap="0.5rem">
-                    <Text fontSize="0.7rem" color="#888" display={{ base: 'none', md: 'block' }}>
+                <div className="flex items-center gap-2">
+                    <p className="hidden text-[0.7rem] text-ink-low md:block">
                         {filledFields}/{totalFields} fields
-                    </Text>
+                    </p>
 
                     <button
                         onClick={handleSaveProfile}
                         disabled={isSaving}
                         data-testid="save-intake"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            padding: '0.5rem 1rem',
-                            background: saveStatus === 'saved'
-                                ? 'rgba(0, 200, 100, 0.2)'
-                                : 'rgba(255, 102, 0, 0.15)',
-                            border: saveStatus === 'saved'
-                                ? '1px solid rgba(0, 200, 100, 0.4)'
-                                : '1px solid rgba(255, 102, 0, 0.3)',
-                            borderRadius: '8px',
-                            color: saveStatus === 'saved' ? '#00C864' : 'var(--neon-orange)',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            cursor: isSaving ? 'not-allowed' : 'pointer',
-                            opacity: isSaving ? 0.6 : 1,
-                        }}
+                        className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-[0.8rem] font-semibold transition-colors ${
+                            saveStatus === 'saved'
+                                ? 'border-[color-mix(in_srgb,var(--success)_40%,transparent)] bg-[color-mix(in_srgb,var(--success)_15%,transparent)] text-[var(--success)]'
+                                : 'border-brand/30 bg-[var(--brand-glow-soft)] text-brand'
+                        } ${isSaving ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                     >
                         <Save size={14} />
                         {isSaving ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
                     </button>
-                </Flex>
-            </Flex>
+                </div>
+            </div>
 
             {/* Existing Plans Banner */}
             {showExistingPlansBanner && existingPlans.length > 0 && flowStage === 'interview' && (
-                <Box
-                    px="1rem"
-                    py="0.6rem"
-                    flexShrink={0}
-                    bg="rgba(255, 102, 0, 0.08)"
-                    borderBottom="1px solid rgba(255, 102, 0, 0.2)"
-                >
-                    <Flex alignItems="center" justifyContent="space-between" gap="0.5rem">
-                        <Flex alignItems="center" gap="0.5rem" flex={1} minW={0}>
-                            <Dumbbell size={16} color="#FF6600" style={{ flexShrink: 0 }} />
-                            <Text fontSize="0.8rem" color="#ccc" truncate>
-                                You have <Text as="span" color="var(--neon-orange)" fontWeight="600">{existingPlans.length} saved plan{existingPlans.length > 1 ? 's' : ''}</Text>
-                            </Text>
-                        </Flex>
-                        <Flex gap="0.4rem" flexShrink={0}>
+                <div className="shrink-0 border-b border-brand/30 bg-[var(--brand-glow-soft)] px-4 py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <Dumbbell size={16} className="shrink-0 text-brand" />
+                            <p className="truncate text-[0.8rem] text-ink-mid">
+                                You have <span className="font-semibold text-brand">{existingPlans.length} saved plan{existingPlans.length > 1 ? 's' : ''}</span>
+                            </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1.5">
                             <button
                                 onClick={() => router.push('/plans')}
-                                style={{
-                                    padding: '0.35rem 0.75rem',
-                                    background: '#FF6600',
-                                    color: '#0B0B15',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                }}
+                                className="btn-brand !px-3 !py-1.5 !text-[0.75rem]"
                             >
                                 View Plans
                             </button>
                             <button
                                 onClick={() => setShowExistingPlansBanner(false)}
-                                style={{
-                                    padding: '0.35rem 0.5rem',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    color: '#888',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '6px',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer',
-                                }}
+                                className="btn-outline !px-2.5 !py-1.5 !text-[0.75rem]"
                             >
                                 Dismiss
                             </button>
-                        </Flex>
-                    </Flex>
-                </Box>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Segmented Control (only during interview phase) */}
             {showInterviewTabs && (
-                <Box px="1rem" py="0.5rem" flexShrink={0} bg="rgba(15, 15, 25, 0.8)">
+                <div className="shrink-0 bg-[rgba(15,15,25,0.8)] px-4 py-2">
                     <SegmentedControl
                         tabs={INTERVIEW_TABS}
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
                         disabled={isFormSubmitted}
                     />
-                </Box>
+                </div>
             )}
 
             {/* Main Content */}
-            <Box flex={1} overflow="hidden" display="flex" flexDirection="column">
+            <div className="flex flex-1 flex-col overflow-hidden">
                 {/* Waiver Screen */}
                 {flowStage === 'waiver' && !waiverLoading && (
-                    <Box
-                        flex={1}
-                        overflow="auto"
-                        display="flex"
-                        flexDirection="column"
-                        alignItems="center"
-                        px="1rem"
-                        py="2rem"
-                    >
-                        <Box
-                            maxW="600px"
-                            w="100%"
-                            p="2rem"
-                            borderRadius="16px"
-                            bg="rgba(21, 21, 31, 0.8)"
-                            border="1px solid rgba(255, 255, 255, 0.1)"
-                            backdropFilter="blur(16px)"
-                            style={{ WebkitBackdropFilter: 'blur(16px)' }}
-                        >
-                            <Flex alignItems="center" gap="0.75rem" mb="1.5rem">
-                                <Box
-                                    p="0.5rem"
-                                    borderRadius="10px"
-                                    bg="rgba(255, 102, 0, 0.15)"
-                                    border="1px solid rgba(255, 102, 0, 0.3)"
-                                >
-                                    <ShieldCheck size={24} color="#FF6600" />
-                                </Box>
-                                <Text
-                                    fontFamily="var(--font-orbitron)"
-                                    fontSize="1.1rem"
-                                    fontWeight="700"
-                                    color="#fff"
-                                >
+                    <div className="flex flex-1 flex-col items-center overflow-auto px-4 py-8">
+                        <div className="glass-card w-full max-w-[600px] p-8">
+                            <div className="mb-6 flex items-center gap-3">
+                                <div className="rounded-[10px] border border-brand/30 bg-[var(--brand-glow-soft)] p-2">
+                                    <ShieldCheck size={24} className="text-brand" />
+                                </div>
+                                <p className="font-display text-[1.1rem] font-bold text-ink-hi">
                                     Health Disclaimer & Liability Waiver
-                                </Text>
-                            </Flex>
+                                </p>
+                            </div>
 
-                            <Box
-                                p="1.25rem"
-                                borderRadius="12px"
-                                bg="rgba(255, 255, 255, 0.03)"
-                                border="1px solid rgba(255, 255, 255, 0.06)"
-                                mb="1.5rem"
-                                maxH="350px"
-                                overflowY="auto"
-                            >
-                                <Text fontSize="0.85rem" color="rgba(255,255,255,0.75)" lineHeight="1.7" mb="1rem">
+                            <div className="mb-6 max-h-[350px] overflow-y-auto rounded-xl border border-[var(--line-soft)] bg-[var(--surface-2)] p-5">
+                                <p className="mb-4 text-[0.85rem] leading-[1.7] text-ink-mid">
                                     SHaiPT uses artificial intelligence to generate personalized fitness training programs and
                                     nutrition guidance. By proceeding, you acknowledge and agree to the following:
-                                </Text>
+                                </p>
 
-                                <Box as="ul" pl="1.25rem" mb="1rem">
-                                    <Box as="li" mb="0.5rem">
-                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
-                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">Not medical advice.</Text>{' '}
+                                <ul className="mb-4 list-disc pl-5">
+                                    <li className="mb-2">
+                                        <p className="text-[0.85rem] leading-[1.6] text-ink-mid">
+                                            <span className="font-bold text-ink-hi">Not medical advice.</span>{' '}
                                             All content generated by SHaiPT, including workout plans, nutrition plans, and AI coach
                                             responses, is for general informational and fitness purposes only. It is not a substitute
                                             for professional medical advice, diagnosis, or treatment.
-                                        </Text>
-                                    </Box>
-                                    <Box as="li" mb="0.5rem">
-                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
-                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">Consult your doctor.</Text>{' '}
+                                        </p>
+                                    </li>
+                                    <li className="mb-2">
+                                        <p className="text-[0.85rem] leading-[1.6] text-ink-mid">
+                                            <span className="font-bold text-ink-hi">Consult your doctor.</span>{' '}
                                             You should consult a qualified healthcare provider before starting any new exercise or
                                             nutrition program, especially if you have pre-existing medical conditions, injuries, or
                                             health concerns.
-                                        </Text>
-                                    </Box>
-                                    <Box as="li" mb="0.5rem">
-                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
-                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">Exercise at your own risk.</Text>{' '}
+                                        </p>
+                                    </li>
+                                    <li className="mb-2">
+                                        <p className="text-[0.85rem] leading-[1.6] text-ink-mid">
+                                            <span className="font-bold text-ink-hi">Exercise at your own risk.</span>{' '}
                                             Physical exercise carries inherent risks of injury. You assume full responsibility for
                                             any injuries or health issues that may arise from following AI-generated fitness
                                             recommendations.
-                                        </Text>
-                                    </Box>
-                                    <Box as="li" mb="0.5rem">
-                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
-                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">AI limitations.</Text>{' '}
+                                        </p>
+                                    </li>
+                                    <li className="mb-2">
+                                        <p className="text-[0.85rem] leading-[1.6] text-ink-mid">
+                                            <span className="font-bold text-ink-hi">AI limitations.</span>{' '}
                                             The AI coach and AI dietitian are not licensed professionals. Their guidance is based on
                                             general fitness and nutrition principles and may not account for your unique medical
                                             circumstances.
-                                        </Text>
-                                    </Box>
-                                    <Box as="li">
-                                        <Text fontSize="0.85rem" color="rgba(255,255,255,0.7)" lineHeight="1.6">
-                                            <Text as="span" fontWeight="700" color="rgba(255,255,255,0.9)">Form analysis disclaimer.</Text>{' '}
+                                        </p>
+                                    </li>
+                                    <li>
+                                        <p className="text-[0.85rem] leading-[1.6] text-ink-mid">
+                                            <span className="font-bold text-ink-hi">Form analysis disclaimer.</span>{' '}
                                             The computer vision form checker is for guidance only. Always prioritize safe form and
                                             physical comfort over AI feedback.
-                                        </Text>
-                                    </Box>
-                                </Box>
-                            </Box>
+                                        </p>
+                                    </li>
+                                </ul>
+                            </div>
 
                             <label
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '0.75rem',
-                                    cursor: 'pointer',
-                                    marginBottom: '1.5rem',
-                                    padding: '0.75rem',
-                                    borderRadius: '10px',
-                                    background: waiverAccepted ? 'rgba(255, 102, 0, 0.08)' : 'transparent',
-                                    border: waiverAccepted ? '1px solid rgba(255, 102, 0, 0.25)' : '1px solid rgba(255, 255, 255, 0.1)',
-                                    transition: 'all 0.2s',
-                                }}
+                                className={`mb-6 flex cursor-pointer items-start gap-3 rounded-[10px] border p-3 transition-all ${
+                                    waiverAccepted
+                                        ? 'border-brand/30 bg-[var(--brand-glow-soft)]'
+                                        : 'border-[var(--line-soft)] bg-transparent'
+                                }`}
                             >
                                 <input
                                     type="checkbox"
                                     checked={waiverAccepted}
                                     onChange={(e) => setWaiverAccepted(e.target.checked)}
-                                    style={{
-                                        width: '20px',
-                                        height: '20px',
-                                        marginTop: '2px',
-                                        accentColor: '#FF6600',
-                                        cursor: 'pointer',
-                                        flexShrink: 0,
-                                    }}
+                                    className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-brand"
                                 />
-                                <Text fontSize="0.85rem" color="rgba(255,255,255,0.85)" lineHeight="1.6">
+                                <p className="text-[0.85rem] leading-[1.6] text-ink-hi">
                                     I understand that SHaiPT provides AI-generated fitness and nutrition advice, not medical
                                     advice. I accept responsibility for my health decisions and will consult a healthcare
                                     professional for medical concerns.
-                                </Text>
+                                </p>
                             </label>
 
                             <button
                                 onClick={handleAcceptWaiver}
                                 disabled={!waiverAccepted}
                                 data-testid="accept-waiver-btn"
-                                style={{
-                                    width: '100%',
-                                    padding: '0.85rem',
-                                    background: waiverAccepted ? '#FF6600' : 'rgba(255, 102, 0, 0.3)',
-                                    color: waiverAccepted ? '#0B0B15' : 'rgba(255, 255, 255, 0.4)',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '700',
-                                    fontFamily: 'var(--font-orbitron)',
-                                    cursor: waiverAccepted ? 'pointer' : 'not-allowed',
-                                    opacity: waiverAccepted ? 1 : 0.6,
-                                    transition: 'all 0.2s',
-                                }}
+                                className="btn-brand font-display w-full !py-3.5 !text-[0.9rem]"
                             >
                                 Accept & Continue to Interview
                             </button>
-                        </Box>
-                    </Box>
+                        </div>
+                    </div>
                 )}
 
                 {/* Interview phase: tabbed Chat/Form */}
                 {showInterviewTabs && (
-                    <Box flex={1} overflow="hidden" display={flowStage === 'interview' ? 'flex' : 'none'} flexDirection="column">
+                    <div className={`flex-1 flex-col overflow-hidden ${flowStage === 'interview' ? 'flex' : 'hidden'}`}>
                         {/* Chat Tab */}
-                        <Box
-                            flex={1}
-                            overflow="hidden"
-                            display={activeTab === 'chat' ? 'flex' : 'none'}
-                            flexDirection="column"
-                        >
+                        <div className={`flex-1 flex-col overflow-hidden ${activeTab === 'chat' ? 'flex' : 'hidden'}`}>
                             <GamifiedChat
                                 coach={coach}
                                 onFormDataUpdate={handleFormDataUpdate}
                                 onInterviewComplete={handleInterviewComplete}
                                 initialFormData={formDataV2}
                             />
-                        </Box>
+                        </div>
 
                         {/* Form Tab */}
-                        <Box
-                            flex={1}
-                            overflow="hidden"
-                            display={activeTab === 'form' ? 'flex' : 'none'}
-                            flexDirection="column"
-                        >
+                        <div className={`flex-1 flex-col overflow-hidden ${activeTab === 'form' ? 'flex' : 'hidden'}`}>
                             <IntakeFormV2
                                 formData={formDataV2}
                                 onChange={handleFormV2Change}
@@ -1161,43 +1011,27 @@ export default function CoachInterviewPage() {
                             />
                             {/* Submit button on form tab */}
                             {!isFormSubmitted && (
-                                <Box px="1rem" py="0.75rem" flexShrink={0} borderTop="1px solid rgba(255,255,255,0.1)">
+                                <div className="shrink-0 border-t border-[var(--line-soft)] px-4 py-3">
                                     <button
                                         onClick={handleFormSubmit}
                                         disabled={!formDataV2.first_name || !formDataV2.fitness_level}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.85rem',
-                                            background: (!formDataV2.first_name || !formDataV2.fitness_level)
-                                                ? 'rgba(255, 102, 0, 0.3)'
-                                                : '#FF6600',
-                                            color: '#0B0B15',
-                                            border: 'none',
-                                            borderRadius: '10px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '700',
-                                            fontFamily: 'var(--font-orbitron)',
-                                            cursor: (!formDataV2.first_name || !formDataV2.fitness_level)
-                                                ? 'not-allowed'
-                                                : 'pointer',
-                                            opacity: (!formDataV2.first_name || !formDataV2.fitness_level) ? 0.6 : 1,
-                                        }}
+                                        className="btn-brand font-display w-full !py-3.5 !text-[0.9rem]"
                                     >
                                         Submit & Generate Plan
                                     </button>
-                                </Box>
+                                </div>
                             )}
-                        </Box>
-                    </Box>
+                        </div>
+                    </div>
                 )}
 
                 {/* Post-interview stages (split selection, plan view, dietitian, etc.) */}
-                <Box flex={1} overflow="auto" display={showInterviewTabs && flowStage === 'interview' ? 'none' : 'block'}>
+                <div className={`flex-1 overflow-auto ${showInterviewTabs && flowStage === 'interview' ? 'hidden' : 'block'}`}>
                     {/* Read-only form view after submission (shown above downstream stages) */}
                     {isFormSubmitted && flowStage !== 'interview' && !isDietitianPhase && (
-                        <Box display={flowStage === 'split_selection' || flowStage === 'generating' ? 'none' : 'block'}>
+                        <div className={flowStage === 'split_selection' || flowStage === 'generating' ? 'hidden' : 'block'}>
                             {/* Form is now embedded read-only in the flow */}
-                        </Box>
+                        </div>
                     )}
 
                     {/* Split Selection */}
@@ -1213,80 +1047,58 @@ export default function CoachInterviewPage() {
 
                     {/* Generating Indicator */}
                     {flowStage === 'generating' && (
-                        <Box p="1rem" data-testid="plan-generating">
-                            <Box
-                                p="1.25rem"
-                                borderRadius="12px"
-                                bg="rgba(255, 102, 0, 0.05)"
-                                border="1px solid rgba(255, 102, 0, 0.2)"
-                                textAlign="center"
-                            >
-                                <Flex gap="0.3rem" alignItems="center" justifyContent="center" mb="0.75rem">
-                                    <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out infinite" />
-                                    <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out 0.2s infinite" />
-                                    <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out 0.4s infinite" />
-                                </Flex>
-                                <Flex alignItems="center" justifyContent="center" gap="0.5rem" mb="0.25rem">
-                                    <Dumbbell size={16} color="#FF6600" />
-                                    <Text
-                                        color="var(--neon-orange)"
-                                        fontFamily="var(--font-orbitron)"
-                                        fontSize="0.85rem"
-                                        fontWeight="600"
-                                    >
+                        <div className="p-4" data-testid="plan-generating">
+                            <div className="rounded-xl border border-brand/30 bg-[var(--brand-glow-soft)] p-5 text-center">
+                                <div className="mb-3 flex items-center justify-center gap-1">
+                                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand [animation-duration:1.4s]" />
+                                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand [animation-delay:0.2s] [animation-duration:1.4s]" />
+                                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand [animation-delay:0.4s] [animation-duration:1.4s]" />
+                                </div>
+                                <div className="mb-1 flex items-center justify-center gap-2">
+                                    <Dumbbell size={16} className="text-brand" />
+                                    <p className="font-display text-[0.85rem] font-semibold text-brand">
                                         Building Your Plan
-                                    </Text>
-                                </Flex>
-                                <Text color="#888" fontSize="0.75rem">
+                                    </p>
+                                </div>
+                                <p className="text-[0.75rem] text-ink-mid">
                                     Generating a personalized periodized program based on your profile
-                                </Text>
-                            </Box>
-                        </Box>
+                                </p>
+                            </div>
+                        </div>
                     )}
 
                     {/* Plan Review */}
                     {flowStage === 'plan_review' && generatedPlan && (
-                        <Box p="0.75rem" ref={planViewRef}>
+                        <div className="p-3" ref={planViewRef}>
                             <InterviewPlanView
                                 plan={generatedPlan}
                                 onPlanUpdate={handlePlanUpdate}
                                 isSaving={isPlanSaving}
                                 saveStatus={planSaveStatus}
                             />
-                            <Box mt="0.75rem" mb="1rem">
+                            <div className="mb-4 mt-3">
                                 <button
                                     onClick={planSaveStatus === 'error' && generatedPlan ? () => savePlanToSupabase(generatedPlan) : handleStartDietitianInterview}
                                     disabled={planSaveStatus === 'saving'}
                                     data-testid="start-dietitian-btn"
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.85rem',
-                                        background: planSaveStatus === 'saving' ? 'rgba(255, 102, 0, 0.3)' : planSaveStatus === 'error' ? '#cc3300' : '#FF6600',
-                                        color: planSaveStatus === 'error' ? '#fff' : '#0B0B15',
-                                        border: 'none',
-                                        borderRadius: '10px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '700',
-                                        fontFamily: 'var(--font-orbitron)',
-                                        cursor: planSaveStatus === 'saving' ? 'not-allowed' : 'pointer',
-                                        transition: 'opacity 0.2s',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.5rem',
-                                        opacity: planSaveStatus === 'saving' ? 0.6 : 1,
-                                    }}
+                                    className={`font-display flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border-none py-3.5 text-[0.9rem] font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${
+                                        planSaveStatus === 'saving'
+                                            ? 'bg-brand/40'
+                                            : planSaveStatus === 'error'
+                                                ? 'bg-[var(--error)]'
+                                                : 'bg-[image:var(--brand-gradient)] shadow-[0_4px_24px_var(--brand-glow)]'
+                                    }`}
                                 >
                                     <UtensilsCrossed size={18} />
                                     {planSaveStatus === 'saving' ? 'Saving Plan...' : planSaveStatus === 'error' ? 'Retry Save' : 'Continue to Nutrition Plan'}
                                 </button>
                                 {planSaveStatus === 'error' && planSaveError && (
-                                    <Text fontSize="0.75rem" color="#ff4444" mt="0.5rem" textAlign="center">
+                                    <p className="mt-2 text-center text-[0.75rem] text-[var(--error)]">
                                         {planSaveError}
-                                    </Text>
+                                    </p>
                                 )}
-                            </Box>
-                        </Box>
+                            </div>
+                        </div>
                     )}
 
                     {/* Dietitian Interview Chat */}
@@ -1301,72 +1113,49 @@ export default function CoachInterviewPage() {
 
                     {/* Generating Nutrition Plan Indicator */}
                     {flowStage === 'generating_nutrition' && (
-                        <Box p="1rem" data-testid="nutrition-generating">
-                            <Box
-                                p="1.25rem"
-                                borderRadius="12px"
-                                bg="rgba(255, 102, 0, 0.05)"
-                                border="1px solid rgba(255, 102, 0, 0.2)"
-                                textAlign="center"
-                            >
-                                <Flex gap="0.3rem" alignItems="center" justifyContent="center" mb="0.75rem">
-                                    <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out infinite" />
-                                    <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out 0.2s infinite" />
-                                    <Box as="span" w="8px" h="8px" borderRadius="50%" bg="var(--neon-orange)" display="inline-block" animation="pulse 1.4s ease-in-out 0.4s infinite" />
-                                </Flex>
-                                <Flex alignItems="center" justifyContent="center" gap="0.5rem" mb="0.25rem">
-                                    <UtensilsCrossed size={16} color="#FF6600" />
-                                    <Text
-                                        color="var(--neon-orange)"
-                                        fontFamily="var(--font-orbitron)"
-                                        fontSize="0.85rem"
-                                        fontWeight="600"
-                                    >
+                        <div className="p-4" data-testid="nutrition-generating">
+                            <div className="rounded-xl border border-brand/30 bg-[var(--brand-glow-soft)] p-5 text-center">
+                                <div className="mb-3 flex items-center justify-center gap-1">
+                                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand [animation-duration:1.4s]" />
+                                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand [animation-delay:0.2s] [animation-duration:1.4s]" />
+                                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand [animation-delay:0.4s] [animation-duration:1.4s]" />
+                                </div>
+                                <div className="mb-1 flex items-center justify-center gap-2">
+                                    <UtensilsCrossed size={16} className="text-brand" />
+                                    <p className="font-display text-[0.85rem] font-semibold text-brand">
                                         Building Your Meal Plan
-                                    </Text>
-                                </Flex>
-                                <Text color="#888" fontSize="0.75rem">
+                                    </p>
+                                </div>
+                                <p className="text-[0.75rem] text-ink-mid">
                                     Dr. Nadia is creating a personalized nutrition plan with meals, macros, and recipes
-                                </Text>
-                            </Box>
-                        </Box>
+                                </p>
+                            </div>
+                        </div>
                     )}
 
                     {/* Nutrition Plan Review */}
                     {flowStage === 'nutrition_review' && generatedNutritionPlan && (
-                        <Box p="0.75rem" ref={nutritionViewRef}>
+                        <div className="p-3" ref={nutritionViewRef}>
                             <NutritionPlanView
                                 plan={generatedNutritionPlan}
                                 onPlanUpdate={handleNutritionPlanUpdate}
                                 isSaving={isNutritionPlanSaving}
                                 saveStatus={nutritionPlanSaveStatus}
                             />
-                            <Box mt="0.75rem" mb="1rem">
+                            <div className="mb-4 mt-3">
                                 <button
                                     onClick={() => router.push('/plans')}
                                     data-testid="view-plans-btn"
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.85rem',
-                                        background: '#FF6600',
-                                        color: '#0B0B15',
-                                        border: 'none',
-                                        borderRadius: '10px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '700',
-                                        fontFamily: 'var(--font-orbitron)',
-                                        cursor: 'pointer',
-                                        transition: 'opacity 0.2s',
-                                    }}
+                                    className="btn-brand font-display w-full !py-3.5 !text-[0.9rem]"
                                 >
                                     View All Plans
                                 </button>
-                            </Box>
-                        </Box>
+                            </div>
+                        </div>
                     )}
-                </Box>
-            </Box>
-        </Box>
+                </div>
+            </div>
+        </div>
     );
 }
 

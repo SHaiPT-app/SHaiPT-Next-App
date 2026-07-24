@@ -1,6 +1,4 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ChakraProvider } from '@chakra-ui/react';
-import { system } from '@/lib/theme';
 
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
@@ -103,9 +101,7 @@ function renderComponent(props: Partial<React.ComponentProps<typeof InterviewPla
     };
 
     return render(
-        <ChakraProvider value={system}>
-            <InterviewPlanView {...defaultProps} />
-        </ChakraProvider>
+        <InterviewPlanView {...defaultProps} />
     );
 }
 

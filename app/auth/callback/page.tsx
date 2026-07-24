@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { db } from '@/lib/supabaseDb';
-import { Box, Text, Button, VStack } from '@chakra-ui/react';
 
 export default function AuthCallback() {
     const router = useRouter();
@@ -93,15 +92,7 @@ export default function AuthCallback() {
 
     if (loading) {
         return (
-            <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                h="100vh"
-                flexDirection="column"
-                gap="1rem"
-                bg="var(--background)"
-            >
+            <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[var(--background)]">
                 <video
                     autoPlay
                     loop
@@ -111,35 +102,26 @@ export default function AuthCallback() {
                 >
                     <source src="/loader.webm" type="video/webm" />
                 </video>
-                <Text fontSize="1.2rem" color="var(--foreground)">
+                <p className="text-[1.2rem] text-ink-hi">
                     Setting up your account...
-                </Text>
-            </Box>
+                </p>
+            </div>
         );
     }
 
     if (error) {
         return (
-            <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                h="100vh"
-                bg="var(--background)"
-            >
-                <VStack gap="1rem">
-                    <Text color="red.400" fontSize="1.2rem">{error}</Text>
-                    <Button
+            <div className="flex h-screen items-center justify-center bg-[var(--background)] p-4">
+                <div className="glass-card flex w-full max-w-[420px] flex-col items-center gap-4 p-6 text-center md:p-8">
+                    <p className="text-[1.2rem] text-red-400">{error}</p>
+                    <button
                         onClick={() => router.push('/login')}
-                        bg="var(--primary)"
-                        color="white"
-                        borderRadius="8px"
-                        _hover={{ opacity: 0.9 }}
+                        className="btn-brand"
                     >
                         Back to Login
-                    </Button>
-                </VStack>
-            </Box>
+                    </button>
+                </div>
+            </div>
         );
     }
 

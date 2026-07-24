@@ -1,6 +1,4 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ChakraProvider } from '@chakra-ui/react';
-import { system } from '@/lib/theme';
 import DietIntakeForm from '@/components/ai-coach/DietIntakeForm';
 import type { DietIntakeFormData } from '@/lib/types';
 
@@ -16,11 +14,7 @@ const EMPTY_DIET_FORM: DietIntakeFormData = {
 };
 
 function renderWithProviders(ui: React.ReactElement) {
-    return render(
-        <ChakraProvider value={system}>
-            {ui}
-        </ChakraProvider>
-    );
+    return render(ui);
 }
 
 describe('DietIntakeForm', () => {

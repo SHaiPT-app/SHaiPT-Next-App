@@ -1,6 +1,4 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ChakraProvider } from '@chakra-ui/react';
-import { system } from '@/lib/theme';
 
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
@@ -35,11 +33,7 @@ jest.mock('lucide-react', () => ({
 import IntakePhotoUpload from '@/components/ai-coach/IntakePhotoUpload';
 
 function renderWithProviders(ui: React.ReactElement) {
-    return render(
-        <ChakraProvider value={system}>
-            {ui}
-        </ChakraProvider>
-    );
+    return render(ui);
 }
 
 function createMockFile(name: string, size: number, type: string): File {

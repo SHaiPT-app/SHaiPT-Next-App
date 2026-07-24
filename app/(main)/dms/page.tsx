@@ -123,7 +123,7 @@ export default function DMsPage() {
 
     if (!user || !authToken) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+            <div className="flex min-h-[60vh] items-center justify-center">
                 <div className="spinner"></div>
             </div>
         );
@@ -132,31 +132,18 @@ export default function DMsPage() {
     // If a conversation is selected, show the thread
     if (selectedPartner) {
         return (
-            <div style={{ padding: '1.5rem', maxWidth: '700px', margin: '0 auto', height: 'calc(100vh - 100px)' }}>
+            <div className="mx-auto h-[calc(100vh-100px)] max-w-[700px] p-6">
                 <button
                     onClick={() => {
                         setSelectedPartner(null);
                         fetchConversations(); // Refresh on back
                     }}
-                    style={{
-                        background: 'rgba(255, 102, 0, 0.15)',
-                        border: '1px solid rgba(255, 102, 0, 0.3)',
-                        borderRadius: '8px',
-                        padding: '0.5rem 0.85rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        color: '#FF6600',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        marginBottom: '1rem',
-                    }}
+                    className="btn-soft mb-4 !px-3.5 !py-2 !text-[0.85rem] !font-semibold"
                 >
                     <ArrowLeft size={18} />
                     Back
                 </button>
-                <div style={{ height: 'calc(100% - 60px)', borderRadius: '12px', overflow: 'hidden' }}>
+                <div className="h-[calc(100%-60px)] overflow-hidden rounded-xl">
                     <DirectMessageThread
                         userId={user.id}
                         otherUserId={selectedPartner.id}
@@ -169,103 +156,63 @@ export default function DMsPage() {
     }
 
     return (
-        <div style={{ padding: '1.5rem', maxWidth: '700px', margin: '0 auto' }}>
-            <h1 style={{
-                fontFamily: 'var(--font-orbitron)',
-                fontSize: '1.5rem',
-                color: 'var(--primary)',
-                marginBottom: '1.5rem',
-            }}>
+        <div className="mx-auto max-w-[700px] p-6 pb-8">
+            <h1 className="display text-gradient-brand mb-6 text-[2rem]">
                 Messages
             </h1>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-                    <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
+                <div className="p-12 text-center text-ink-mid">
+                    <div className="spinner mx-auto mb-4"></div>
                     Loading conversations...
                 </div>
             ) : conversations.length === 0 ? (
-                <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
-                    <MessageSquare size={40} color="#555" style={{ marginBottom: '1rem' }} />
-                    <p style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>No conversations yet</p>
-                    <p style={{ fontSize: '0.85rem' }}>
+                <div className="glass-card p-12 text-center">
+                    <MessageSquare size={40} className="mx-auto mb-4 text-ink-low" />
+                    <p className="mb-2 text-base text-ink-mid">No conversations yet</p>
+                    <p className="text-[0.85rem] text-ink-low">
                         Messages will appear here when you connect with a coach or trainee.
                     </p>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="flex flex-col gap-2">
                     {conversations.map(convo => (
                         <button
                             key={convo.partnerId}
                             onClick={() => setSelectedPartner({ id: convo.partnerId, name: convo.partnerName })}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.75rem',
-                                padding: '1rem 1.25rem',
-                                background: convo.unreadCount > 0
-                                    ? 'rgba(255, 102, 0, 0.04)'
-                                    : 'rgba(255, 255, 255, 0.03)',
-                                border: '1px solid rgba(255, 255, 255, 0.06)',
-                                borderRadius: '12px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                width: '100%',
-                                textAlign: 'left',
-                            }}
+                            className={`glass-card glass-card-hover flex w-full cursor-pointer items-center gap-3 px-5 py-4 text-left ${
+                                convo.unreadCount > 0 ? '!border-brand/30 !bg-[var(--brand-glow-soft)]' : ''
+                            }`}
                         >
                             {/* Avatar */}
-                            <div style={{
-                                width: '44px',
-                                height: '44px',
-                                borderRadius: '50%',
-                                background: 'var(--primary)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '1rem',
-                                fontWeight: '700',
-                                color: 'white',
-                                flexShrink: 0,
-                                position: 'relative',
-                            }}>
+                            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-base font-bold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]">
                                 {convo.partnerName[0].toUpperCase()}
                                 {convo.unreadCount > 0 && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '-2px',
-                                        right: '-2px',
-                                        width: '12px',
-                                        height: '12px',
-                                        borderRadius: '50%',
-                                        background: '#FF6600',
-                                        border: '2px solid rgba(21, 21, 31, 1)',
-                                    }} />
+                                    <div className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[var(--surface-0)] bg-brand" />
                                 )}
                             </div>
 
                             {/* Content */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                                    <span style={{
-                                        fontWeight: convo.unreadCount > 0 ? '600' : '500',
-                                        color: convo.unreadCount > 0 ? 'white' : '#ccc',
-                                        fontSize: '0.95rem',
-                                    }}>
+                            <div className="min-w-0 flex-1">
+                                <div className="mb-0.5 flex justify-between">
+                                    <span
+                                        className={`text-[0.95rem] ${
+                                            convo.unreadCount > 0
+                                                ? 'font-semibold text-ink-hi'
+                                                : 'font-medium text-ink-mid'
+                                        }`}
+                                    >
                                         {convo.partnerName}
                                     </span>
-                                    <span style={{ fontSize: '0.75rem', color: '#666', flexShrink: 0 }}>
+                                    <span className="shrink-0 text-xs text-ink-low">
                                         {timeAgo(convo.lastMessageAt)}
                                     </span>
                                 </div>
-                                <p style={{
-                                    color: convo.unreadCount > 0 ? '#bbb' : '#888',
-                                    fontSize: '0.85rem',
-                                    margin: 0,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}>
+                                <p
+                                    className={`m-0 truncate text-[0.85rem] ${
+                                        convo.unreadCount > 0 ? 'text-ink-mid' : 'text-ink-low'
+                                    }`}
+                                >
                                     {convo.lastMessage}
                                 </p>
                             </div>

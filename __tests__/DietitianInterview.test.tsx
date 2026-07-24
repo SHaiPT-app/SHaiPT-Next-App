@@ -1,6 +1,4 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ChakraProvider } from '@chakra-ui/react';
-import { system } from '@/lib/theme';
 
 // Mock next/navigation
 const mockPush = jest.fn();
@@ -130,11 +128,7 @@ jest.mock('@/components/ai-coach/NutritionPlanView', () => {
 import CoachInterviewPage from '@/app/coach/[coachId]/page';
 
 function renderWithProviders(ui: React.ReactElement) {
-    return render(
-        <ChakraProvider value={system}>
-            {ui}
-        </ChakraProvider>
-    );
+    return render(ui);
 }
 
 describe('CoachInterviewPage - Dietitian Integration', () => {

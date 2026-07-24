@@ -34,53 +34,6 @@ jest.mock('framer-motion', () => {
     };
 });
 
-// Mock Chakra UI - strip non-DOM props
-jest.mock('@chakra-ui/react', () => {
-    const React = require('react');
-
-    // List of Chakra-specific props to filter out
-    const chakraProps = [
-        'as', 'lineClamp', 'flexShrink', 'alignItems', 'justifyContent',
-        'flexDirection', 'borderRadius', 'fontSize', 'fontWeight',
-        'fontFamily', 'lineHeight', 'textTransform', 'letterSpacing',
-        'whiteSpace', 'borderColor', 'borderBottom', 'borderTop',
-        'backdropFilter', 'boxShadow', 'overflowY', 'maxH', 'minH',
-        'bg', 'px', 'py', 'mb', 'mt', 'mx', 'w', 'h', 'gap',
-        'display', 'flex', 'maxW', 'color', 'textAlign', 'align',
-        'position', 'bottom', 'right', 'top', 'left', 'zIndex',
-        'width', 'height', 'overflow', 'border',
-    ];
-
-    const createComponent = (displayName: string, tag = 'div') => {
-        const Component = React.forwardRef((props: any, ref: any) => {
-            const filtered: any = {};
-            for (const key of Object.keys(props)) {
-                if (!chakraProps.includes(key) && typeof props[key] !== 'object') {
-                    filtered[key] = props[key];
-                } else if (key === 'children') {
-                    filtered[key] = props[key];
-                } else if (key === 'data-testid' || key === 'className' || key === 'style' || key === 'id') {
-                    filtered[key] = props[key];
-                }
-            }
-            // Always pass children
-            if (props.children !== undefined) {
-                filtered.children = props.children;
-            }
-            return React.createElement(tag, { ...filtered, ref });
-        });
-        Component.displayName = displayName;
-        return Component;
-    };
-    return {
-        Box: createComponent('Box'),
-        Text: createComponent('Text', 'p'),
-        Heading: createComponent('Heading', 'h3'),
-        VStack: createComponent('VStack'),
-        Flex: createComponent('Flex'),
-    };
-});
-
 // Mock lucide-react
 jest.mock('lucide-react', () => ({
     Send: () => React.createElement('span', { 'data-testid': 'send-icon' }),

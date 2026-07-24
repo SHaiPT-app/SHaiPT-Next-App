@@ -19,57 +19,24 @@ function CoachCard({ coach, isSelected, onSelect }: {
         <button
             onClick={() => onSelect(coach)}
             data-testid={`coach-card-${coach.id}`}
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                padding: '1.5rem',
-                background: isSelected
-                    ? 'rgba(255, 102, 0, 0.1)'
-                    : 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: isSelected
-                    ? '1px solid var(--neon-orange)'
-                    : '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '16px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: isSelected
-                    ? '0 0 20px rgba(255, 102, 0, 0.2)'
-                    : '0 4px 30px rgba(0, 0, 0, 0.1)',
-                width: '100%',
-            }}
+            className={`glass-card glass-card-hover flex w-full cursor-pointer flex-col items-center p-6 text-center ${
+                isSelected
+                    ? '!border-brand !bg-[var(--brand-glow-soft)] shadow-[0_0_20px_var(--brand-glow-soft)]'
+                    : ''
+            }`}
         >
             {/* Avatar */}
             <div
-                style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    background: isSelected
-                        ? 'linear-gradient(135deg, var(--neon-orange), var(--neon-pink))'
-                        : 'linear-gradient(135deg, #2A2A35, #3A3A45)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '1rem',
-                    overflow: 'hidden',
-                    border: isSelected
-                        ? '2px solid var(--neon-orange)'
-                        : '2px solid rgba(255, 255, 255, 0.15)',
-                    flexShrink: 0,
-                }}
+                className={`mb-4 flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 ${
+                    isSelected
+                        ? 'border-brand bg-[image:var(--brand-gradient)]'
+                        : 'border-[var(--line-strong)] bg-[var(--surface-2)]'
+                }`}
             >
                 <img
                     src={coach.avatarUrl}
                     alt={coach.fullName}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                    }}
+                    className="h-full w-full object-cover"
                     onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
@@ -82,56 +49,28 @@ function CoachCard({ coach, isSelected, onSelect }: {
 
             {/* Name */}
             <h3
-                style={{
-                    fontFamily: 'var(--font-orbitron)',
-                    fontSize: '0.95rem',
-                    fontWeight: '600',
-                    color: isSelected ? 'var(--neon-orange)' : 'var(--foreground)',
-                    marginBottom: '0.75rem',
-                    lineHeight: 1.3,
-                }}
+                className={`font-display mb-3 text-[0.95rem] font-semibold leading-[1.3] ${
+                    isSelected ? 'text-brand' : 'text-ink-hi'
+                }`}
             >
                 {coach.displayName}
             </h3>
 
             {/* Coaching Style */}
-            <p
-                style={{
-                    fontSize: '0.8rem',
-                    color: '#999',
-                    lineHeight: 1.5,
-                    marginBottom: '1rem',
-                    flexGrow: 1,
-                }}
-            >
+            <p className="mb-4 flex-grow text-[0.8rem] leading-normal text-ink-mid">
                 {coach.coachingStyle}
             </p>
 
             {/* Specialty Tags */}
-            <div
-                style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.4rem',
-                    justifyContent: 'center',
-                }}
-            >
+            <div className="flex flex-wrap justify-center gap-1.5">
                 {coach.specialtyTags.map((tag) => (
                     <span
                         key={tag}
-                        style={{
-                            padding: '0.2rem 0.6rem',
-                            background: isSelected
-                                ? 'rgba(255, 102, 0, 0.15)'
-                                : 'rgba(255, 255, 255, 0.08)',
-                            color: isSelected ? 'var(--neon-orange)' : '#aaa',
-                            borderRadius: '20px',
-                            fontSize: '0.7rem',
-                            fontWeight: '500',
-                            border: isSelected
-                                ? '1px solid rgba(255, 102, 0, 0.3)'
-                                : '1px solid rgba(255, 255, 255, 0.08)',
-                        }}
+                        className={`rounded-full border px-2.5 py-0.5 text-[0.7rem] font-medium ${
+                            isSelected
+                                ? 'border-brand/30 bg-[var(--brand-glow-soft)] text-brand'
+                                : 'border-[var(--line-soft)] bg-[var(--surface-2)] text-ink-mid'
+                        }`}
                     >
                         {tag}
                     </span>
@@ -211,104 +150,48 @@ export default function CoachSelectionPage() {
     };
 
     return (
-        <div
-            style={{
-                minHeight: '100vh',
-                background: 'var(--background)',
-                color: 'var(--foreground)',
-                padding: '2rem 1.5rem',
-            }}
-        >
-            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="min-h-screen px-6 py-8 text-ink-hi">
+            <div className="mx-auto max-w-[1200px]">
                 {/* Header */}
-                <div style={{ marginBottom: '2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <div className="mb-8">
+                    <div className="mb-2 flex items-center gap-3">
                         <button
                             onClick={() => router.push('/home')}
                             aria-label="Back to Home"
-                            style={{
-                                background: 'rgba(255, 102, 0, 0.15)',
-                                border: '1px solid rgba(255, 102, 0, 0.3)',
-                                borderRadius: '8px',
-                                padding: '0.5rem 0.85rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.4rem',
-                                color: '#FF6600',
-                                cursor: 'pointer',
-                                flexShrink: 0,
-                                fontSize: '0.85rem',
-                                fontWeight: '600',
-                            }}
+                            className="btn-soft shrink-0 !rounded-xl !px-3.5 !py-2 !text-[0.85rem]"
                         >
                             <ArrowLeft size={18} />
                             Home
                         </button>
-                        <h1
-                            style={{
-                                fontFamily: 'var(--font-orbitron)',
-                                fontSize: '2rem',
-                                color: 'var(--neon-orange)',
-                            }}
-                        >
+                        <h1 className="display text-gradient-brand text-[2rem]">
                             Coach List
                         </h1>
                     </div>
-                    <p style={{ color: '#888', fontSize: '0.95rem' }}>
+                    <p className="text-[0.95rem] text-ink-mid">
                         Browse AI and human coaches to match your training goals.
                     </p>
                 </div>
 
                 {/* Tab Toggle */}
-                <div style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    marginBottom: '2rem',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '10px',
-                    padding: '0.25rem',
-                    maxWidth: '400px',
-                }}>
+                <div className="mb-8 flex max-w-[400px] gap-2 rounded-xl border border-line-soft bg-[var(--surface-1)] p-1">
                     <button
                         onClick={() => setActiveTab('ai')}
-                        style={{
-                            flex: 1,
-                            padding: '0.7rem',
-                            background: activeTab === 'ai' ? 'var(--primary, #FF6600)' : 'transparent',
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: activeTab === 'ai' ? 'white' : '#888',
-                            cursor: 'pointer',
-                            fontWeight: activeTab === 'ai' ? '600' : '400',
-                            fontSize: '0.9rem',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.4rem',
-                        }}
+                        className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm transition-all ${
+                            activeTab === 'ai'
+                                ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                        }`}
                     >
                         <Bot size={16} />
                         AI Coaches
                     </button>
                     <button
                         onClick={() => setActiveTab('human')}
-                        style={{
-                            flex: 1,
-                            padding: '0.7rem',
-                            background: activeTab === 'human' ? 'var(--primary, #FF6600)' : 'transparent',
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: activeTab === 'human' ? 'white' : '#888',
-                            cursor: 'pointer',
-                            fontWeight: activeTab === 'human' ? '600' : '400',
-                            fontSize: '0.9rem',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.4rem',
-                        }}
+                        className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm transition-all ${
+                            activeTab === 'human'
+                                ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
+                                : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
+                        }`}
                     >
                         <Users size={16} />
                         Human Coaches
@@ -320,12 +203,7 @@ export default function CoachSelectionPage() {
                     <>
                         <div
                             data-testid="coach-grid"
-                            style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                                gap: '1.25rem',
-                                marginBottom: '2rem',
-                            }}
+                            className="mb-8 grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-5"
                         >
                             {coaches.map((coach) => (
                                 <CoachCard
@@ -341,36 +219,15 @@ export default function CoachSelectionPage() {
                         {selectedCoach && (
                             <div
                                 data-testid="selected-coach-cta"
-                                style={{
-                                    position: 'fixed',
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    padding: '1.25rem 1.5rem',
-                                    background: 'rgba(21, 21, 31, 0.95)',
-                                    backdropFilter: 'blur(16px)',
-                                    WebkitBackdropFilter: 'blur(16px)',
-                                    borderTop: '1px solid rgba(255, 102, 0, 0.2)',
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    gap: '1rem',
-                                    zIndex: 100,
-                                }}
+                                className="fixed inset-x-0 bottom-0 z-[100] flex items-center justify-center gap-4 border-t border-brand/30 bg-[rgba(21,21,31,0.95)] px-6 py-5 backdrop-blur-[16px]"
                             >
-                                <span style={{ color: '#ccc', fontSize: '0.95rem' }}>
-                                    Selected: <strong style={{ color: 'var(--neon-orange)' }}>{selectedCoach.displayName}</strong>
+                                <span className="text-[0.95rem] text-ink-mid">
+                                    Selected: <strong className="text-brand">{selectedCoach.displayName}</strong>
                                 </span>
                                 <button
                                     data-testid="start-training-btn"
-                                    className="btn-primary"
+                                    className="btn-brand !px-8 !py-3 !text-[0.95rem]"
                                     onClick={handleStartTraining}
-                                    style={{
-                                        padding: '0.75rem 2rem',
-                                        fontSize: '0.95rem',
-                                        fontWeight: '600',
-                                        borderRadius: '10px',
-                                    }}
                                 >
                                     Start Training
                                 </button>
@@ -383,32 +240,18 @@ export default function CoachSelectionPage() {
                 {activeTab === 'human' && (
                     <>
                         {trainersLoading ? (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-                                <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
+                            <div className="p-12 text-center text-ink-mid">
+                                <div className="spinner mx-auto mb-4"></div>
                                 Loading trainers...
                             </div>
                         ) : trainers.length === 0 ? (
-                            <div style={{
-                                textAlign: 'center',
-                                padding: '3rem',
-                                color: '#888',
-                                background: 'rgba(255, 255, 255, 0.03)',
-                                borderRadius: '16px',
-                                border: '1px solid rgba(255, 255, 255, 0.06)',
-                            }}>
-                                <Users size={40} color="#555" style={{ marginBottom: '1rem' }} />
-                                <p style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>No human coaches available yet</p>
-                                <p style={{ fontSize: '0.85rem' }}>Check back soon — trainers are being onboarded!</p>
+                            <div className="glass-card p-12 text-center text-ink-mid">
+                                <Users size={40} className="mx-auto mb-4 text-ink-low" />
+                                <p className="mb-2 text-base">No human coaches available yet</p>
+                                <p className="text-[0.85rem]">Check back soon — trainers are being onboarded!</p>
                             </div>
                         ) : (
-                            <div
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                                    gap: '1.25rem',
-                                    marginBottom: '2rem',
-                                }}
-                            >
+                            <div className="mb-8 grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-5">
                                 {trainers.map((trainer) => (
                                     <HumanCoachCard
                                         key={trainer.id}
