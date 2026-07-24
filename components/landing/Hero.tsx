@@ -6,11 +6,17 @@ import { motion } from 'framer-motion';
 import TextType from '@/components/TextType';
 import { fadeInUp, fadeInDown, staggerContainer } from '@/lib/animations';
 
+/**
+ * Full-width masthead: ambient glow + navbar.
+ *
+ * The hero copy lives in {@link HeroCopy} so it can be rendered inside the
+ * right-hand column of the split scroll-storyboard while the navbar stays
+ * full-bleed across the top of the page.
+ */
 export default function Hero() {
   return (
-    <section className="relative flex min-h-screen flex-col overflow-hidden">
+    <section className="relative overflow-hidden">
       {/* Ambient background */}
-      <div className="bg-grid absolute inset-0 z-0" />
       <div className="glow-orb -top-[20%] left-[10%] h-[50vw] w-[50vw]" />
       <div className="glow-orb glow-orb--pink -bottom-[10%] right-[10%] h-[40vw] w-[40vw]" />
 
@@ -52,84 +58,88 @@ export default function Hero() {
           </Link>
         </div>
       </motion.nav>
-
-      {/* Hero content */}
-      <motion.div
-        variants={staggerContainer}
-        initial={false}
-        animate="visible"
-        className="relative z-[1] flex flex-1 flex-col items-center justify-center px-4 pt-16 text-center"
-      >
-        <motion.div variants={fadeInDown} className="badge-brand mb-7">
-          <span className="dot" />
-          AI-Powered Personal Training
-        </motion.div>
-
-        <motion.p
-          variants={fadeInUp}
-          className="font-display mb-3 text-sm font-bold uppercase tracking-[0.2em] text-ink-mid sm:text-base"
-        >
-          Don&apos;t just train.{' '}
-          <span className="text-brand [text-shadow:0_0_20px_var(--brand-glow)]">Get SHaiPT</span>
-        </motion.p>
-
-        <motion.h1
-          variants={fadeInUp}
-          className="display mb-6 max-w-4xl text-[clamp(2.6rem,7vw,5.25rem)] font-black"
-        >
-          Let&apos;s{' '}
-          <TextType
-            text={['Get SHaiPT', 'Train Smart', 'Push Limits', 'Crush Goals']}
-            as="span"
-            typingSpeed={100}
-            pauseDuration={5000}
-            deletingSpeed={50}
-            loop={true}
-            textColors={['#FF6600']}
-            cursorCharacter="|"
-            showCursor={true}
-            cursorClassName=""
-            style={{
-              color: '#FF6600',
-              display: 'inline',
-              textShadow: '0 0 30px rgba(255, 102, 0, 0.4)',
-            }}
-          />
-        </motion.h1>
-
-        <motion.p
-          variants={fadeInUp}
-          className="mb-10 max-w-2xl text-lg leading-relaxed text-ink-mid sm:text-xl"
-        >
-          Real-time AI form analysis, periodized workout plans, and complete
-          nutrition tracking. Your personal trainer that never sleeps.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div variants={fadeInUp} className="mb-6 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/login" className="btn-brand !text-lg">
-            Start Free Trial
-          </Link>
-          <Link href="/demo" data-testid="try-demo-cta" className="btn-soft !text-lg">
-            Try 5-Min Demo
-          </Link>
-          <Link href="#features" className="btn-outline !text-lg">
-            See Features
-          </Link>
-        </motion.div>
-
-        {/* Trust line */}
-        <motion.div
-          variants={fadeInUp}
-          className="mb-14 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-ink-low"
-        >
-          <span>No credit card required</span>
-          <span className="hidden h-1 w-1 rounded-full bg-line-strong sm:block" />
-          <span>Cancel anytime</span>
-          <span className="hidden h-1 w-1 rounded-full bg-line-strong sm:block" />
-          <span>Free Pro month for consistency</span>
-        </motion.div>
-      </motion.div>
     </section>
+  );
+}
+
+/** Hero copy block — rendered in the right column of the split storyboard. */
+export function HeroCopy() {
+  return (
+    <motion.div
+      variants={staggerContainer}
+      initial={false}
+      animate="visible"
+      className="relative z-[1] flex min-h-screen flex-col items-center justify-center px-4 py-16 text-center"
+    >
+      <motion.div variants={fadeInDown} className="badge-brand mb-7">
+        <span className="dot" />
+        AI-Powered Personal Training
+      </motion.div>
+
+      <motion.p
+        variants={fadeInUp}
+        className="font-display mb-3 text-sm font-bold uppercase tracking-[0.2em] text-ink-mid sm:text-base"
+      >
+        Don&apos;t just train.{' '}
+        <span className="text-brand [text-shadow:0_0_20px_var(--brand-glow)]">Get SHaiPT</span>
+      </motion.p>
+
+      <motion.h1
+        variants={fadeInUp}
+        className="display mb-6 max-w-4xl text-[clamp(2.1rem,4.6vw,4rem)] font-black"
+      >
+        Let&apos;s{' '}
+        <TextType
+          text={['Get SHaiPT', 'Train Smart', 'Push Limits', 'Crush Goals']}
+          as="span"
+          typingSpeed={100}
+          pauseDuration={5000}
+          deletingSpeed={50}
+          loop={true}
+          textColors={['#FF6600']}
+          cursorCharacter="|"
+          showCursor={true}
+          cursorClassName=""
+          style={{
+            color: '#FF6600',
+            display: 'inline',
+            textShadow: '0 0 30px rgba(255, 102, 0, 0.4)',
+          }}
+        />
+      </motion.h1>
+
+      <motion.p
+        variants={fadeInUp}
+        className="mb-10 max-w-2xl text-lg leading-relaxed text-ink-mid"
+      >
+        Real-time AI form analysis, periodized workout plans, and complete
+        nutrition tracking. Your personal trainer that never sleeps.
+      </motion.p>
+
+      {/* CTAs */}
+      <motion.div variants={fadeInUp} className="mb-6 flex flex-wrap items-center justify-center gap-4">
+        <Link href="/login" className="btn-brand !text-lg">
+          Start Free Trial
+        </Link>
+        <Link href="/demo" data-testid="try-demo-cta" className="btn-soft !text-lg">
+          Try 5-Min Demo
+        </Link>
+        <Link href="#features" className="btn-outline !text-lg">
+          See Features
+        </Link>
+      </motion.div>
+
+      {/* Trust line */}
+      <motion.div
+        variants={fadeInUp}
+        className="mb-14 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-ink-low"
+      >
+        <span>No credit card required</span>
+        <span className="hidden h-1 w-1 rounded-full bg-line-strong sm:block" />
+        <span>Cancel anytime</span>
+        <span className="hidden h-1 w-1 rounded-full bg-line-strong sm:block" />
+        <span>Free Pro month for consistency</span>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 type LayerKey = 'img1' | 'v1' | 'img2' | 'v2' | 'img3' | 'v3' | 'img4' | 'img5';
 
@@ -27,9 +27,20 @@ const CAPTION_BANDS = [0, 0.175, 0.42, 0.665, 0.87, 1.01];
 
 const BRAND = 'var(--brand)';
 
-export default function ScrollVideoSection() {
+/**
+ * Split scroll-storyboard.
+ *
+ * Layout: the video stage is pinned (position: sticky) in the LEFT column and
+ * stays vertically centred while `children` — the hero copy, app showcase and
+ * features — scroll down the RIGHT column. The right column's natural height is
+ * what drives the scroll track, so the section no longer needs a fixed 700vh
+ * spacer.
+ *
+ * The scrub/cross-fade mapping below (progress -> currentTime / opacity) is
+ * unchanged from the centred version; only positioning moved.
+ */
+export default function ScrollVideoSection({ children }: { children?: ReactNode }) {
     const sectionRef = useRef<HTMLDivElement>(null);
-    const stageRef = useRef<HTMLDivElement>(null);
     const layerRefs = useRef<Record<LayerKey, HTMLElement | null>>({
         img1: null, v1: null, img2: null, v2: null, img3: null, v3: null, img4: null, img5: null,
     });
@@ -128,11 +139,32 @@ export default function ScrollVideoSection() {
         };
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('resize', onScroll, { passive: true });
+
+        // The scrub above no-ops while `video.duration` is still NaN. Without
+        // this, a clip whose metadata lands after the user has already scrolled
+        // past its band stays parked on frame 0 until the next scroll event.
+        const videos = [v1Ref.current, v2Ref.current, v3Ref.current].filter(
+            (v): v is HTMLVideoElement => Boolean(v)
+        );
+        const onMeta = () => {
+            lastProgress = -1; // defeat the no-op guard so the scrub re-runs
+            update();
+        };
+        videos.forEach((v) => {
+            v.addEventListener('loadedmetadata', onMeta);
+            // preload="auto" alone is only a hint, and Chrome defers it for
+            // these (they are opacity:0 and never play). Without an explicit
+            // load() the clips can sit at readyState 0 indefinitely, so
+            // `duration` stays NaN and the scrub never engages.
+            if (v.readyState === 0) v.load();
+        });
+
         update();
 
         return () => {
             window.removeEventListener('scroll', onScroll);
             window.removeEventListener('resize', onScroll);
+            videos.forEach((v) => v.removeEventListener('loadedmetadata', onMeta));
             if (raf) cancelAnimationFrame(raf);
         };
     }, []);
@@ -145,70 +177,12 @@ export default function ScrollVideoSection() {
     };
 
     return (
-        <>
-            {/* Outer spacer — establishes scroll length for the pinned stage. */}
-            <section
-                ref={sectionRef}
-                aria-label="How SHaiPT works"
-                style={{
-                    position: 'relative',
-                    height: '700vh',
-                    // Transparent so the fixed FloatingLines background shows through.
-                    background: 'transparent',
-                    zIndex: 1,
-                }}
-            />
+        <section ref={sectionRef} aria-label="How SHaiPT works" className="sb-split">
+            {/* LEFT — pinned video stage, vertically centred for the scroll track. */}
+            <div className="sb-pin">
+                <div className="sb-eyebrow">From rep one to rep done</div>
 
-            {/* Fixed pinned stage — only visible while the section is in viewport. */}
-            <div
-                ref={stageRef}
-                aria-hidden={!active}
-                style={{
-                    position: 'fixed',
-                    inset: 0,
-                    height: '100vh',
-                    width: '100%',
-                    overflow: 'hidden',
-                    // Transparent stage over the fixed FloatingLines background, with a
-                    // subtle top/bottom scrim so the eyebrow, captions, and progress bar
-                    // stay legible over the animated lines. Middle stays clear for the phone.
-                    background:
-                        'linear-gradient(to bottom, rgba(21,21,31,0.55) 0%, rgba(21,21,31,0) 20%, rgba(21,21,31,0) 66%, rgba(21,21,31,0.72) 100%)',
-                    pointerEvents: 'none',
-                    opacity: active ? 1 : 0,
-                    visibility: active ? 'visible' : 'hidden',
-                    transition: 'opacity 0.2s linear',
-                    zIndex: 5,
-                }}
-            >
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 'max(2rem, env(safe-area-inset-top))',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        zIndex: 30,
-                        fontSize: '0.72rem',
-                        letterSpacing: '0.3em',
-                        textTransform: 'uppercase',
-                        color: BRAND,
-                        fontFamily: 'var(--font-display), var(--font-sans)',
-                        fontWeight: 700,
-                        whiteSpace: 'nowrap',
-                    }}
-                >
-                    From rep one to rep done
-                </div>
-
-                <div
-                    style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
+                <div className="sb-stage-wrap" aria-hidden={!active}>
                     <div className="shaipt-stage">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img ref={setRef('img1')} src="/storyboard/1.png" alt="" className="shaipt-layer" style={{ opacity: 1 }} decoding="async" loading="eager" />
@@ -248,96 +222,77 @@ export default function ScrollVideoSection() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img ref={setRef('img5')} src="/storyboard/5.png" alt="SHaiPT pose analysis on a phone" className="shaipt-layer" style={{ opacity: 0 }} decoding="async" />
                     </div>
-                </div>
 
-                <div
-                    style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: 'max(4rem, env(safe-area-inset-bottom))',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        padding: '0 1.5rem',
-                        zIndex: 20,
-                    }}
-                >
-                    <div style={{ position: 'relative', maxWidth: '720px', width: '100%', minHeight: '8rem' }}>
+                    {/* Captions: overlaid on the stage at desktop, stacked beneath it on mobile. */}
+                    <div className="sb-captions">
                         {ANCHORS.map((a, i) => (
-                            <div
-                                key={i}
-                                ref={setCaption(i)}
-                                style={{
-                                    position: 'absolute',
-                                    inset: 0,
-                                    opacity: i === 0 ? 1 : 0,
-                                    transition: 'opacity 0.35s ease, transform 0.35s ease',
-                                    textAlign: 'center',
-                                    color: 'var(--ink-hi)',
-                                    willChange: 'opacity, transform',
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        fontSize: 'clamp(1.75rem, 4.5vw, 3rem)',
-                                        fontWeight: 800,
-                                        lineHeight: 1.05,
-                                        letterSpacing: '-0.02em',
-                                        marginBottom: '0.75rem',
-                                        color: 'var(--ink-hi)',
-                                        textShadow: '0 2px 24px rgba(0,0,0,0.6)',
-                                    }}
-                                >
-                                    {a.caption}
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)',
-                                        color: 'var(--ink-mid)',
-                                        maxWidth: '540px',
-                                        margin: '0 auto',
-                                        lineHeight: 1.5,
-                                        textShadow: '0 1px 12px rgba(0,0,0,0.5)',
-                                    }}
-                                >
-                                    {a.sub}
-                                </div>
+                            <div key={i} ref={setCaption(i)} className="sb-caption" style={{ opacity: i === 0 ? 1 : 0 }}>
+                                <div className="sb-caption-title">{a.caption}</div>
+                                <div className="sb-caption-sub">{a.sub}</div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div
-                    style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: '2px',
-                        background: 'var(--line-soft)',
-                        zIndex: 25,
-                    }}
-                >
-                    <div
-                        ref={progressBarRef}
-                        style={{
-                            height: '100%',
-                            background: 'var(--brand-gradient)',
-                            boxShadow: '0 0 10px var(--brand-glow)',
-                            transformOrigin: 'left center',
-                            transform: 'scaleX(0)',
-                            willChange: 'transform',
-                        }}
-                    />
+                <div className="sb-progress">
+                    <div ref={progressBarRef} className="sb-progress-fill" />
                 </div>
             </div>
 
+            {/* RIGHT — normal-flow content that drives the scroll track. */}
+            <div className="sb-flow">{children}</div>
+
             <style jsx>{`
+                .sb-split {
+                    position: relative;
+                    z-index: 1;
+                    background: transparent;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    align-items: start;
+                    /* Floor so there is always scrub room even if the right
+                       column is short; content taller than this extends it. */
+                    min-height: 320vh;
+                }
+
+                .sb-pin {
+                    position: sticky;
+                    top: 0;
+                    align-self: start;
+                    height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1.25rem;
+                    padding: max(2rem, env(safe-area-inset-top)) 1.5rem 2rem;
+                    overflow: hidden;
+                    pointer-events: none;
+                }
+
+                .sb-eyebrow {
+                    font-size: 0.72rem;
+                    letter-spacing: 0.3em;
+                    text-transform: uppercase;
+                    color: ${BRAND};
+                    font-family: var(--font-display), var(--font-sans);
+                    font-weight: 700;
+                    white-space: nowrap;
+                }
+
+                .sb-stage-wrap {
+                    position: relative;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    min-height: 0;
+                }
+
                 .shaipt-stage {
                     position: relative;
-                    width: min(90vw, 56vh);
+                    width: min(40vw, 60vh);
                     aspect-ratio: 720 / 898;
-                    max-height: 86vh;
+                    max-height: 74vh;
                     border-radius: 18px;
                     overflow: hidden;
                     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
@@ -345,6 +300,7 @@ export default function ScrollVideoSection() {
                        lines show through only during crossfades. */
                     background: transparent;
                 }
+
                 .shaipt-layer {
                     position: absolute;
                     inset: 0;
@@ -353,14 +309,133 @@ export default function ScrollVideoSection() {
                     object-fit: cover;
                     will-change: opacity;
                 }
-                @media (max-width: 640px) {
+
+                /* Desktop: captions overlay the bottom of the video card. */
+                .sb-captions {
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    min-height: 8rem;
+                    padding: 0 1rem 1.25rem;
+                    background: linear-gradient(to top, rgba(8, 8, 12, 0.88) 0%, rgba(8, 8, 12, 0.6) 55%, rgba(8, 8, 12, 0) 100%);
+                    border-radius: 0 0 18px 18px;
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: center;
+                }
+
+                .sb-caption {
+                    position: absolute;
+                    left: 1rem;
+                    right: 1rem;
+                    bottom: 1.25rem;
+                    transition: opacity 0.35s ease, transform 0.35s ease;
+                    text-align: center;
+                    color: var(--ink-hi);
+                    will-change: opacity, transform;
+                }
+
+                .sb-caption-title {
+                    font-size: clamp(1.35rem, 2.2vw, 2.1rem);
+                    font-weight: 800;
+                    line-height: 1.08;
+                    letter-spacing: -0.02em;
+                    margin-bottom: 0.5rem;
+                    color: var(--ink-hi);
+                    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.85);
+                }
+
+                .sb-caption-sub {
+                    font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+                    color: var(--ink-mid);
+                    max-width: 34ch;
+                    margin: 0 auto;
+                    line-height: 1.5;
+                    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8);
+                }
+
+                .sb-progress {
+                    width: min(40vw, 60vh);
+                    height: 2px;
+                    background: var(--line-soft);
+                    flex: none;
+                }
+
+                .sb-progress-fill {
+                    height: 100%;
+                    background: var(--brand-gradient);
+                    box-shadow: 0 0 10px var(--brand-glow);
+                    transform-origin: left center;
+                    transform: scaleX(0);
+                    will-change: transform;
+                }
+
+                .sb-flow {
+                    min-width: 0;
+                }
+
+                /* ── Stacked fallback ─────────────────────────────────────────
+                   Below the md: breakpoint the split has too little room, so the
+                   grid collapses to one column: video on top, captions beneath
+                   it, then the content. Nothing is pinned, so nothing overlaps. */
+                @media (max-width: 900px) {
+                    .sb-split {
+                        grid-template-columns: 1fr;
+                        min-height: 0;
+                    }
+
+                    .sb-pin {
+                        position: static;
+                        height: auto;
+                        padding: 3rem 1rem 1.5rem;
+                        gap: 1rem;
+                    }
+
                     .shaipt-stage {
-                        width: 86vw;
-                        max-height: 70vh;
+                        width: min(86vw, 52vh);
+                        max-height: 60vh;
+                    }
+
+                    .sb-captions {
+                        position: static;
+                        min-height: 9rem;
+                        width: min(86vw, 40rem);
+                        margin-top: 1.25rem;
+                        padding: 0 0.5rem;
+                        background: none;
+                        border-radius: 0;
+                        align-items: flex-start;
+                    }
+
+                    .sb-caption {
+                        left: 0.5rem;
+                        right: 0.5rem;
+                        bottom: auto;
+                        top: 0;
+                    }
+
+                    .sb-caption-title {
+                        font-size: clamp(1.5rem, 6vw, 2.25rem);
+                    }
+
+                    .sb-caption-sub {
+                        font-size: clamp(0.95rem, 3.4vw, 1.1rem);
+                        max-width: none;
+                    }
+
+                    .sb-progress {
+                        width: min(86vw, 40rem);
+                    }
+                }
+
+                @media (prefers-reduced-motion: reduce) {
+                    .sb-caption {
+                        transition: none;
                     }
                 }
             `}</style>
-        </>
+        </section>
     );
 }
 

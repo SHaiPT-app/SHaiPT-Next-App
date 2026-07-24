@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import Hero from '@/components/landing/Hero';
+import Hero, { HeroCopy } from '@/components/landing/Hero';
 import ScrollVideoSection from '@/components/landing/ScrollVideoSection';
 import AppShowcase from '@/components/landing/AppShowcase';
 import Features from '@/components/landing/Features';
@@ -34,9 +34,12 @@ export default function Home() {
   return (
     <StaticBackground>
       <Hero />
-      <ScrollVideoSection />
-      <AppShowcase />
-      <Features />
+      {/* Video pins in the left column; this content scrolls down the right. */}
+      <ScrollVideoSection>
+        <HeroCopy />
+        <AppShowcase />
+        <Features />
+      </ScrollVideoSection>
       <Comparison />
       <Pricing />
       <Footer />

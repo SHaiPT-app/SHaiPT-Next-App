@@ -17,7 +17,7 @@
   --brand-glow: rgba(255, 102, 0, 0.35);
   --brand-glow-soft: rgba(255, 102, 0, 0.12);
   --brand-gradient: linear-gradient(135deg, var(--brand-hot) 0%, var(--brand) 55%, var(--brand-deep) 100%);
-  --surface-0: #15151F;
+  --surface-0: #08080C;
   --surface-1: rgba(31, 31, 41, 0.72);
   --surface-2: rgba(42, 42, 53, 0.85);
   --line-soft: rgba(255, 255, 255, 0.08);
@@ -42,8 +42,8 @@
 
   --radius: 0.625rem;
 
-  /* Dark theme as default (matches #15151F background) */
-  --background: #15151F;
+  /* Dark theme as default (matches --surface-0 background) */
+  --background: #08080C;
   --foreground: #E5E5E7;
 
   --card: #1F1F29;
@@ -125,10 +125,16 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* Must stay inside @layer base. Unlayered rules win over ALL layered rules
+   regardless of specificity, so an unlayered `* { margin: 0 }` silently beats
+   Tailwind's `.mx-auto` (and every margin/padding utility) in @layer utilities —
+   which zeroed `margin-inline: auto` site-wide and left-shifted the layout. */
+@layer base {
+  * {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
 }
 
 html,
@@ -136,8 +142,11 @@ body {
   max-width: 100%;
   /* 100% (not 100vw) so the vertical scrollbar width is excluded — 100vw
      over-widens the page by the scrollbar and pushes content left. */
-  overflow-x: hidden;
-  background: #15151F;
+  /* `clip`, not `hidden`: overflow-x:hidden makes html/body a scroll container,
+     which silently breaks `position: sticky` on every descendant (it broke the
+     pinned storyboard stage). `clip` suppresses overflow without doing that. */
+  overflow-x: clip;
+  background: #08080C;
   /* Dark fallback to prevent white flash */
   color: var(--foreground);
   font-family: var(--font-sans);
