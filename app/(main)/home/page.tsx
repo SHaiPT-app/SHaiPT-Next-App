@@ -2,46 +2,61 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dumbbell, ClipboardList, Bot, UtensilsCrossed, Trash2, Pencil, ChevronRight } from 'lucide-react';
+import { Dumbbell, ClipboardList, Bot, UtensilsCrossed, Trash2, Pencil, ChevronRight, X } from 'lucide-react';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import EmptyState from '@/components/EmptyState';
 import { db } from '@/lib/supabaseDb';
 import { supabase } from '@/lib/supabase';
-import type { Profile, TrainingPlan, NutritionPlan } from '@/lib/types';
+import type { Profile, TrainingPlan, NutritionPlan, Notification } from '@/lib/types';
 
 async function fetchPlans(userId: string): Promise<{ workoutPlans: TrainingPlan[]; dietPlans: NutritionPlan[] }> {
-    // Primary path: via training_plan_assignments (reliable RLS path)
-    const assignments = await db.trainingPlanAssignments.getByUser(userId);
-    const uniquePlanIds = [...new Set(assignments.map(a => a.plan_id))];
-
     let workoutPlans: TrainingPlan[] = [];
-    if (uniquePlanIds.length > 0) {
-        const planResults = await Promise.all(
-            uniquePlanIds.map(id => db.trainingPlans.getById(id))
-        );
-        workoutPlans = planResults.filter((p): p is TrainingPlan => p !== null);
-    }
+    let dietPlans: NutritionPlan[] = [];
 
-    // Fallback: direct query by creator_id
-    if (workoutPlans.length === 0) {
-        try {
-            const directPlans = await db.trainingPlans.getByCreator(userId);
-            if (directPlans.length > 0) workoutPlans = directPlans;
-        } catch {
-            // Direct query may fail due to RLS — that's OK
+    // 1. Fetch Workout Plans
+    try {
+        // Load training plans via training_plan_assignments (reliable RLS path)
+        const assignments = await db.trainingPlanAssignments.getByUser(userId);
+        const uniquePlanIds = [...new Set(assignments.map(a => a.plan_id))];
+
+        if (uniquePlanIds.length > 0) {
+            const planResults = await Promise.all(
+                uniquePlanIds.map(id => db.trainingPlans.getById(id).catch(() => null))
+            );
+            workoutPlans = planResults.filter((p): p is TrainingPlan => p !== null);
         }
+
+        // Fallback: also try direct query in case some plans don't have assignments
+        if (workoutPlans.length === 0) {
+            try {
+                const directPlans = await db.trainingPlans.getByCreator(userId);
+                if (directPlans.length > 0) workoutPlans = directPlans;
+            } catch {
+                // Direct query may fail due to RLS — that's OK
+            }
+        }
+    } catch (error) {
+        console.warn('Error fetching workout plans:', error);
     }
 
-    const dietPlans = await db.nutritionPlans.getByUser(userId);
+    // 2. Fetch Diet Plans
+    try {
+        dietPlans = await db.nutritionPlans.getByUser(userId);
+    } catch (error) {
+        // Silently fail if table missing or RLS error
+    }
+
     return { workoutPlans, dietPlans };
 }
 
 export default function HomePage() {
+    // ... (state declarations)
     const [user, setUser] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [plans, setPlans] = useState<TrainingPlan[]>([]);
     const [nutritionPlans, setNutritionPlans] = useState<NutritionPlan[]>([]);
     const [plansLoading, setPlansLoading] = useState(true);
+    const [planBanner, setPlanBanner] = useState<Notification | null>(null);
     const router = useRouter();
     const userIdRef = useRef<string | null>(null);
 
@@ -62,34 +77,76 @@ export default function HomePage() {
 
     useEffect(() => {
         async function initAndLoad() {
-            // Resolve user ID: try Supabase auth first, fall back to localStorage
+            // Resolve the authenticated user ID
             let resolvedUserId: string | null = null;
 
             try {
                 const { data: { user: authUser } } = await supabase.auth.getUser();
                 if (authUser) {
                     resolvedUserId = authUser.id;
+                    const storedUser = localStorage.getItem('user');
+                    if (storedUser) {
+                        setUser(JSON.parse(storedUser));
+                    } else {
+                        setUser({ id: authUser.id, email: authUser.email || '', username: authUser.email || '' } as Profile);
+                    }
                 }
             } catch {
-                // Auth check failed — continue to fallback
+                // getUser() can throw on network errors — continue to fallbacks
             }
 
-            // Load display user from localStorage (always, for profile info)
+            if (!resolvedUserId) {
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        resolvedUserId = session.user.id;
+                        const storedUser = localStorage.getItem('user');
+                        if (storedUser) {
+                            setUser(JSON.parse(storedUser));
+                        } else {
+                            setUser({ id: session.user.id, email: session.user.email || '', username: session.user.email || '' } as Profile);
+                        }
+                    }
+                } catch {
+                    // getSession() failed — continue to localStorage fallback
+                }
+            }
+
+            if (!resolvedUserId) {
+                // ... (session check omitted)
+            }
+
+            // PRIORITIZE LOCAL STORAGE
+            // If we have a stored user in localStorage, prefer that ID over the session ID
+            // This ensures consistency with WorkoutLogger and other components that rely on localStorage
             const storedUser = localStorage.getItem('user');
             if (storedUser) {
-                const parsed = JSON.parse(storedUser);
-                setUser(parsed);
-                if (!resolvedUserId) {
-                    resolvedUserId = parsed.id;
+                try {
+                    const parsed = JSON.parse(storedUser);
+                    if (parsed && parsed.id) {
+                        setUser(parsed);
+                        resolvedUserId = parsed.id;
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse stored user:', e);
                 }
-            } else if (resolvedUserId) {
-                setUser({ id: resolvedUserId, email: '', username: '' } as Profile);
+            } else if (resolvedUserId && !user) {
+                // If no local storage but we have a session ID, fetch the full profile
+                try {
+                    const profile = await db.profiles.getById(resolvedUserId);
+                    if (profile) {
+                        setUser(profile);
+                        localStorage.setItem('user', JSON.stringify(profile));
+                    }
+                } catch {
+                    // Ignore profile fetch errors
+                }
             }
 
             userIdRef.current = resolvedUserId;
             setLoading(false);
 
-            // Load plans directly — no useCallback/useEffect chain
+            // Load plans directly with the resolved userId — no useCallback/useEffect chain
             if (resolvedUserId) {
                 setPlansLoading(true);
                 try {
@@ -101,12 +158,40 @@ export default function HomePage() {
                 } finally {
                     setPlansLoading(false);
                 }
+                // Check for plan_assigned notifications
+                try {
+                    const res = await fetch(`/api/notifications?userId=${resolvedUserId}`);
+                    if (res.ok) {
+                        const { notifications } = await res.json();
+                        const planNotif = (notifications || []).find(
+                            (n: Notification) => n.type === 'plan_assigned' && !n.is_read
+                        );
+                        if (planNotif) setPlanBanner(planNotif);
+                    }
+                } catch {
+                    // Silently fail
+                }
             } else {
                 setPlansLoading(false);
             }
         }
         initAndLoad();
     }, []);
+
+    const dismissBanner = async () => {
+        if (planBanner) {
+            try {
+                await fetch('/api/notifications', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notificationId: planBanner.id }),
+                });
+            } catch {
+                // Silently fail
+            }
+        }
+        setPlanBanner(null);
+    };
 
     const hasPlans = plans.length > 0 || nutritionPlans.length > 0;
 
@@ -139,6 +224,73 @@ export default function HomePage() {
                     Welcome back, {user?.full_name || user?.username || 'Athlete'}!
                 </p>
             </div>
+
+            {/* Plan Assignment Banner */}
+            {planBanner && (
+                <div style={{
+                    background: 'rgba(255, 102, 0, 0.1)',
+                    border: '1px solid rgba(255, 102, 0, 0.3)',
+                    borderRadius: '12px',
+                    padding: '1rem 1.25rem',
+                    marginBottom: '1.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                }}>
+                    <div style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '12px',
+                        background: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                    }}>
+                        <Dumbbell size={22} color="white" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', color: 'white', fontSize: '0.95rem', marginBottom: '0.15rem' }}>
+                            New Plan Assigned!
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#ccc' }}>
+                            {planBanner.content}
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                        <button
+                            onClick={() => router.push('/home/workout')}
+                            style={{
+                                background: 'var(--primary)',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '0.5rem 0.75rem',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                            }}
+                        >
+                            View Plan
+                        </button>
+                        <button
+                            onClick={dismissBanner}
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '8px',
+                                padding: '0.5rem',
+                                color: '#888',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Two Primary Action Cards */}
             <div
@@ -281,11 +433,11 @@ export default function HomePage() {
                             color: 'white',
                             marginBottom: '0.25rem'
                         }}>
-                            AI Coach
+                            Coach List
                         </div>
                         <div style={{ fontSize: '0.85rem', color: '#888' }}>
                             {hasPlans
-                                ? 'Chat, generate plans, get advice'
+                                ? 'Browse AI and human coaches'
                                 : 'Get started with a personalized plan'}
                         </div>
                     </div>

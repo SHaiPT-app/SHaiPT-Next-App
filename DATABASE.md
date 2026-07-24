@@ -37,7 +37,9 @@ Manages coach-athlete connections.
 | id | uuid | NO | gen_random_uuid() | Primary Key |
 | coach_id | uuid | NO | | FK to profiles.id (Coach) |
 | athlete_id | uuid | NO | | FK to profiles.id (Athlete) |
-| status | varchar(20) | YES | 'pending' | 'pending', 'active', 'declined' |
+| status | varchar(20) | YES | 'pending' | 'pending', 'active', 'declined', 'ended', 'waitlisted' |
+| decline_reason | text | YES | | Reason for declining a request |
+| intake_data | jsonb | YES | | Athlete's intake form data shared with coach |
 | requested_by | uuid | NO | | FK to profiles.id |
 | can_assign_plans | boolean | YES | true | Permissions |
 | can_view_workouts | boolean | YES | true | Permissions |
@@ -179,6 +181,12 @@ User profiles.
 | fitness_goals | ARRAY | YES | | |
 | pinned_plan_id | uuid | YES | | FK to training_plans.id |
 | allow_unsolicited_messages | boolean | YES | true | |
+| role | varchar(20) | YES | 'trainee' | 'trainer' or 'trainee' |
+| specialties | TEXT[] | YES | '{}' | Trainer specialties |
+| availability_status | varchar(20) | YES | 'available' | Trainer availability |
+| is_accepting_clients | boolean | YES | true | Whether trainer accepts new clients |
+| rating | numeric(3,2) | YES | | Trainer rating (e.g. 4.90) |
+| trainer_bio | text | YES | | Extended trainer biography |
 | created_at | timestamptz | YES | now() | |
 | updated_at | timestamptz | YES | now() | |
 

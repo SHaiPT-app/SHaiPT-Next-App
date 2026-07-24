@@ -10,6 +10,22 @@
   --neon-orange-light: #FF8533;
   --neon-pink: #ff007f;
 
+  /* ── SHaiPT brand system v2 ─────────────────────────────── */
+  --brand: #FF6600;
+  --brand-hot: #FF8A00;
+  --brand-deep: #E04E00;
+  --brand-glow: rgba(255, 102, 0, 0.35);
+  --brand-glow-soft: rgba(255, 102, 0, 0.12);
+  --brand-gradient: linear-gradient(135deg, var(--brand-hot) 0%, var(--brand) 55%, var(--brand-deep) 100%);
+  --surface-0: #15151F;
+  --surface-1: rgba(31, 31, 41, 0.72);
+  --surface-2: rgba(42, 42, 53, 0.85);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --ink-hi: #FFFFFF;
+  --ink-mid: rgba(255, 255, 255, 0.72);
+  --ink-low: rgba(255, 255, 255, 0.45);
+
   /* Primary uses neon orange */
   --primary: #FF6600;
   --primary-hover: #E55C00;
@@ -265,6 +281,15 @@ a {
 }
 
 @theme inline {
+  --color-brand: var(--brand);
+  --color-brand-hot: var(--brand-hot);
+  --color-brand-deep: var(--brand-deep);
+  --color-ink-hi: var(--ink-hi);
+  --color-ink-mid: var(--ink-mid);
+  --color-ink-low: var(--ink-low);
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+  --font-display: var(--font-orbitron);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -599,4 +624,250 @@ button, a, input, select, textarea {
   [style*="gridTemplateColumns: repeat(4"] {
     grid-template-columns: repeat(2, 1fr) !important;
   }
+}
+/* ═══════════════════════════════════════════════════════════════
+   SHaiPT Design System v2 — brand utilities
+   Orange (#FF6600) on deep charcoal (#15151F), glassmorphism,
+   Orbitron display type, and the three-bar logo motif.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Section label, e.g. "FEATURES" */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.eyebrow::before {
+  content: '';
+  width: 22px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--brand-gradient);
+  box-shadow: 0 0 10px var(--brand-glow);
+}
+
+/* Display headings */
+.display {
+  font-family: var(--font-orbitron), var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  color: var(--ink-hi);
+}
+
+.text-gradient-brand {
+  background: linear-gradient(120deg, var(--brand-hot), var(--brand) 60%, #FF3D00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Glass surfaces */
+.glass-card {
+  position: relative;
+  background: var(--surface-1);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--line-soft);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.glass-card-hover {
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 102, 0, 0.35);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), 0 0 32px var(--brand-glow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Buttons */
+.btn-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 2.2rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--brand-gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 24px var(--brand-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn-brand:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 8px 36px var(--brand-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.btn-brand:active {
+  transform: translateY(0);
+}
+
+.btn-brand:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 2.2rem;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-mid);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.btn-outline:hover {
+  border-color: rgba(255, 102, 0, 0.5);
+  color: var(--ink-hi);
+  background: var(--brand-glow-soft);
+}
+
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 2.2rem;
+  border-radius: 999px;
+  background: var(--brand-glow-soft);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  color: var(--brand);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-soft:hover {
+  background: rgba(255, 102, 0, 0.2);
+  border-color: rgba(255, 102, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Icon-circle button (app shell) */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: var(--brand-glow-soft);
+  border-color: rgba(255, 102, 0, 0.4);
+  color: var(--brand);
+  box-shadow: 0 0 16px var(--brand-glow-soft);
+}
+
+/* Badge pill, e.g. hero announcement */
+.badge-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.1rem;
+  background: var(--brand-glow-soft);
+  border: 1px solid rgba(255, 102, 0, 0.28);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.badge-brand .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--brand);
+  box-shadow: 0 0 8px var(--brand);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.8); }
+}
+
+/* Three-bar logo motif, used as a decorative divider */
+.brand-bars {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+
+.brand-bars span {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--brand-gradient);
+  box-shadow: 0 0 12px var(--brand-glow-soft);
+}
+
+.brand-bars span:nth-child(1) { width: 34px; margin-left: 14px; }
+.brand-bars span:nth-child(2) { width: 34px; margin-left: 7px; }
+.brand-bars span:nth-child(3) { width: 34px; margin-left: 0; }
+
+/* Ambient glow orb — position with inline top/left/right/bottom */
+.glow-orb {
+  position: absolute;
+  border-radius: 999px;
+  background: radial-gradient(circle, var(--brand-glow-soft), transparent 70%);
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-orb--pink {
+  background: radial-gradient(circle, rgba(255, 0, 127, 0.08), transparent 70%);
+}
+
+/* Subtle blueprint grid backdrop for sections */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 40%, transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-brand .dot { animation: none; }
+  .btn-brand, .btn-soft, .glass-card-hover { transition: none; }
 }

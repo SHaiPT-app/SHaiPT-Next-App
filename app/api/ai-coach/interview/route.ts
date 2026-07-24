@@ -46,7 +46,7 @@ const COACH_PERSONAS: Record<string, { name: string; personality: string }> = {
 };
 
 const INTERVIEW_QUESTIONS = [
-    'name, age, height, and weight',
+    'first name, last name, age, height, and weight',
     'general and specific athletic history -- what sports they have played, how long they have been training, and their training style',
     'current fitness goals',
     'available training days per week, preferred session duration, and preferred time of day',
@@ -80,6 +80,12 @@ IMPORTANT RULES:
 - If the user provides information about multiple topics at once, acknowledge all of it and move on to the remaining topics.
 - If you detect the user has already provided certain information in previous messages, do not ask again.
 - After covering a topic, include a step marker tag in your response. Valid markers are: [STEP:basic_info], [STEP:athletic_history], [STEP:fitness_goals], [STEP:training_schedule], [STEP:equipment_location], [STEP:medical], [STEP:fitness_level], [STEP:photo_upload]. These will be stripped before showing to the user.
+- For certain questions, include a numbered list of options in your message so the user can pick one (or type their own). Specifically:
+  * When asking about athletic/training history experience level, list: 1. Never trained  2. Less than 1 year  3. 1-3 years  4. 3-5 years  5. 5-10 years  6. 10+ years
+  * When asking about fitness level, list: 1. Beginner  2. Intermediate  3. Advanced
+  * When asking about training location, list: 1. Commercial Gym  2. Home Gym  3. Outdoor  4. Calisthenics Park  5. Garage Gym  6. Hotel/Travel
+  * When asking about fitness goals, list relevant options for your coaching specialty and tell the user they can pick multiple or describe their own.
+  * Always tell the user they can type a number, the option text, or their own custom answer.
 
 SAFETY PROTOCOLS (MANDATORY — always follow these):
 - You are an AI fitness coach, NOT a medical professional. Never diagnose medical conditions or prescribe medical treatments.
@@ -87,14 +93,14 @@ SAFETY PROTOCOLS (MANDATORY — always follow these):
 - When asking about injuries and medical considerations (topic 6), note their response carefully but do NOT attempt to diagnose or treat anything. Simply acknowledge and flag it for the training plan.
 - Never recommend supplements or medications as treatment for medical conditions.
 
-Start by introducing yourself in character and asking for their basic info (name, age, height, weight).`;
+Start by introducing yourself in character and asking for their basic info (first name, last name, age, height, weight).`;
 }
 
 const EXTRACT_FORM_PROMPT = `You are a data extraction assistant. Given a conversation between a fitness coach and a client, extract all intake form information mentioned by the USER (not the coach) into a structured JSON object.
 
 Return ONLY a valid JSON object with these fields (use empty string "" for any field not mentioned):
 {
-  "name": "",
+  "name": "(first name and last name combined)",
   "age": "",
   "height": "",
   "weight": "",
@@ -220,53 +226,62 @@ export async function POST(req: NextRequest) {
             ],
         });
 
-        try {
-            const result = await chat.sendMessageStream(lastMessage.content);
+        // Retry up to 3 times on rate limit
+        const MAX_RETRIES = 3;
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+                const result = await chat.sendMessageStream(lastMessage.content);
 
-            // Collect full response first so we can check for [INTERVIEW_COMPLETE]
-            let fullResponse = '';
-            const chunks: string[] = [];
-            for await (const chunk of result.stream) {
-                const text = chunk.text();
-                if (text) {
-                    fullResponse += text;
-                    // Keep [STEP:*] markers in the stream (client will strip them)
-                    const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
-                    if (cleanText) {
-                        chunks.push(cleanText);
+                // Collect full response first so we can check for [INTERVIEW_COMPLETE]
+                let fullResponse = '';
+                const chunks: string[] = [];
+                for await (const chunk of result.stream) {
+                    const text = chunk.text();
+                    if (text) {
+                        fullResponse += text;
+                        // Keep [STEP:*] markers in the stream (client will strip them)
+                        const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
+                        if (cleanText) {
+                            chunks.push(cleanText);
+                        }
                     }
                 }
+
+                const isComplete = fullResponse.includes('[INTERVIEW_COMPLETE]');
+
+                // Now stream the collected chunks to the client
+                const encoder = new TextEncoder();
+                const stream = new ReadableStream({
+                    async start(controller) {
+                        for (const chunk of chunks) {
+                            controller.enqueue(encoder.encode(chunk));
+                        }
+                        controller.close();
+                    },
+                });
+
+                return new Response(stream, {
+                    headers: {
+                        'Content-Type': 'text/plain; charset=utf-8',
+                        'Transfer-Encoding': 'chunked',
+                        ...(isComplete ? { 'X-Interview-Complete': 'true' } : {}),
+                    },
+                });
+            } catch (error: unknown) {
+                const err = error as { status?: number; message?: string };
+                if ((err?.status === 429 || err?.message?.includes('429')) && attempt < MAX_RETRIES - 1) {
+                    // Wait before retrying: 2s, 4s
+                    await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
+                    continue;
+                }
+                if (err?.status === 429 || err?.message?.includes('429')) {
+                    return new Response(
+                        JSON.stringify({ error: 'Rate limited. Please wait a moment and try again.' }),
+                        { status: 429, headers: { 'Content-Type': 'application/json' } }
+                    );
+                }
+                throw error;
             }
-
-            const isComplete = fullResponse.includes('[INTERVIEW_COMPLETE]');
-
-            // Now stream the collected chunks to the client
-            const encoder = new TextEncoder();
-            const stream = new ReadableStream({
-                async start(controller) {
-                    for (const chunk of chunks) {
-                        controller.enqueue(encoder.encode(chunk));
-                    }
-                    controller.close();
-                },
-            });
-
-            return new Response(stream, {
-                headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                    'Transfer-Encoding': 'chunked',
-                    ...(isComplete ? { 'X-Interview-Complete': 'true' } : {}),
-                },
-            });
-        } catch (error: unknown) {
-            const err = error as { status?: number; message?: string };
-            if (err?.status === 429 || err?.message?.includes('429')) {
-                return new Response(
-                    JSON.stringify({ error: 'Rate limited. Please wait a moment and try again.' }),
-                    { status: 429, headers: { 'Content-Type': 'application/json' } }
-                );
-            }
-            throw error;
         }
     } catch (error: unknown) {
         console.error('Coach interview error:', error);

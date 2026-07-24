@@ -26,86 +26,23 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* CTA Banner */}
+    <footer className="relative overflow-hidden">
+      {/* CTA banner */}
       <ScrollReveal>
-        <div
-          style={{
-            maxWidth: '1100px',
-            margin: '0 auto 4rem',
-            padding: '0 1rem',
-          }}
-        >
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(255, 102, 0, 0.1), rgba(255, 102, 0, 0.05))',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              borderRadius: '24px',
-              border: '1px solid rgba(255, 102, 0, 0.15)',
-              padding: '4rem 2rem',
-              textAlign: 'center',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Glow */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '-50%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '60%',
-                height: '100%',
-                background: 'radial-gradient(ellipse, rgba(255, 102, 0, 0.1), transparent 70%)',
-                filter: 'blur(60px)',
-                zIndex: 0,
-              }}
-            />
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <h2
-                style={{
-                  fontSize: 'clamp(1.8rem, 4vw, 3rem)',
-                  fontWeight: '800',
-                  color: '#fff',
-                  marginBottom: '1rem',
-                  fontFamily: 'var(--font-orbitron)',
-                }}
-              >
-                Ready to Transform Your Training?
+        <div className="mx-auto mb-16 max-w-5xl px-4">
+          <div className="glass-card relative overflow-hidden border-brand/20 bg-[linear-gradient(135deg,rgba(255,102,0,0.1),rgba(255,102,0,0.04))] px-8 py-16 text-center">
+            <div className="absolute -top-1/2 left-1/2 h-full w-3/5 -translate-x-1/2 bg-[radial-gradient(ellipse,var(--brand-glow-soft),transparent_70%)] blur-[60px]" />
+            <div className="relative z-[1] flex flex-col items-center">
+              <div className="brand-bars mb-6">
+                <span /><span /><span />
+              </div>
+              <h2 className="display mb-4 text-[clamp(1.8rem,4vw,3rem)]">
+                Ready to Get <span className="text-gradient-brand">SHaiPT</span>?
               </h2>
-              <p
-                style={{
-                  fontSize: '1.1rem',
-                  color: 'rgba(255,255,255,0.6)',
-                  marginBottom: '2rem',
-                  maxWidth: '500px',
-                  margin: '0 auto 2rem',
-                }}
-              >
+              <p className="mx-auto mb-8 max-w-lg text-lg text-ink-mid">
                 Join thousands of athletes training smarter with AI.
               </p>
-              <Link
-                href="/login"
-                style={{
-                  display: 'inline-block',
-                  background: 'linear-gradient(135deg, #FF6600, #CC5200)',
-                  color: '#fff',
-                  padding: '1rem 3rem',
-                  borderRadius: '50px',
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  textDecoration: 'none',
-                  boxShadow: '0 0 30px rgba(255, 102, 0, 0.3)',
-                  transition: 'transform 0.2s',
-                }}
-              >
+              <Link href="/login" className="btn-brand !px-12 !text-lg">
                 Start Free Trial
               </Link>
             </div>
@@ -113,84 +50,35 @@ export default function Footer() {
         </div>
       </ScrollReveal>
 
-      {/* Footer Links */}
-      <div
-        style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-          padding: '3rem 2rem 2rem',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1100px',
-            margin: '0 auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-            gap: '2rem',
-          }}
-        >
+      {/* Footer links */}
+      <div className="border-t border-line-soft px-8 pb-8 pt-12">
+        <div className="mx-auto grid max-w-5xl grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-8">
           {/* Brand */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <Image
-                src="/logo_transparent.png"
-                alt="SHaiPT"
-                width={32}
-                height={32}
-              />
-              <span
-                style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '800',
-                  fontFamily: 'var(--font-orbitron)',
-                  background: 'linear-gradient(135deg, #FF6600, #FF8533)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
+            <div className="mb-4 flex items-center gap-2">
+              <Image src="/logo_transparent.png" alt="SHaiPT" width={32} height={32} />
+              <span className="font-display text-gradient-brand text-xl font-extrabold">
                 SHaiPT
               </span>
             </div>
-            <p
-              style={{
-                fontSize: '0.85rem',
-                color: 'rgba(255,255,255,0.4)',
-                lineHeight: '1.6',
-                maxWidth: '220px',
-              }}
-            >
-              AI-powered personal training — form analysis, smart programming,
+            <p className="max-w-[220px] text-sm leading-relaxed text-ink-low">
+              AI-powered personal training. Form analysis, smart programming,
               and nutrition coaching.
             </p>
           </div>
 
-          {/* Link Columns */}
+          {/* Link columns */}
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
-              <h4
-                style={{
-                  fontSize: '0.8rem',
-                  fontWeight: '700',
-                  color: 'rgba(255,255,255,0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '2px',
-                  marginBottom: '1rem',
-                }}
-              >
+              <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-ink-low">
                 {category}
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <div className="flex flex-col gap-2.5">
                 {links.map((link) => (
                   <Link
                     key={link.label}
                     href={link.href}
-                    style={{
-                      color: 'rgba(255,255,255,0.4)',
-                      textDecoration: 'none',
-                      fontSize: '0.9rem',
-                      transition: 'color 0.2s',
-                    }}
+                    className="text-sm text-ink-low transition-colors hover:text-brand"
                   >
                     {link.label}
                   </Link>
@@ -201,46 +89,15 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div
-          style={{
-            maxWidth: '1100px',
-            margin: '3rem auto 0',
-            paddingTop: '1.5rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem',
-          }}
-        >
-          <span
-            style={{
-              color: 'rgba(255,255,255,0.3)',
-              fontSize: '0.8rem',
-            }}
-          >
+        <div className="mx-auto mt-12 flex max-w-5xl flex-wrap items-center justify-between gap-4 border-t border-line-soft pt-6">
+          <span className="text-xs text-white/30">
             &copy; {new Date().getFullYear()} SHaiPT. All rights reserved.
           </span>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <Link
-              href="/login"
-              style={{
-                color: 'rgba(255,255,255,0.4)',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-              }}
-            >
+          <div className="flex gap-6">
+            <Link href="/login" className="text-sm text-ink-low transition-colors hover:text-brand">
               Sign In
             </Link>
-            <Link
-              href="/login"
-              style={{
-                color: 'rgba(255,255,255,0.4)',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-              }}
-            >
+            <Link href="/login" className="text-sm text-ink-low transition-colors hover:text-brand">
               Sign Up
             </Link>
           </div>

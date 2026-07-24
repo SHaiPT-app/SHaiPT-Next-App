@@ -1,8 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { Check, X } from 'lucide-react';
 import { ScrollReveal } from '@/components/ScrollReveal';
-import { fadeInUp, staggerContainer } from '@/lib/animations';
 
 interface ComparisonRow {
   feature: string;
@@ -71,263 +71,95 @@ const comparisonData: ComparisonRow[] = [
   },
 ];
 
-function CellValue({ value }: { value: boolean | string }) {
+function CellValue({ value, brand = false }: { value: boolean | string; brand?: boolean }) {
   if (typeof value === 'string') {
     return (
-      <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
+      <span className={`text-sm font-semibold ${brand ? 'text-brand' : 'text-ink-mid'}`}>
         {value}
       </span>
     );
   }
   if (value) {
     return (
-      <span
-        style={{
-          color: '#FF6600',
-          fontSize: '1.1rem',
-          textShadow: '0 0 8px rgba(255, 102, 0, 0.4)',
-        }}
-      >
-        ✓
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand-glow-soft)]">
+        <Check className="h-4 w-4 text-brand [filter:drop-shadow(0_0_6px_var(--brand-glow))]" />
       </span>
     );
   }
-  return (
-    <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '1.1rem' }}>
-      ✗
-    </span>
-  );
+  return <X className="inline h-4 w-4 text-white/25" />;
 }
+
+const columns = [
+  { key: 'fitbod' as const, label: 'Fitbod' },
+  { key: 'strongApp' as const, label: 'Strong' },
+  { key: 'genericPT' as const, label: 'Generic PT' },
+];
 
 export default function Comparison() {
   return (
-    <section
-      id="comparison"
-      style={{
-        padding: '6rem 1rem',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+    <section id="comparison" className="relative overflow-hidden px-4 py-24 sm:px-8">
+      <div className="relative z-[1] mx-auto max-w-5xl">
         <ScrollReveal>
-          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <p
-              style={{
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                color: '#FF6600',
-                textTransform: 'uppercase',
-                letterSpacing: '3px',
-                marginBottom: '1rem',
-              }}
-            >
-              Comparison
-            </p>
-            <h2
-              style={{
-                fontSize: 'clamp(2rem, 5vw, 3.5rem)',
-                fontWeight: '800',
-                color: '#fff',
-                marginBottom: '1rem',
-                fontFamily: 'var(--font-orbitron)',
-              }}
-            >
-              Why SHaiPT?
+          <div className="mb-16 flex flex-col items-center text-center">
+            <span className="eyebrow mb-4">Comparison</span>
+            <h2 className="display mb-4 text-[clamp(2rem,5vw,3.5rem)]">
+              Why <span className="text-gradient-brand">SHaiPT</span>?
             </h2>
-            <p
-              style={{
-                fontSize: '1.1rem',
-                color: 'rgba(255,255,255,0.6)',
-                maxWidth: '550px',
-                margin: '0 auto',
-              }}
-            >
+            <p className="max-w-lg text-lg text-ink-mid">
               See how we stack up against the competition.
             </p>
           </div>
         </ScrollReveal>
 
         <ScrollReveal>
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.1 }}
-            style={{
-              overflowX: 'auto',
-              WebkitOverflowScrolling: 'touch',
-            }}
-          >
-            <motion.table
-              variants={fadeInUp}
-              style={{
-                width: '100%',
-                minWidth: '700px',
-                borderCollapse: 'separate',
-                borderSpacing: '0',
-                background: 'rgba(21, 21, 31, 0.6)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                overflow: 'hidden',
-              }}
-            >
+          <div className="glass-card overflow-x-auto p-2 sm:p-4">
+            <table className="w-full min-w-[640px] border-collapse">
               <thead>
                 <tr>
-                  <th
-                    style={{
-                      padding: '1.25rem 1.5rem',
-                      textAlign: 'left',
-                      color: 'rgba(255,255,255,0.5)',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    }}
-                  >
+                  <th className="px-4 py-5 text-left text-sm font-semibold uppercase tracking-wider text-ink-low">
                     Feature
                   </th>
-                  <th
-                    style={{
-                      padding: '1.25rem 1rem',
-                      textAlign: 'center',
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontFamily: 'var(--font-orbitron)',
-                        fontWeight: '800',
-                        fontSize: '1rem',
-                        background: 'linear-gradient(135deg, #FF6600, #FF8533)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
+                  <th className="rounded-t-2xl border-x border-t border-brand/30 bg-[var(--brand-glow-soft)] px-4 py-5">
+                    <span className="flex items-center justify-center gap-2">
+                      <Image src="/logo_transparent.png" alt="" width={22} height={22} />
+                      <span className="font-display text-base font-extrabold text-white">
+                        SH<span className="text-brand">ai</span>PT
+                      </span>
+                    </span>
+                  </th>
+                  {columns.map((col) => (
+                    <th
+                      key={col.key}
+                      className="px-4 py-5 text-center text-sm font-semibold text-ink-low"
                     >
-                      SHaiPT
-                    </div>
-                  </th>
-                  <th
-                    style={{
-                      padding: '1.25rem 1rem',
-                      textAlign: 'center',
-                      color: 'rgba(255,255,255,0.5)',
-                      fontSize: '0.9rem',
-                      fontWeight: '600',
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    }}
-                  >
-                    Fitbod
-                  </th>
-                  <th
-                    style={{
-                      padding: '1.25rem 1rem',
-                      textAlign: 'center',
-                      color: 'rgba(255,255,255,0.5)',
-                      fontSize: '0.9rem',
-                      fontWeight: '600',
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    }}
-                  >
-                    Strong
-                  </th>
-                  <th
-                    style={{
-                      padding: '1.25rem 1rem',
-                      textAlign: 'center',
-                      color: 'rgba(255,255,255,0.5)',
-                      fontSize: '0.9rem',
-                      fontWeight: '600',
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    }}
-                  >
-                    Personal Trainer
-                  </th>
+                      {col.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {comparisonData.map((row, index) => (
-                  <tr
-                    key={index}
-                    style={{
-                      borderBottom:
-                        index < comparisonData.length - 1
-                          ? '1px solid rgba(255,255,255,0.04)'
-                          : 'none',
-                    }}
-                  >
-                    <td
-                      style={{
-                        padding: '1rem 1.5rem',
-                        color: 'rgba(255,255,255,0.8)',
-                        fontSize: '0.95rem',
-                        fontWeight: '500',
-                        borderBottom:
-                          index < comparisonData.length - 1
-                            ? '1px solid rgba(255,255,255,0.04)'
-                            : 'none',
-                      }}
-                    >
+                {comparisonData.map((row, i) => (
+                  <tr key={row.feature} className="border-t border-line-soft">
+                    <td className="px-4 py-4 text-sm font-medium text-ink-mid">
                       {row.feature}
                     </td>
                     <td
-                      style={{
-                        padding: '1rem',
-                        textAlign: 'center',
-                        background: 'rgba(255, 102, 0, 0.04)',
-                        borderBottom:
-                          index < comparisonData.length - 1
-                            ? '1px solid rgba(255,255,255,0.04)'
-                            : 'none',
-                      }}
+                      className={`border-x border-brand/30 bg-[var(--brand-glow-soft)] px-4 py-4 text-center ${
+                        i === comparisonData.length - 1 ? 'rounded-b-2xl border-b' : ''
+                      }`}
                     >
-                      <CellValue value={row.shaipt} />
+                      <CellValue value={row.shaipt} brand />
                     </td>
-                    <td
-                      style={{
-                        padding: '1rem',
-                        textAlign: 'center',
-                        borderBottom:
-                          index < comparisonData.length - 1
-                            ? '1px solid rgba(255,255,255,0.04)'
-                            : 'none',
-                      }}
-                    >
-                      <CellValue value={row.fitbod} />
-                    </td>
-                    <td
-                      style={{
-                        padding: '1rem',
-                        textAlign: 'center',
-                        borderBottom:
-                          index < comparisonData.length - 1
-                            ? '1px solid rgba(255,255,255,0.04)'
-                            : 'none',
-                      }}
-                    >
-                      <CellValue value={row.strongApp} />
-                    </td>
-                    <td
-                      style={{
-                        padding: '1rem',
-                        textAlign: 'center',
-                        borderBottom:
-                          index < comparisonData.length - 1
-                            ? '1px solid rgba(255,255,255,0.04)'
-                            : 'none',
-                      }}
-                    >
-                      <CellValue value={row.genericPT} />
-                    </td>
+                    {columns.map((col) => (
+                      <td key={col.key} className="px-4 py-4 text-center">
+                        <CellValue value={row[col.key]} />
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
-            </motion.table>
-          </motion.div>
+            </table>
+          </div>
         </ScrollReveal>
       </div>
     </section>

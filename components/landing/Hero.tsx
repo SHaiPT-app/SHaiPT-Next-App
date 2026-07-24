@@ -8,207 +8,74 @@ import { fadeInUp, fadeInDown, staggerContainer, scaleIn } from '@/lib/animation
 
 export default function Hero() {
   return (
-    <section
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Background glow effects */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-20%',
-          left: '10%',
-          width: '50vw',
-          height: '50vw',
-          background:
-            'radial-gradient(circle, rgba(255, 102, 0, 0.08), transparent 70%)',
-          filter: 'blur(100px)',
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '-10%',
-          right: '10%',
-          width: '40vw',
-          height: '40vw',
-          background:
-            'radial-gradient(circle, rgba(255, 0, 127, 0.06), transparent 70%)',
-          filter: 'blur(100px)',
-          zIndex: 0,
-        }}
-      />
+    <section className="relative flex min-h-screen flex-col overflow-hidden">
+      {/* Ambient background */}
+      <div className="bg-grid absolute inset-0 z-0" />
+      <div className="glow-orb -top-[20%] left-[10%] h-[50vw] w-[50vw]" />
+      <div className="glow-orb glow-orb--pink -bottom-[10%] right-[10%] h-[40vw] w-[40vw]" />
 
       {/* Navbar */}
       <motion.nav
         initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '0.75rem 2rem',
-          maxWidth: '1200px',
-          width: '100%',
-          margin: '1rem auto 0',
-          position: 'relative',
-          zIndex: 10,
-          background: 'rgba(21, 21, 31, 0.7)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderRadius: '16px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-        }}
+        className="glass-card relative z-10 mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-6xl items-center justify-between rounded-2xl px-4 py-3 sm:px-6"
       >
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          <Image
-            src="/logo_transparent.png"
-            alt="SHaiPT"
-            width={40}
-            height={40}
-          />
-          <span
-            style={{
-              fontSize: '1.5rem',
-              fontWeight: '800',
-              color: '#fff',
-              fontFamily: 'var(--font-orbitron)',
-            }}
-          >
-            SHaiPT
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image src="/logo_transparent.png" alt="SHaiPT" width={40} height={40} priority />
+          <span className="font-display text-2xl font-extrabold tracking-tight text-white">
+            SH<span className="text-brand">ai</span>PT
           </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <Link
-            href="#features"
-            style={{
-              color: 'rgba(255,255,255,0.7)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              transition: 'color 0.2s',
-            }}
-          >
+        </Link>
+
+        <div className="hidden items-center gap-7 md:flex">
+          <Link href="#features" className="text-sm font-medium text-ink-mid transition-colors hover:text-brand">
             Features
           </Link>
-          <Link
-            href="#pricing"
-            style={{
-              color: 'rgba(255,255,255,0.7)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              transition: 'color 0.2s',
-            }}
-          >
+          <Link href="#comparison" className="text-sm font-medium text-ink-mid transition-colors hover:text-brand">
+            Compare
+          </Link>
+          <Link href="#pricing" className="text-sm font-medium text-ink-mid transition-colors hover:text-brand">
             Pricing
           </Link>
+        </div>
+
+        <div className="flex items-center gap-3">
           <Link
             href="/login"
-            style={{
-              padding: '0.5rem 1.25rem',
-              fontSize: '0.875rem',
-              fontWeight: '700',
-              color: '#fff',
-              background: 'linear-gradient(135deg, #FF6600, #CC5200)',
-              borderRadius: '10px',
-              textDecoration: 'none',
-              boxShadow: '0 0 20px rgba(255, 102, 0, 0.3)',
-              transition: 'box-shadow 0.2s, transform 0.2s',
-            }}
+            className="hidden text-sm font-semibold text-ink-mid transition-colors hover:text-white sm:block"
           >
+            Sign in
+          </Link>
+          <Link href="/login" className="btn-brand !px-5 !py-2.5 !text-sm">
             Get Started
           </Link>
         </div>
       </motion.nav>
 
-      {/* Hero Content — uses CSS animation for instant SSR visibility,
-           Framer Motion takes over after hydration */}
+      {/* Hero content */}
       <motion.div
         variants={staggerContainer}
         initial={false}
         animate="visible"
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          padding: '5rem 1rem 0',
-          position: 'relative',
-          zIndex: 1,
-        }}
+        className="relative z-[1] flex flex-1 flex-col items-center justify-center px-4 pt-16 text-center"
       >
-        {/* Badge */}
-        <motion.div
-          variants={fadeInDown}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.4rem 1rem',
-            background: 'rgba(255, 102, 0, 0.1)',
-            border: '1px solid rgba(255, 102, 0, 0.25)',
-            borderRadius: '50px',
-            marginBottom: '1.5rem',
-            fontSize: '0.85rem',
-            color: '#FF6600',
-            fontWeight: '600',
-          }}
-        >
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: '#FF6600',
-              boxShadow: '0 0 8px #FF6600',
-            }}
-          />
+        <motion.div variants={fadeInDown} className="badge-brand mb-7">
+          <span className="dot" />
           AI-Powered Personal Training
         </motion.div>
 
         <motion.p
           variants={fadeInUp}
-          style={{
-            fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)',
-            fontWeight: '700',
-            color: 'rgba(255, 255, 255, 0.85)',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            marginBottom: '0.75rem',
-            fontFamily: 'var(--font-orbitron)',
-          }}
+          className="font-display mb-3 text-sm font-bold uppercase tracking-[0.2em] text-ink-mid sm:text-base"
         >
-          Don&apos;t Just Train.{' '}
-          <span style={{ color: '#FF6600', textShadow: '0 0 20px rgba(255, 102, 0, 0.4)' }}>
-            Get SHaiPT
-          </span>
+          Don&apos;t just train.{' '}
+          <span className="text-brand [text-shadow:0_0_20px_var(--brand-glow)]">Get SHaiPT</span>
         </motion.p>
 
         <motion.h1
           variants={fadeInUp}
-          style={{
-            fontSize: 'clamp(2.8rem, 7vw, 5.5rem)',
-            fontWeight: '900',
-            color: '#fff',
-            lineHeight: '1.1',
-            marginBottom: '1.5rem',
-            maxWidth: '900px',
-            letterSpacing: '-0.02em',
-            fontFamily: 'var(--font-orbitron)',
-          }}
+          className="display mb-6 max-w-4xl text-[clamp(2.6rem,7vw,5.25rem)] font-black"
         >
           Let&apos;s{' '}
           <TextType
@@ -230,133 +97,49 @@ export default function Hero() {
           />
         </motion.h1>
 
-        <motion.div
+        <motion.p
           variants={fadeInUp}
-          style={{
-            background: 'rgba(21, 21, 31, 0.6)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            padding: '2rem 2.5rem',
-            borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-            marginBottom: '2.5rem',
-            maxWidth: '700px',
-          }}
+          className="mb-10 max-w-2xl text-lg leading-relaxed text-ink-mid sm:text-xl"
         >
-          <p
-            style={{
-              fontSize: '1.2rem',
-              color: 'rgba(255,255,255,0.7)',
-              lineHeight: '1.7',
-              margin: '0',
-            }}
-          >
-            Real-time AI form analysis, periodized workout plans, and complete
-            nutrition tracking — your personal trainer that never sleeps.
-          </p>
-        </motion.div>
+          Real-time AI form analysis, periodized workout plans, and complete
+          nutrition tracking. Your personal trainer that never sleeps.
+        </motion.p>
 
         {/* CTAs */}
-        <motion.div
-          variants={fadeInUp}
-          style={{
-            display: 'flex',
-            gap: '1rem',
-            marginBottom: '4rem',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-          }}
-        >
-          <Link
-            href="/login"
-            style={{
-              background: 'linear-gradient(135deg, #FF6600, #CC5200)',
-              color: 'white',
-              padding: '1rem 2.5rem',
-              borderRadius: '50px',
-              fontSize: '1.1rem',
-              fontWeight: '700',
-              textDecoration: 'none',
-              boxShadow: '0 0 30px rgba(255, 102, 0, 0.3)',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-            }}
-          >
+        <motion.div variants={fadeInUp} className="mb-6 flex flex-wrap items-center justify-center gap-4">
+          <Link href="/login" className="btn-brand !text-lg">
             Start Free Trial
           </Link>
-          <Link
-            href="/demo"
-            data-testid="try-demo-cta"
-            style={{
-              background: 'linear-gradient(135deg, rgba(242, 95, 41, 0.15), rgba(242, 95, 41, 0.05))',
-              color: '#F25F29',
-              padding: '1rem 2.5rem',
-              borderRadius: '50px',
-              fontSize: '1.1rem',
-              fontWeight: '700',
-              textDecoration: 'none',
-              border: '1px solid rgba(242, 95, 41, 0.3)',
-              transition: 'border-color 0.2s, background 0.2s',
-            }}
-          >
+          <Link href="/demo" data-testid="try-demo-cta" className="btn-soft !text-lg">
             Try 5-Min Demo
           </Link>
-          <Link
-            href="#features"
-            style={{
-              background: 'transparent',
-              color: 'rgba(255,255,255,0.8)',
-              padding: '1rem 2.5rem',
-              borderRadius: '50px',
-              fontSize: '1.1rem',
-              fontWeight: '600',
-              textDecoration: 'none',
-              border: '1px solid rgba(255,255,255,0.15)',
-              transition: 'border-color 0.2s, color 0.2s',
-            }}
-          >
+          <Link href="#features" className="btn-outline !text-lg">
             See Features
           </Link>
         </motion.div>
 
-        {/* Hero Composite Image */}
+        {/* Trust line */}
         <motion.div
-          variants={scaleIn}
-          style={{
-            width: '100%',
-            maxWidth: '1100px',
-            position: 'relative',
-            marginBottom: '-10%',
-          }}
+          variants={fadeInUp}
+          className="mb-14 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-ink-low"
         >
-          {/* Glow behind image */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '80%',
-              height: '80%',
-              background:
-                'radial-gradient(ellipse, rgba(255, 102, 0, 0.1), transparent 70%)',
-              filter: 'blur(60px)',
-              zIndex: 0,
-            }}
-          />
+          <span>No credit card required</span>
+          <span className="hidden h-1 w-1 rounded-full bg-line-strong sm:block" />
+          <span>Cancel anytime</span>
+          <span className="hidden h-1 w-1 rounded-full bg-line-strong sm:block" />
+          <span>Free Pro month for consistency</span>
+        </motion.div>
+
+        {/* Showcase image */}
+        <motion.div variants={scaleIn} className="relative -mb-[10%] w-full max-w-5xl">
+          <div className="absolute left-1/2 top-1/2 h-4/5 w-4/5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse,var(--brand-glow-soft),transparent_70%)] blur-[60px]" />
           <Image
             src="/mockups/shaipt_app_showcase_v2.png"
             alt="SHaiPT App Showcase"
             width={1200}
             height={800}
             priority
-            style={{
-              width: '100%',
-              height: 'auto',
-              position: 'relative',
-              zIndex: 1,
-              filter: 'drop-shadow(0 -20px 60px rgba(0,0,0,0.5))',
-            }}
+            className="relative z-[1] h-auto w-full drop-shadow-[0_-20px_60px_rgba(0,0,0,0.5)]"
           />
         </motion.div>
       </motion.div>

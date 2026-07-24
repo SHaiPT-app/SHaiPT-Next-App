@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import TrainerDashboardPage from '@/app/trainer/page';
+import TrainerDashboardPage from '@/app/(main)/trainer/page';
 
 // Mock next/navigation
 const mockPush = jest.fn();
@@ -16,6 +16,18 @@ jest.mock('@/lib/supabase', () => ({
             getSession: jest.fn().mockResolvedValue({
                 data: { session: { access_token: 'test-token' } },
             }),
+        },
+    },
+}));
+
+// Mock supabaseDb
+jest.mock('@/lib/supabaseDb', () => ({
+    db: {
+        coachingRelationships: {
+            getPendingAsCoach: jest.fn().mockResolvedValue([]),
+        },
+        profiles: {
+            getById: jest.fn().mockResolvedValue(null),
         },
     },
 }));

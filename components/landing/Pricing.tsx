@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { fadeInUp, staggerContainer } from '@/lib/animations';
 import type { SubscriptionTier } from '@/lib/types';
@@ -113,65 +114,18 @@ export default function Pricing() {
   }, []);
 
   return (
-    <section
-      id="pricing"
-      style={{
-        padding: '6rem 1rem',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Background glow */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '30%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '60vw',
-          height: '40vw',
-          background:
-            'radial-gradient(ellipse, rgba(255, 102, 0, 0.06), transparent 70%)',
-          filter: 'blur(80px)',
-          zIndex: 0,
-        }}
-      />
+    <section id="pricing" className="relative overflow-hidden px-4 py-24 sm:px-8">
+      <div className="glow-orb left-1/2 top-[30%] h-[40vw] w-[60vw] -translate-x-1/2" />
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      <div className="relative z-[1] mx-auto max-w-6xl">
         <ScrollReveal>
-          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <p
-              style={{
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                color: '#FF6600',
-                textTransform: 'uppercase',
-                letterSpacing: '3px',
-                marginBottom: '1rem',
-              }}
-            >
-              Pricing
-            </p>
-            <h2
-              style={{
-                fontSize: 'clamp(2rem, 5vw, 3.5rem)',
-                fontWeight: '800',
-                color: '#fff',
-                marginBottom: '1rem',
-                fontFamily: 'var(--font-orbitron)',
-              }}
-            >
-              Choose Your Plan
+          <div className="mb-16 flex flex-col items-center text-center">
+            <span className="eyebrow mb-4">Pricing</span>
+            <h2 className="display mb-4 text-[clamp(2rem,5vw,3.5rem)]">
+              Train Hard. <span className="text-gradient-brand">Pay Smart.</span>
             </h2>
-            <p
-              style={{
-                fontSize: '1.1rem',
-                color: 'rgba(255,255,255,0.6)',
-                maxWidth: '500px',
-                margin: '0 auto',
-              }}
-            >
-              Start free, upgrade when you&apos;re ready. Cancel anytime.
+            <p className="max-w-lg text-lg text-ink-mid">
+              Stay consistent and your Pro month is free. That&apos;s the SHaiPT deal.
             </p>
           </div>
         </ScrollReveal>
@@ -181,179 +135,67 @@ export default function Pricing() {
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.1 }}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '2rem',
-              alignItems: 'stretch',
-            }}
+            viewport={{ once: true, amount: 0.15 }}
+            className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3"
           >
-            {tiers.map((tier, index) => (
+            {tiers.map((tier) => (
               <motion.div
-                key={index}
+                key={tier.tier}
                 variants={fadeInUp}
-                style={{
-                  position: 'relative',
-                  background: tier.highlighted
-                    ? 'rgba(255, 102, 0, 0.06)'
-                    : 'rgba(21, 21, 31, 0.6)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  borderRadius: '20px',
-                  border: tier.highlighted
-                    ? '1px solid rgba(255, 102, 0, 0.3)'
-                    : '1px solid rgba(255, 255, 255, 0.08)',
-                  padding: '2.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: tier.highlighted
-                    ? '0 0 40px rgba(255, 102, 0, 0.1)'
-                    : '0 8px 32px rgba(0, 0, 0, 0.2)',
-                }}
+                className={`glass-card glass-card-hover relative flex flex-col p-8 ${
+                  tier.highlighted
+                    ? 'border-brand/40 shadow-[0_0_48px_var(--brand-glow-soft)] md:-my-4 md:py-12'
+                    : ''
+                }`}
               >
-                {/* Popular badge */}
                 {tier.highlighted && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '-12px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      padding: '0.3rem 1rem',
-                      background: 'linear-gradient(135deg, #FF6600, #CC5200)',
-                      borderRadius: '50px',
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: '#fff',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      boxShadow: '0 0 20px rgba(255, 102, 0, 0.3)',
-                    }}
-                  >
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[image:var(--brand-gradient)] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_4px_16px_var(--brand-glow)]">
                     Most Popular
-                  </div>
+                  </span>
                 )}
 
-                <h3
-                  style={{
-                    fontSize: '1.3rem',
-                    fontWeight: '700',
-                    color: '#fff',
-                    marginBottom: '0.5rem',
-                    fontFamily: 'var(--font-orbitron)',
-                  }}
-                >
-                  {tier.name}
-                </h3>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '0.25rem',
-                    marginBottom: '0.75rem',
-                  }}
-                >
+                <h3 className="font-display mb-2 text-xl font-bold text-white">{tier.name}</h3>
+                <div className="mb-3 flex items-baseline gap-1">
                   <span
-                    style={{
-                      fontSize: '3rem',
-                      fontWeight: '900',
-                      color: '#fff',
-                      fontFamily: 'var(--font-orbitron)',
-                    }}
+                    className={`font-display text-5xl font-extrabold ${
+                      tier.highlighted ? 'text-gradient-brand' : 'text-white'
+                    }`}
                   >
                     {tier.price}
                   </span>
-                  <span
-                    style={{
-                      fontSize: '1rem',
-                      color: 'rgba(255,255,255,0.5)',
-                    }}
-                  >
-                    {tier.period}
-                  </span>
+                  <span className="text-sm text-ink-low">{tier.period}</span>
                 </div>
+                <p className="mb-7 text-sm leading-relaxed text-ink-mid">{tier.description}</p>
 
-                <p
-                  style={{
-                    fontSize: '0.95rem',
-                    color: 'rgba(255,255,255,0.5)',
-                    lineHeight: '1.6',
-                    marginBottom: '2rem',
-                  }}
-                >
-                  {tier.description}
-                </p>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.75rem',
-                    marginBottom: '2rem',
-                    flex: 1,
-                  }}
-                >
-                  {tier.features.map((feature, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        fontSize: '0.9rem',
-                        color: 'rgba(255,255,255,0.75)',
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: '#FF6600',
-                          fontSize: '0.85rem',
-                          textShadow: '0 0 6px rgba(255, 102, 0, 0.3)',
-                        }}
-                      >
-                        ✓
-                      </span>
+                <ul className="mb-8 flex flex-col gap-3">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-3 text-sm text-ink-mid">
+                      <Check
+                        className={`h-4 w-4 shrink-0 ${
+                          tier.highlighted ? 'text-brand' : 'text-ink-low'
+                        }`}
+                      />
                       {feature}
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
 
                 <button
                   onClick={() => handleSubscribe(tier.tier)}
-                  disabled={loadingTier === tier.tier}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'center',
-                    padding: '0.9rem 2rem',
-                    borderRadius: '12px',
-                    fontSize: '1rem',
-                    fontWeight: '700',
-                    cursor: loadingTier === tier.tier ? 'wait' : 'pointer',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    opacity: loadingTier === tier.tier ? 0.7 : 1,
-                    ...(tier.highlighted
-                      ? {
-                          background:
-                            'linear-gradient(135deg, #FF6600, #CC5200)',
-                          color: '#fff',
-                          boxShadow: '0 0 25px rgba(255, 102, 0, 0.3)',
-                          border: 'none',
-                        }
-                      : {
-                          background: 'transparent',
-                          color: 'rgba(255,255,255,0.8)',
-                          border: '1px solid rgba(255,255,255,0.15)',
-                        }),
-                  }}
+                  disabled={loadingTier !== null}
+                  className={`mt-auto w-full ${tier.highlighted ? 'btn-brand' : 'btn-outline'}`}
                 >
-                  {loadingTier === tier.tier ? 'Loading...' : tier.ctaText}
+                  {loadingTier === tier.tier ? 'Redirecting…' : tier.ctaText}
                 </button>
               </motion.div>
             ))}
           </motion.div>
+        </ScrollReveal>
+
+        <ScrollReveal>
+          <p className="mt-12 text-center text-sm text-ink-low">
+            All plans include a free trial. Cancel anytime, no questions asked.
+          </p>
         </ScrollReveal>
       </div>
     </section>

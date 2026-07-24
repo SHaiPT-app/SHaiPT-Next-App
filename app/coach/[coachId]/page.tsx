@@ -97,8 +97,13 @@ export default function CoachInterviewPage() {
     const [isLoadingSplits, setIsLoadingSplits] = useState(false);
     const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlanData | null>(null);
     const [planSaveStatus, setPlanSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const [planSaveError, setPlanSaveError] = useState<string | null>(null);
     const [isPlanSaving, setIsPlanSaving] = useState(false);
     const planViewRef = useRef<HTMLDivElement>(null);
+
+    // Existing plans state
+    const [existingPlans, setExistingPlans] = useState<{ id: string; name: string }[]>([]);
+    const [showExistingPlansBanner, setShowExistingPlansBanner] = useState(false);
 
     // Dietitian flow state
     const [, setDietitianMessages] = useState<{ role: string; content: string }[]>([]);
@@ -179,6 +184,24 @@ export default function CoachInterviewPage() {
                     if (interview.is_complete) {
                         setIsInterviewComplete(true);
                     }
+                } else {
+                    // No data for this coach — fall back to most recent completed interview from any coach
+                    const { data: anyInterview } = await supabase
+                        .from('coach_interviews')
+                        .select('intake_data')
+                        .eq('user_id', user.id)
+                        .eq('is_complete', true)
+                        .order('updated_at', { ascending: false })
+                        .limit(1)
+                        .single();
+
+                    if (anyInterview?.intake_data) {
+                        const v1Data = anyInterview.intake_data as IntakeFormData;
+                        setFormData(v1Data);
+                        setFormDataV2(intakeV1toV2(v1Data));
+                        // Don't set isInterviewComplete — new coach still runs its interview
+                        // but prefilledFields will tell AI to skip already-answered topics
+                    }
                 }
             } catch {
                 // No previous data, that's fine
@@ -187,6 +210,46 @@ export default function CoachInterviewPage() {
         loadPreviousData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [coachId]);
+
+    // Check for existing training plans on mount (via assignments for reliable RLS)
+    useEffect(() => {
+        async function checkExistingPlans() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                // Query via training_plan_assignments (reliable RLS path)
+                const { data: assignments } = await supabase
+                    .from('training_plan_assignments')
+                    .select('plan_id')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (assignments && assignments.length > 0) {
+                    const uniquePlanIds = [...new Set(assignments.map(a => a.plan_id))];
+                    const planResults = await Promise.all(
+                        uniquePlanIds.map(async (id) => {
+                            const { data } = await supabase
+                                .from('training_plans')
+                                .select('id, name')
+                                .eq('id', id)
+                                .single();
+                            return data;
+                        })
+                    );
+                    const validPlans = planResults.filter((p): p is { id: string; name: string } => p !== null);
+                    if (validPlans.length > 0) {
+                        setExistingPlans(validPlans);
+                        setShowExistingPlansBanner(true);
+                    }
+                }
+            } catch {
+                // Non-critical — don't block the interview
+            }
+        }
+        checkExistingPlans();
+    }, []);
 
     // Waiver acceptance handler
     const handleAcceptWaiver = useCallback(async () => {
@@ -327,36 +390,81 @@ export default function CoachInterviewPage() {
     const savePlanToSupabase = useCallback(async (plan: GeneratedPlanData) => {
         setIsPlanSaving(true);
         setPlanSaveStatus('saving');
+        setPlanSaveError(null);
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 setPlanSaveStatus('error');
+                setPlanSaveError('Not authenticated. Please log in and try again.');
                 return;
             }
 
-            const { data: trainingPlan, error: planError } = await supabase
-                .from('training_plans')
-                .insert({
-                    creator_id: user.id,
-                    name: plan.name,
-                    description: plan.description,
-                    duration_weeks: plan.duration_weeks,
-                    periodization_blocks: plan.periodization_blocks,
-                    tags: [
-                        `split:${plan.split_type}`,
-                        ...(formData.fitness_goals
-                            ? formData.fitness_goals.split(/[,;]/).map(g => g.trim()).filter(Boolean)
-                            : []),
-                    ],
-                    is_template: false,
-                    is_public: false,
-                })
-                .select()
-                .single();
+            // Step 1: Insert training plan (try with periodization_blocks, fall back without)
+            const basePlanData: Record<string, unknown> = {
+                creator_id: user.id,
+                name: plan.name,
+                description: plan.description || '',
+                duration_weeks: plan.duration_weeks,
+                tags: [
+                    `split:${plan.split_type}`,
+                    ...(formData.fitness_goals
+                        ? formData.fitness_goals.split(/[,;]/).map(g => g.trim()).filter(Boolean)
+                        : []),
+                ],
+                is_template: false,
+                is_public: false,
+            };
 
-            if (planError) throw planError;
+            let trainingPlan: { id: string } | null = null;
 
+            // Try with periodization_blocks first
+            if (plan.periodization_blocks) {
+                const { data, error } = await supabase
+                    .from('training_plans')
+                    .insert({ ...basePlanData, periodization_blocks: plan.periodization_blocks })
+                    .select('id')
+                    .single();
+
+                if (error) {
+                    // If column doesn't exist, retry without it
+                    if (error.message?.includes('periodization_blocks') || error.code === '42703') {
+                        console.warn('periodization_blocks column not found, retrying without it');
+                        const { data: fallbackData, error: fallbackError } = await supabase
+                            .from('training_plans')
+                            .insert(basePlanData)
+                            .select('id')
+                            .single();
+                        if (fallbackError) {
+                            console.error('Training plan insert error (fallback):', fallbackError.code, fallbackError.message, fallbackError.details, fallbackError.hint);
+                            throw new Error(`Training plan save failed: ${fallbackError.message}`);
+                        }
+                        trainingPlan = fallbackData;
+                    } else {
+                        console.error('Training plan insert error:', error.code, error.message, error.details, error.hint);
+                        throw new Error(`Training plan save failed: ${error.message}`);
+                    }
+                } else {
+                    trainingPlan = data;
+                }
+            } else {
+                const { data, error } = await supabase
+                    .from('training_plans')
+                    .insert(basePlanData)
+                    .select('id')
+                    .single();
+                if (error) {
+                    console.error('Training plan insert error:', error.code, error.message, error.details, error.hint);
+                    throw new Error(`Training plan save failed: ${error.message}`);
+                }
+                trainingPlan = data;
+            }
+
+            if (!trainingPlan?.id) {
+                throw new Error('Training plan was created but no ID was returned');
+            }
+
+            // Step 2: Insert workout sessions
             const planSessions: {
                 plan_id: string;
                 session_id: string;
@@ -380,6 +488,7 @@ export default function CoachInterviewPage() {
                                 .toLowerCase()
                                 .replace(/[^a-z0-9]+/g, '_')
                                 .substring(0, 50)}_d${session.day_number}_e${exIndex}`,
+                            exercise_name: ex.exercise_name,
                             sets: ex.sets.map(s => ({
                                 reps: s.reps,
                                 weight: s.weight || '',
@@ -391,10 +500,17 @@ export default function CoachInterviewPage() {
                         is_template: false,
                         is_public: false,
                     })
-                    .select()
+                    .select('id')
                     .single();
 
-                if (sessionError) throw sessionError;
+                if (sessionError) {
+                    console.error(`Workout session "${session.name}" insert error:`, sessionError.code, sessionError.message, sessionError.details);
+                    throw new Error(`Failed to save workout "${session.name}": ${sessionError.message}`);
+                }
+
+                if (!workoutSession?.id) {
+                    throw new Error(`Workout session "${session.name}" was created but no ID returned`);
+                }
 
                 planSessions.push({
                     plan_id: trainingPlan.id,
@@ -404,13 +520,18 @@ export default function CoachInterviewPage() {
                 });
             }
 
+            // Step 3: Link sessions to plan
             if (planSessions.length > 0) {
                 const { error: linkError } = await supabase
                     .from('training_plan_sessions')
                     .insert(planSessions);
-                if (linkError) throw linkError;
+                if (linkError) {
+                    console.error('Plan sessions link error:', linkError.code, linkError.message, linkError.details);
+                    throw new Error(`Failed to link sessions to plan: ${linkError.message}`);
+                }
             }
 
+            // Step 4: Create plan assignment
             const today = new Date();
             const endDate = new Date(today);
             endDate.setDate(endDate.getDate() + (plan.duration_weeks || 8) * 7);
@@ -420,31 +541,41 @@ export default function CoachInterviewPage() {
                 .insert({
                     plan_id: trainingPlan.id,
                     user_id: user.id,
+                    assigned_by_id: user.id,
                     is_self_assigned: true,
                     start_date: today.toISOString().split('T')[0],
                     end_date: endDate.toISOString().split('T')[0],
                     is_active: true,
                 });
 
-            if (assignError) throw assignError;
+            if (assignError) {
+                console.error('Plan assignment error:', assignError.code, assignError.message, assignError.details);
+                throw new Error(`Failed to assign plan: ${assignError.message}`);
+            }
 
             setPlanSaveStatus('saved');
 
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                const parsed = JSON.parse(storedUser);
-                parsed.pinned_plan_id = trainingPlan.id;
-                if (formData.fitness_goals) {
-                    parsed.fitness_goals = formData.fitness_goals
-                        .split(/[,;]/)
-                        .map((g: string) => g.trim())
-                        .filter(Boolean);
+            try {
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser);
+                    parsed.pinned_plan_id = trainingPlan.id;
+                    if (formData.fitness_goals) {
+                        parsed.fitness_goals = formData.fitness_goals
+                            .split(/[,;]/)
+                            .map((g: string) => g.trim())
+                            .filter(Boolean);
+                    }
+                    localStorage.setItem('user', JSON.stringify(parsed));
                 }
-                localStorage.setItem('user', JSON.stringify(parsed));
+            } catch {
+                // localStorage is non-critical
             }
         } catch (error) {
-            console.error('Plan save error:', error);
+            const msg = error instanceof Error ? error.message : 'Unknown error saving plan';
+            console.error('Plan save error:', msg, error);
             setPlanSaveStatus('error');
+            setPlanSaveError(msg);
         } finally {
             setIsPlanSaving(false);
         }
@@ -514,11 +645,12 @@ export default function CoachInterviewPage() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
+                console.error('Nutrition plan save: no authenticated user');
                 setNutritionPlanSaveStatus('error');
                 return;
             }
 
-            const { error } = await supabase
+            const { data: savedPlan, error } = await supabase
                 .from('nutrition_plans')
                 .insert({
                     user_id: user.id,
@@ -528,10 +660,16 @@ export default function CoachInterviewPage() {
                     daily_schedule: plan.daily_schedule,
                     shopping_list: plan.shopping_list,
                     nutrition_tips: plan.nutrition_tips,
-                });
+                })
+                .select()
+                .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('Nutrition plan Supabase error:', error.code, error.message, error.details, error.hint);
+                throw error;
+            }
 
+            console.log('Nutrition plan saved:', savedPlan?.id);
             setNutritionPlanSaveStatus('saved');
         } catch (error) {
             console.error('Nutrition plan save error:', error);
@@ -768,6 +906,57 @@ export default function CoachInterviewPage() {
                     </button>
                 </Flex>
             </Flex>
+
+            {/* Existing Plans Banner */}
+            {showExistingPlansBanner && existingPlans.length > 0 && flowStage === 'interview' && (
+                <Box
+                    px="1rem"
+                    py="0.6rem"
+                    flexShrink={0}
+                    bg="rgba(255, 102, 0, 0.08)"
+                    borderBottom="1px solid rgba(255, 102, 0, 0.2)"
+                >
+                    <Flex alignItems="center" justifyContent="space-between" gap="0.5rem">
+                        <Flex alignItems="center" gap="0.5rem" flex={1} minW={0}>
+                            <Dumbbell size={16} color="#FF6600" style={{ flexShrink: 0 }} />
+                            <Text fontSize="0.8rem" color="#ccc" truncate>
+                                You have <Text as="span" color="var(--neon-orange)" fontWeight="600">{existingPlans.length} saved plan{existingPlans.length > 1 ? 's' : ''}</Text>
+                            </Text>
+                        </Flex>
+                        <Flex gap="0.4rem" flexShrink={0}>
+                            <button
+                                onClick={() => router.push('/plans')}
+                                style={{
+                                    padding: '0.35rem 0.75rem',
+                                    background: '#FF6600',
+                                    color: '#0B0B15',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                View Plans
+                            </button>
+                            <button
+                                onClick={() => setShowExistingPlansBanner(false)}
+                                style={{
+                                    padding: '0.35rem 0.5rem',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    color: '#888',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '6px',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Dismiss
+                            </button>
+                        </Flex>
+                    </Flex>
+                </Box>
+            )}
 
             {/* Segmented Control (only during interview phase) */}
             {showInterviewTabs && (
@@ -1066,31 +1255,36 @@ export default function CoachInterviewPage() {
                             />
                             <Box mt="0.75rem" mb="1rem">
                                 <button
-                                    onClick={handleStartDietitianInterview}
-                                    disabled={planSaveStatus !== 'saved'}
+                                    onClick={planSaveStatus === 'error' && generatedPlan ? () => savePlanToSupabase(generatedPlan) : handleStartDietitianInterview}
+                                    disabled={planSaveStatus === 'saving'}
                                     data-testid="start-dietitian-btn"
                                     style={{
                                         width: '100%',
                                         padding: '0.85rem',
-                                        background: planSaveStatus !== 'saved' ? 'rgba(255, 102, 0, 0.3)' : '#FF6600',
-                                        color: '#0B0B15',
+                                        background: planSaveStatus === 'saving' ? 'rgba(255, 102, 0, 0.3)' : planSaveStatus === 'error' ? '#cc3300' : '#FF6600',
+                                        color: planSaveStatus === 'error' ? '#fff' : '#0B0B15',
                                         border: 'none',
                                         borderRadius: '10px',
                                         fontSize: '0.9rem',
                                         fontWeight: '700',
                                         fontFamily: 'var(--font-orbitron)',
-                                        cursor: planSaveStatus !== 'saved' ? 'not-allowed' : 'pointer',
+                                        cursor: planSaveStatus === 'saving' ? 'not-allowed' : 'pointer',
                                         transition: 'opacity 0.2s',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: '0.5rem',
-                                        opacity: planSaveStatus !== 'saved' ? 0.6 : 1,
+                                        opacity: planSaveStatus === 'saving' ? 0.6 : 1,
                                     }}
                                 >
                                     <UtensilsCrossed size={18} />
-                                    {planSaveStatus === 'saving' ? 'Saving Plan...' : planSaveStatus === 'error' ? 'Plan Save Failed' : 'Continue to Nutrition Plan'}
+                                    {planSaveStatus === 'saving' ? 'Saving Plan...' : planSaveStatus === 'error' ? 'Retry Save' : 'Continue to Nutrition Plan'}
                                 </button>
+                                {planSaveStatus === 'error' && planSaveError && (
+                                    <Text fontSize="0.75rem" color="#ff4444" mt="0.5rem" textAlign="center">
+                                        {planSaveError}
+                                    </Text>
+                                )}
                             </Box>
                         </Box>
                     )}

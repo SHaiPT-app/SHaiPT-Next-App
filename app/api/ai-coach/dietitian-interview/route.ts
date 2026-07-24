@@ -167,52 +167,60 @@ export async function POST(req: NextRequest) {
             ],
         });
 
-        try {
-            const result = await chat.sendMessageStream(lastMessage.content);
+        // Retry up to 3 times on rate limit
+        const MAX_RETRIES = 3;
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+                const result = await chat.sendMessageStream(lastMessage.content);
 
-            // Collect full response first so we can check for [INTERVIEW_COMPLETE]
-            let fullResponse = '';
-            const chunks: string[] = [];
-            for await (const chunk of result.stream) {
-                const text = chunk.text();
-                if (text) {
-                    fullResponse += text;
-                    const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
-                    if (cleanText) {
-                        chunks.push(cleanText);
+                // Collect full response first so we can check for [INTERVIEW_COMPLETE]
+                let fullResponse = '';
+                const chunks: string[] = [];
+                for await (const chunk of result.stream) {
+                    const text = chunk.text();
+                    if (text) {
+                        fullResponse += text;
+                        const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
+                        if (cleanText) {
+                            chunks.push(cleanText);
+                        }
                     }
                 }
+
+                const isComplete = fullResponse.includes('[INTERVIEW_COMPLETE]');
+
+                // Now stream the collected chunks to the client
+                const encoder = new TextEncoder();
+                const stream = new ReadableStream({
+                    async start(controller) {
+                        for (const chunk of chunks) {
+                            controller.enqueue(encoder.encode(chunk));
+                        }
+                        controller.close();
+                    },
+                });
+
+                return new Response(stream, {
+                    headers: {
+                        'Content-Type': 'text/plain; charset=utf-8',
+                        'Transfer-Encoding': 'chunked',
+                        ...(isComplete ? { 'X-Interview-Complete': 'true' } : {}),
+                    },
+                });
+            } catch (error: unknown) {
+                const err = error as { status?: number; message?: string };
+                if ((err?.status === 429 || err?.message?.includes('429')) && attempt < MAX_RETRIES - 1) {
+                    await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
+                    continue;
+                }
+                if (err?.status === 429 || err?.message?.includes('429')) {
+                    return new Response(
+                        JSON.stringify({ error: 'Rate limited. Please wait a moment and try again.' }),
+                        { status: 429, headers: { 'Content-Type': 'application/json' } }
+                    );
+                }
+                throw error;
             }
-
-            const isComplete = fullResponse.includes('[INTERVIEW_COMPLETE]');
-
-            // Now stream the collected chunks to the client
-            const encoder = new TextEncoder();
-            const stream = new ReadableStream({
-                async start(controller) {
-                    for (const chunk of chunks) {
-                        controller.enqueue(encoder.encode(chunk));
-                    }
-                    controller.close();
-                },
-            });
-
-            return new Response(stream, {
-                headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                    'Transfer-Encoding': 'chunked',
-                    ...(isComplete ? { 'X-Interview-Complete': 'true' } : {}),
-                },
-            });
-        } catch (error: unknown) {
-            const err = error as { status?: number; message?: string };
-            if (err?.status === 429 || err?.message?.includes('429')) {
-                return new Response(
-                    JSON.stringify({ error: 'Rate limited. Please wait a moment and try again.' }),
-                    { status: 429, headers: { 'Content-Type': 'application/json' } }
-                );
-            }
-            throw error;
         }
     } catch (error: unknown) {
         console.error('Dietitian interview error:', error);

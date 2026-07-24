@@ -158,6 +158,8 @@ export default function SettingsPage() {
     const [allowUnsolicitedMessages, setAllowUnsolicitedMessages] = useState(true);
     const [preferredWeightUnit, setPreferredWeightUnit] = useState<'lbs' | 'kg'>('lbs');
 
+    const [gender, setGender] = useState<string>('');
+
     // Profile / intake data
     const [intakeData, setIntakeData] = useState<IntakeFormData | null>(null);
     const [profilePhotos, setProfilePhotos] = useState<string[]>([]);
@@ -175,6 +177,7 @@ export default function SettingsPage() {
             setAutoPostWorkouts(profile.auto_post_workouts !== false);
             setAllowUnsolicitedMessages(profile.allow_unsolicited_messages !== false);
             setPreferredWeightUnit(profile.preferred_weight_unit || 'lbs');
+            setGender(profile.gender || '');
         }
 
         // Load intake data from latest coach interview
@@ -227,6 +230,7 @@ export default function SettingsPage() {
                 auto_post_workouts: autoPostWorkouts,
                 allow_unsolicited_messages: allowUnsolicitedMessages,
                 preferred_weight_unit: preferredWeightUnit,
+                gender: gender || undefined,
             });
 
             // Save intake data if changed
@@ -248,6 +252,7 @@ export default function SettingsPage() {
                 auto_post_workouts: autoPostWorkouts,
                 allow_unsolicited_messages: allowUnsolicitedMessages,
                 preferred_weight_unit: preferredWeightUnit,
+                gender: gender || undefined,
             };
             localStorage.setItem('user', JSON.stringify(updatedUser));
             setUser(updatedUser);
@@ -365,6 +370,41 @@ export default function SettingsPage() {
                             value={intakeData?.weight || ''}
                             onSave={v => updateIntakeField('weight', v)}
                         />
+
+                        {/* Gender */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0.65rem 0',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                        }}>
+                            <div>
+                                <div style={{ fontSize: '0.72rem', color: '#888', fontWeight: '500', marginBottom: '0.2rem' }}>
+                                    Gender <span style={{ color: '#f87171' }}>*</span>
+                                </div>
+                            </div>
+                            <select
+                                value={gender}
+                                onChange={(e) => setGender(e.target.value)}
+                                className="input-field"
+                                style={{
+                                    width: 'auto',
+                                    minWidth: '120px',
+                                    padding: '0.4rem 0.6rem',
+                                    fontSize: '0.85rem',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '6px',
+                                    color: gender ? 'var(--foreground)' : '#555',
+                                }}
+                            >
+                                <option value="">Select...</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                     </section>
 
                     {/* Privacy Settings */}

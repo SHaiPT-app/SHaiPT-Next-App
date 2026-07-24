@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { ArrowLeft, Bot, Users } from 'lucide-react';
 import { coaches } from '@/data/coaches';
 import type { CoachPersona } from '@/data/coaches';
+import type { Profile } from '@/lib/types';
+import HumanCoachCard from '@/components/HumanCoachCard';
+import CoachRequestModal from '@/components/CoachRequestModal';
 
 function CoachCard({ coach, isSelected, onSelect }: {
     coach: CoachPersona;
@@ -136,9 +141,55 @@ function CoachCard({ coach, isSelected, onSelect }: {
     );
 }
 
+type TabType = 'ai' | 'human';
+
 export default function CoachSelectionPage() {
+    const [activeTab, setActiveTab] = useState<TabType>('ai');
     const [selectedCoach, setSelectedCoach] = useState<CoachPersona | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [trainers, setTrainers] = useState<(Profile & { relationship_status?: string | null })[]>([]);
+    const [trainersLoading, setTrainersLoading] = useState(false);
+    const [selectedTrainer, setSelectedTrainer] = useState<(Profile & { relationship_status?: string | null }) | null>(null);
     const router = useRouter();
+
+    // Auth guard + get user ID
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (!user) {
+                router.push('/login');
+            } else {
+                setCurrentUserId(user.id);
+            }
+        });
+    }, [router]);
+
+    const fetchTrainers = useCallback(async () => {
+        if (!currentUserId) return;
+        setTrainersLoading(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: Record<string, string> = {};
+            if (session?.access_token) {
+                headers.Authorization = `Bearer ${session.access_token}`;
+            }
+            const res = await fetch(`/api/coaching/trainers?userId=${currentUserId}`, { headers });
+            if (res.ok) {
+                const { trainers: data } = await res.json();
+                setTrainers(data || []);
+            }
+        } catch {
+            // Silently fail
+        } finally {
+            setTrainersLoading(false);
+        }
+    }, [currentUserId]);
+
+    // Fetch trainers when switching to human tab
+    useEffect(() => {
+        if (activeTab === 'human' && currentUserId) {
+            fetchTrainers();
+        }
+    }, [activeTab, currentUserId, fetchTrainers]);
 
     const handleSelect = (coach: CoachPersona) => {
         setSelectedCoach(coach);
@@ -148,6 +199,15 @@ export default function CoachSelectionPage() {
         if (selectedCoach) {
             router.push(`/coach/${selectedCoach.id}`);
         }
+    };
+
+    const handleTrainerClick = (trainer: Profile & { relationship_status?: string | null }) => {
+        if (!trainer.is_accepting_clients) {
+            // Show a simple alert for coming-soon trainers
+            alert(`${trainer.full_name} is not yet accepting clients. Check back soon!`);
+            return;
+        }
+        setSelectedTrainer(trainer);
     };
 
     return (
@@ -162,81 +222,217 @@ export default function CoachSelectionPage() {
             <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 {/* Header */}
                 <div style={{ marginBottom: '2rem' }}>
-                    <h1
-                        style={{
-                            fontFamily: 'var(--font-orbitron)',
-                            fontSize: '2rem',
-                            color: 'var(--neon-orange)',
-                            marginBottom: '0.5rem',
-                        }}
-                    >
-                        Choose Your AI Coach
-                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                        <button
+                            onClick={() => router.push('/home')}
+                            aria-label="Back to Home"
+                            style={{
+                                background: 'rgba(255, 102, 0, 0.15)',
+                                border: '1px solid rgba(255, 102, 0, 0.3)',
+                                borderRadius: '8px',
+                                padding: '0.5rem 0.85rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                color: '#FF6600',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                            }}
+                        >
+                            <ArrowLeft size={18} />
+                            Home
+                        </button>
+                        <h1
+                            style={{
+                                fontFamily: 'var(--font-orbitron)',
+                                fontSize: '2rem',
+                                color: 'var(--neon-orange)',
+                            }}
+                        >
+                            Coach List
+                        </h1>
+                    </div>
                     <p style={{ color: '#888', fontSize: '0.95rem' }}>
-                        Select a coaching persona that matches your training goals and style.
+                        Browse AI and human coaches to match your training goals.
                     </p>
                 </div>
 
-                {/* Coach Grid */}
-                <div
-                    data-testid="coach-grid"
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                        gap: '1.25rem',
-                        marginBottom: '2rem',
-                    }}
-                >
-                    {coaches.map((coach) => (
-                        <CoachCard
-                            key={coach.id}
-                            coach={coach}
-                            isSelected={selectedCoach?.id === coach.id}
-                            onSelect={handleSelect}
-                        />
-                    ))}
-                </div>
-
-                {/* Selected Coach CTA */}
-                {selectedCoach && (
-                    <div
-                        data-testid="selected-coach-cta"
+                {/* Tab Toggle */}
+                <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    marginBottom: '2rem',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '10px',
+                    padding: '0.25rem',
+                    maxWidth: '400px',
+                }}>
+                    <button
+                        onClick={() => setActiveTab('ai')}
                         style={{
-                            position: 'fixed',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            padding: '1.25rem 1.5rem',
-                            background: 'rgba(21, 21, 31, 0.95)',
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                            borderTop: '1px solid rgba(255, 102, 0, 0.2)',
+                            flex: 1,
+                            padding: '0.7rem',
+                            background: activeTab === 'ai' ? 'var(--primary, #FF6600)' : 'transparent',
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: activeTab === 'ai' ? 'white' : '#888',
+                            cursor: 'pointer',
+                            fontWeight: activeTab === 'ai' ? '600' : '400',
+                            fontSize: '0.9rem',
+                            transition: 'all 0.2s',
                             display: 'flex',
-                            justifyContent: 'center',
                             alignItems: 'center',
-                            gap: '1rem',
-                            zIndex: 100,
+                            justifyContent: 'center',
+                            gap: '0.4rem',
                         }}
                     >
-                        <span style={{ color: '#ccc', fontSize: '0.95rem' }}>
-                            Selected: <strong style={{ color: 'var(--neon-orange)' }}>{selectedCoach.displayName}</strong>
-                        </span>
-                        <button
-                            data-testid="start-training-btn"
-                            className="btn-primary"
-                            onClick={handleStartTraining}
+                        <Bot size={16} />
+                        AI Coaches
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('human')}
+                        style={{
+                            flex: 1,
+                            padding: '0.7rem',
+                            background: activeTab === 'human' ? 'var(--primary, #FF6600)' : 'transparent',
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: activeTab === 'human' ? 'white' : '#888',
+                            cursor: 'pointer',
+                            fontWeight: activeTab === 'human' ? '600' : '400',
+                            fontSize: '0.9rem',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.4rem',
+                        }}
+                    >
+                        <Users size={16} />
+                        Human Coaches
+                    </button>
+                </div>
+
+                {/* AI Coaches Tab */}
+                {activeTab === 'ai' && (
+                    <>
+                        <div
+                            data-testid="coach-grid"
                             style={{
-                                padding: '0.75rem 2rem',
-                                fontSize: '0.95rem',
-                                fontWeight: '600',
-                                borderRadius: '10px',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                                gap: '1.25rem',
+                                marginBottom: '2rem',
                             }}
                         >
-                            Start Training
-                        </button>
-                    </div>
+                            {coaches.map((coach) => (
+                                <CoachCard
+                                    key={coach.id}
+                                    coach={coach}
+                                    isSelected={selectedCoach?.id === coach.id}
+                                    onSelect={handleSelect}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Selected Coach CTA */}
+                        {selectedCoach && (
+                            <div
+                                data-testid="selected-coach-cta"
+                                style={{
+                                    position: 'fixed',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    padding: '1.25rem 1.5rem',
+                                    background: 'rgba(21, 21, 31, 0.95)',
+                                    backdropFilter: 'blur(16px)',
+                                    WebkitBackdropFilter: 'blur(16px)',
+                                    borderTop: '1px solid rgba(255, 102, 0, 0.2)',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    gap: '1rem',
+                                    zIndex: 100,
+                                }}
+                            >
+                                <span style={{ color: '#ccc', fontSize: '0.95rem' }}>
+                                    Selected: <strong style={{ color: 'var(--neon-orange)' }}>{selectedCoach.displayName}</strong>
+                                </span>
+                                <button
+                                    data-testid="start-training-btn"
+                                    className="btn-primary"
+                                    onClick={handleStartTraining}
+                                    style={{
+                                        padding: '0.75rem 2rem',
+                                        fontSize: '0.95rem',
+                                        fontWeight: '600',
+                                        borderRadius: '10px',
+                                    }}
+                                >
+                                    Start Training
+                                </button>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* Human Coaches Tab */}
+                {activeTab === 'human' && (
+                    <>
+                        {trainersLoading ? (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
+                                <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
+                                Loading trainers...
+                            </div>
+                        ) : trainers.length === 0 ? (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '3rem',
+                                color: '#888',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                borderRadius: '16px',
+                                border: '1px solid rgba(255, 255, 255, 0.06)',
+                            }}>
+                                <Users size={40} color="#555" style={{ marginBottom: '1rem' }} />
+                                <p style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>No human coaches available yet</p>
+                                <p style={{ fontSize: '0.85rem' }}>Check back soon — trainers are being onboarded!</p>
+                            </div>
+                        ) : (
+                            <div
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                                    gap: '1.25rem',
+                                    marginBottom: '2rem',
+                                }}
+                            >
+                                {trainers.map((trainer) => (
+                                    <HumanCoachCard
+                                        key={trainer.id}
+                                        trainer={trainer}
+                                        onClick={() => handleTrainerClick(trainer)}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
+
+            {/* Coach Request Modal */}
+            {selectedTrainer && currentUserId && (
+                <CoachRequestModal
+                    trainer={selectedTrainer}
+                    athleteId={currentUserId}
+                    onClose={() => setSelectedTrainer(null)}
+                    onSuccess={() => {
+                        fetchTrainers();
+                    }}
+                />
+            )}
         </div>
     );
 }

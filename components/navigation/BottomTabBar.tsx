@@ -51,15 +51,7 @@ export function BottomTabBar() {
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
             {/* Glassmorphism backdrop */}
-            <div
-                className="absolute inset-0 backdrop-blur-2xl border-t"
-                style={{
-                    background: 'rgba(21, 21, 31, 0.55)',
-                    borderColor: 'rgba(255, 255, 255, 0.08)',
-                    boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.2)',
-                    WebkitBackdropFilter: 'blur(24px)',
-                }}
-            />
+            <div className="absolute inset-0 border-t border-line-soft bg-[rgba(21,21,31,0.55)] shadow-[0_-4px_30px_rgba(0,0,0,0.2)] backdrop-blur-2xl" />
 
             <div className="relative flex items-end justify-around px-2 pb-safe">
                 {tabs.map((tab) => {
@@ -79,10 +71,10 @@ export function BottomTabBar() {
                                     style={{
                                         background: workout.isActive
                                             ? 'linear-gradient(135deg, #10b981, #059669)'
-                                            : 'linear-gradient(135deg, #FF6600, #CC5200)',
+                                            : 'var(--brand-gradient)',
                                         boxShadow: workout.isActive
                                             ? '0 4px 20px rgba(16, 185, 129, 0.4)'
-                                            : '0 4px 20px rgba(255, 102, 0, 0.4)',
+                                            : '0 4px 20px var(--brand-glow)',
                                     }}
                                 >
                                     {workout.isActive ? (
@@ -110,14 +102,14 @@ export function BottomTabBar() {
                             >
                                 <Icon
                                     className={`w-6 h-6 transition-colors ${
-                                        active ? 'text-orange-400' : 'text-gray-500'
+                                        active ? 'text-brand' : 'text-gray-500'
                                     }`}
                                 />
                                 {active && (
                                     <motion.div
                                         layoutId="activeTab"
                                         className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full"
-                                        style={{ background: '#FF6600', boxShadow: '0 0 6px rgba(255, 102, 0, 0.5)' }}
+                                        style={{ background: 'var(--brand)', boxShadow: '0 0 6px var(--brand-glow)' }}
                                         initial={false}
                                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                                     />
@@ -125,7 +117,7 @@ export function BottomTabBar() {
                             </motion.div>
                             <span
                                 className={`text-xs mt-1 transition-colors ${
-                                    active ? 'text-orange-400' : 'text-gray-500'
+                                    active ? 'text-brand' : 'text-gray-500'
                                 }`}
                             >
                                 {tab.label}
