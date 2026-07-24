@@ -25,7 +25,7 @@ const SEGMENTS: { layer: LayerKey; start: number; end: number }[] = [
 
 const CAPTION_BANDS = [0, 0.175, 0.42, 0.665, 0.87, 1.01];
 
-const BRAND_ORANGE = '#FF6600';
+const BRAND = 'var(--brand)';
 
 export default function ScrollVideoSection() {
     const sectionRef = useRef<HTMLDivElement>(null);
@@ -153,7 +153,7 @@ export default function ScrollVideoSection() {
                 style={{
                     position: 'relative',
                     height: '700vh',
-                    background: '#0a0a0a',
+                    background: 'var(--surface-0)',
                     zIndex: 1,
                 }}
             />
@@ -168,7 +168,7 @@ export default function ScrollVideoSection() {
                     height: '100vh',
                     width: '100%',
                     overflow: 'hidden',
-                    background: '#0a0a0a',
+                    background: 'var(--surface-0)',
                     pointerEvents: 'none',
                     opacity: active ? 1 : 0,
                     visibility: active ? 'visible' : 'hidden',
@@ -186,7 +186,8 @@ export default function ScrollVideoSection() {
                         fontSize: '0.72rem',
                         letterSpacing: '0.3em',
                         textTransform: 'uppercase',
-                        color: BRAND_ORANGE,
+                        color: BRAND,
+                        fontFamily: 'var(--font-display), var(--font-sans)',
                         fontWeight: 700,
                         whiteSpace: 'nowrap',
                     }}
@@ -267,7 +268,7 @@ export default function ScrollVideoSection() {
                                     opacity: i === 0 ? 1 : 0,
                                     transition: 'opacity 0.35s ease, transform 0.35s ease',
                                     textAlign: 'center',
-                                    color: '#fff',
+                                    color: 'var(--ink-hi)',
                                     willChange: 'opacity, transform',
                                 }}
                             >
@@ -278,7 +279,7 @@ export default function ScrollVideoSection() {
                                         lineHeight: 1.05,
                                         letterSpacing: '-0.02em',
                                         marginBottom: '0.75rem',
-                                        color: '#fff',
+                                        color: 'var(--ink-hi)',
                                         textShadow: '0 2px 24px rgba(0,0,0,0.6)',
                                     }}
                                 >
@@ -287,7 +288,7 @@ export default function ScrollVideoSection() {
                                 <div
                                     style={{
                                         fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)',
-                                        color: 'rgba(255,255,255,0.78)',
+                                        color: 'var(--ink-mid)',
                                         maxWidth: '540px',
                                         margin: '0 auto',
                                         lineHeight: 1.5,
@@ -308,7 +309,7 @@ export default function ScrollVideoSection() {
                         right: 0,
                         bottom: 0,
                         height: '2px',
-                        background: 'rgba(255,255,255,0.08)',
+                        background: 'var(--line-soft)',
                         zIndex: 25,
                     }}
                 >
@@ -316,7 +317,8 @@ export default function ScrollVideoSection() {
                         ref={progressBarRef}
                         style={{
                             height: '100%',
-                            background: BRAND_ORANGE,
+                            background: 'var(--brand-gradient)',
+                            boxShadow: '0 0 10px var(--brand-glow)',
                             transformOrigin: 'left center',
                             transform: 'scaleX(0)',
                             willChange: 'transform',
@@ -334,7 +336,7 @@ export default function ScrollVideoSection() {
                     border-radius: 18px;
                     overflow: hidden;
                     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
-                    background: #0a0a0a;
+                    background: var(--surface-0);
                 }
                 .shaipt-layer {
                     position: absolute;
