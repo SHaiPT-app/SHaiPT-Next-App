@@ -133,7 +133,9 @@
 
 html,
 body {
-  max-width: 100vw;
+  max-width: 100%;
+  /* 100% (not 100vw) so the vertical scrollbar width is excluded — 100vw
+     over-widens the page by the scrollbar and pushes content left. */
   overflow-x: hidden;
   background: #15151F;
   /* Dark fallback to prevent white flash */

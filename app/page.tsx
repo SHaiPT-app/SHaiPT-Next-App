@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Hero from '@/components/landing/Hero';
 import ScrollVideoSection from '@/components/landing/ScrollVideoSection';
+import AppShowcase from '@/components/landing/AppShowcase';
 import Features from '@/components/landing/Features';
 import Comparison from '@/components/landing/Comparison';
 import Pricing from '@/components/landing/Pricing';
@@ -34,6 +35,7 @@ export default function Home() {
     <StaticBackground>
       <Hero />
       <ScrollVideoSection />
+      <AppShowcase />
       <Features />
       <Comparison />
       <Pricing />

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import TextType from '@/components/TextType';
-import { fadeInUp, fadeInDown, staggerContainer, scaleIn } from '@/lib/animations';
+import { fadeInUp, fadeInDown, staggerContainer } from '@/lib/animations';
 
 export default function Hero() {
   return (
@@ -128,19 +128,6 @@ export default function Hero() {
           <span>Cancel anytime</span>
           <span className="hidden h-1 w-1 rounded-full bg-line-strong sm:block" />
           <span>Free Pro month for consistency</span>
-        </motion.div>
-
-        {/* Showcase image */}
-        <motion.div variants={scaleIn} className="relative -mb-[10%] w-full max-w-5xl">
-          <div className="absolute left-1/2 top-1/2 h-4/5 w-4/5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse,var(--brand-glow-soft),transparent_70%)] blur-[60px]" />
-          <Image
-            src="/mockups/shaipt_app_showcase_v2.png"
-            alt="SHaiPT App Showcase"
-            width={1200}
-            height={800}
-            priority
-            className="relative z-[1] h-auto w-full drop-shadow-[0_-20px_60px_rgba(0,0,0,0.5)]"
-          />
         </motion.div>
       </motion.div>
     </section>

@@ -153,7 +153,8 @@ export default function ScrollVideoSection() {
                 style={{
                     position: 'relative',
                     height: '700vh',
-                    background: 'var(--surface-0)',
+                    // Transparent so the fixed FloatingLines background shows through.
+                    background: 'transparent',
                     zIndex: 1,
                 }}
             />
@@ -168,7 +169,11 @@ export default function ScrollVideoSection() {
                     height: '100vh',
                     width: '100%',
                     overflow: 'hidden',
-                    background: 'var(--surface-0)',
+                    // Transparent stage over the fixed FloatingLines background, with a
+                    // subtle top/bottom scrim so the eyebrow, captions, and progress bar
+                    // stay legible over the animated lines. Middle stays clear for the phone.
+                    background:
+                        'linear-gradient(to bottom, rgba(21,21,31,0.55) 0%, rgba(21,21,31,0) 20%, rgba(21,21,31,0) 66%, rgba(21,21,31,0.72) 100%)',
                     pointerEvents: 'none',
                     opacity: active ? 1 : 0,
                     visibility: active ? 'visible' : 'hidden',
@@ -336,7 +341,9 @@ export default function ScrollVideoSection() {
                     border-radius: 18px;
                     overflow: hidden;
                     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
-                    background: var(--surface-0);
+                    /* Transparent phone frame — the opaque storyboard frames fill it;
+                       lines show through only during crossfades. */
+                    background: transparent;
                 }
                 .shaipt-layer {
                     position: absolute;
