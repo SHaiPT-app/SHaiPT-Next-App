@@ -71,7 +71,7 @@ export default function TitleSequence() {
                     </h1>
                 ))}
                 <div className="ts-rule" />
-                <p className="ts-sub">All you want from a personal trainer. One phone, no wearable: every rep measured, replayed in 3D, scored.</p>
+                <p className="ts-sub">All you want from a personal trainer. At home or in the gym, form is king: one phone, no wearable, every rep measured, replayed in 3D, scored.</p>
                 <div className="ts-actions">
                     <Link href="/login" className="ts-btn">
                         Get started

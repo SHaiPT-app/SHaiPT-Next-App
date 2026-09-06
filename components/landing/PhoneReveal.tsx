@@ -44,7 +44,7 @@ const CHAPTERS: Chapter[] = [
         n: '01',
         title: 'Film the set.',
         em: 'Name it, trim it.',
-        body: 'Any phone, any angle, propped against a plate. Pick the lift, enter the load, cut the clip to the working set with two sliders. That is the whole setup.',
+        body: 'Any phone, any angle, propped against a plate or a water bottle. At home or in the gym: pick the exercise, enter the load, cut the clip to the working set with two sliders. That is the whole setup.',
         readout: [['Camera', 'any phone'], ['Setup', '10 s'], ['Trim', 'two sliders']],
     },
     {

@@ -19,11 +19,11 @@ export default function Statement() {
             <div className="st-body">
                 <div className="st-kicker">Statement — 02</div>
                 <h2 className="st-title">
-                    No wearable.
+                    At home or in the gym.
                     <br />
-                    No fixed camera.
+                    No wearable, one phone.
                     <br />
-                    <em>One phone.</em>
+                    <em>Form is king.</em>
                 </h2>
                 <div className="st-rule" />
                 <p className="st-note">
