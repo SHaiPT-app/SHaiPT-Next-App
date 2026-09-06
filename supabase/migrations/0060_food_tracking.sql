@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS food_database (
 
 CREATE INDEX IF NOT EXISTS idx_food_database_name ON food_database USING gin (to_tsvector('english', name));
 CREATE INDEX IF NOT EXISTS idx_food_database_category ON food_database (category);
+-- one row per (name, brand); the seeders upsert on this
+CREATE UNIQUE INDEX IF NOT EXISTS uq_food_database_name_brand ON food_database (lower(name), coalesce(brand, ''));
 
 -- ============================================
 -- FOOD LOGS
@@ -99,7 +101,7 @@ INSERT INTO food_database (name, category, serving_size, serving_unit, calories,
     ('Whole Wheat Bread', 'grains', 28, 'g', 69, 3.6, 12, 1, 1.9, true),
     ('Milk (whole)', 'dairy', 244, 'ml', 149, 8, 12, 8, 0, true),
     ('Blueberries', 'fruits', 148, 'g', 84, 1.1, 21, 0.5, 3.6, true)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (lower(name), coalesce(brand, '')) DO NOTHING;
 
 -- ============================================
 -- RLS POLICIES
@@ -109,17 +111,27 @@ ALTER TABLE food_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE grocery_lists ENABLE ROW LEVEL SECURITY;
 
 -- Food database: readable by all, writable by creator
+DROP POLICY IF EXISTS "food_database_select" ON food_database;
 CREATE POLICY "food_database_select" ON food_database FOR SELECT USING (true);
+DROP POLICY IF EXISTS "food_database_insert" ON food_database;
 CREATE POLICY "food_database_insert" ON food_database FOR INSERT WITH CHECK (auth.uid() = created_by);
 
 -- Food logs: users can only access their own
+DROP POLICY IF EXISTS "food_logs_select" ON food_logs;
 CREATE POLICY "food_logs_select" ON food_logs FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "food_logs_insert" ON food_logs;
 CREATE POLICY "food_logs_insert" ON food_logs FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "food_logs_update" ON food_logs;
 CREATE POLICY "food_logs_update" ON food_logs FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "food_logs_delete" ON food_logs;
 CREATE POLICY "food_logs_delete" ON food_logs FOR DELETE USING (auth.uid() = user_id);
 
 -- Grocery lists: users can only access their own
+DROP POLICY IF EXISTS "grocery_lists_select" ON grocery_lists;
 CREATE POLICY "grocery_lists_select" ON grocery_lists FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "grocery_lists_insert" ON grocery_lists;
 CREATE POLICY "grocery_lists_insert" ON grocery_lists FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "grocery_lists_update" ON grocery_lists;
 CREATE POLICY "grocery_lists_update" ON grocery_lists FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "grocery_lists_delete" ON grocery_lists;
 CREATE POLICY "grocery_lists_delete" ON grocery_lists FOR DELETE USING (auth.uid() = user_id);

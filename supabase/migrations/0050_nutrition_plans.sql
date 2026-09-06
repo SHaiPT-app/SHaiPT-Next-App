@@ -19,19 +19,28 @@ CREATE INDEX IF NOT EXISTS idx_nutrition_plans_user ON nutrition_plans (user_id)
 -- RLS
 ALTER TABLE nutrition_plans ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "nutrition_plans_select" ON nutrition_plans;
+
 CREATE POLICY "nutrition_plans_select" ON nutrition_plans
     FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "nutrition_plans_insert" ON nutrition_plans;
 
 CREATE POLICY "nutrition_plans_insert" ON nutrition_plans
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "nutrition_plans_update" ON nutrition_plans;
+
 CREATE POLICY "nutrition_plans_update" ON nutrition_plans
     FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "nutrition_plans_delete" ON nutrition_plans;
 
 CREATE POLICY "nutrition_plans_delete" ON nutrition_plans
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Updated_at trigger
+DROP TRIGGER IF EXISTS update_nutrition_plans_updated_at ON nutrition_plans;
 CREATE TRIGGER update_nutrition_plans_updated_at
     BEFORE UPDATE ON nutrition_plans
     FOR EACH ROW

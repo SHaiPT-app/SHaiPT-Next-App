@@ -65,11 +65,11 @@ CREATE TRIGGER trigger_create_trial_subscription
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own subscription
-CREATE POLICY "Users can view own subscription"
-    ON subscriptions FOR SELECT
+DROP POLICY IF EXISTS "Users can view own subscription" ON subscriptions;
+CREATE POLICY "Users can view own subscription" ON subscriptions FOR SELECT
     USING (auth.uid() = user_id);
 
 -- Only service role can insert/update (via webhooks)
-CREATE POLICY "Service role can manage subscriptions"
-    ON subscriptions FOR ALL
+DROP POLICY IF EXISTS "Service role can manage subscriptions" ON subscriptions;
+CREATE POLICY "Service role can manage subscriptions" ON subscriptions FOR ALL
     USING (auth.role() = 'service_role');

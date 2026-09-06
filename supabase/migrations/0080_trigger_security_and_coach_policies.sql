@@ -2,47 +2,9 @@
 -- This allows triggers to insert notifications for OTHER users
 -- without needing service-role key (bypasses RLS at the function level)
 
--- 1. notify_coaching_request — fires on coaching_relationships INSERT
--- Inserts notification for the COACH when an ATHLETE sends a request
-CREATE OR REPLACE FUNCTION notify_coaching_request()
-RETURNS trigger AS $$
-BEGIN
-    INSERT INTO notifications (user_id, type, actor_id, reference_id, reference_type, content)
-    VALUES (
-        NEW.coach_id,
-        'coaching_request',
-        NEW.athlete_id,
-        NEW.id,
-        'coaching_relationship',
-        'You have a new coaching request'
-    );
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 2. notify_coaching_accepted — fires on coaching_relationships UPDATE
--- Inserts notification for the ATHLETE when coach accepts/declines
-CREATE OR REPLACE FUNCTION notify_coaching_accepted()
-RETURNS trigger AS $$
-BEGIN
-    IF OLD.status = 'pending' AND NEW.status IN ('active', 'declined', 'waitlisted') THEN
-        INSERT INTO notifications (user_id, type, actor_id, reference_id, reference_type, content)
-        VALUES (
-            NEW.athlete_id,
-            'coaching_accepted',
-            NEW.coach_id,
-            NEW.id,
-            'coaching_relationship',
-            CASE NEW.status
-                WHEN 'active' THEN 'Your coaching request was accepted!'
-                WHEN 'declined' THEN 'Your coaching request was declined'
-                WHEN 'waitlisted' THEN 'You have been added to the waitlist'
-            END
-        );
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 1./2. notify_coaching_request and notify_coaching_accepted are defined in 0001_base.sql in a
+-- direction-aware form (a trainer may request a trainee or the other way round; the notification
+-- goes to the party that did not send the request). They are SECURITY DEFINER there.
 
 -- 3. notify_plan_assigned — fires on training_plan_assignments INSERT
 CREATE OR REPLACE FUNCTION notify_plan_assigned()
@@ -87,8 +49,8 @@ BEGIN
         WHERE tablename = 'coaching_relationships'
         AND policyname = 'Athletes can create coaching requests'
     ) THEN
-        CREATE POLICY "Athletes can create coaching requests"
-        ON coaching_relationships FOR INSERT
+        DROP POLICY IF EXISTS "Athletes can create coaching requests" ON coaching_relationships;
+        CREATE POLICY "Athletes can create coaching requests" ON coaching_relationships FOR INSERT
         TO authenticated
         WITH CHECK (athlete_id = auth.uid());
     END IF;
@@ -102,8 +64,8 @@ BEGIN
         WHERE tablename = 'coaching_relationships'
         AND policyname = 'Coaches can update their relationships'
     ) THEN
-        CREATE POLICY "Coaches can update their relationships"
-        ON coaching_relationships FOR UPDATE
+        DROP POLICY IF EXISTS "Coaches can update their relationships" ON coaching_relationships;
+        CREATE POLICY "Coaches can update their relationships" ON coaching_relationships FOR UPDATE
         TO authenticated
         USING (coach_id = auth.uid());
     END IF;
@@ -117,8 +79,8 @@ BEGIN
         WHERE tablename = 'coaching_relationships'
         AND policyname = 'Users can view own relationships'
     ) THEN
-        CREATE POLICY "Users can view own relationships"
-        ON coaching_relationships FOR SELECT
+        DROP POLICY IF EXISTS "Users can view own relationships" ON coaching_relationships;
+        CREATE POLICY "Users can view own relationships" ON coaching_relationships FOR SELECT
         TO authenticated
         USING (coach_id = auth.uid() OR athlete_id = auth.uid());
     END IF;
@@ -151,8 +113,8 @@ BEGIN
         WHERE tablename = 'profiles'
         AND policyname = 'Coaches can view client profiles'
     ) THEN
-        CREATE POLICY "Coaches can view client profiles"
-        ON profiles FOR SELECT
+        DROP POLICY IF EXISTS "Coaches can view client profiles" ON profiles;
+        CREATE POLICY "Coaches can view client profiles" ON profiles FOR SELECT
         TO authenticated
         USING (id = auth.uid() OR is_coach_of(id));
     END IF;
@@ -166,8 +128,8 @@ BEGIN
         WHERE tablename = 'workout_logs'
         AND policyname = 'Coaches can view client workout logs'
     ) THEN
-        CREATE POLICY "Coaches can view client workout logs"
-        ON workout_logs FOR SELECT
+        DROP POLICY IF EXISTS "Coaches can view client workout logs" ON workout_logs;
+        CREATE POLICY "Coaches can view client workout logs" ON workout_logs FOR SELECT
         TO authenticated
         USING (user_id = auth.uid() OR is_coach_of(user_id));
     END IF;
@@ -181,8 +143,8 @@ BEGIN
         WHERE tablename = 'exercise_logs'
         AND policyname = 'Coaches can view client exercise logs'
     ) THEN
-        CREATE POLICY "Coaches can view client exercise logs"
-        ON exercise_logs FOR SELECT
+        DROP POLICY IF EXISTS "Coaches can view client exercise logs" ON exercise_logs;
+        CREATE POLICY "Coaches can view client exercise logs" ON exercise_logs FOR SELECT
         TO authenticated
         USING (
             EXISTS (
@@ -203,8 +165,8 @@ BEGIN
             WHERE tablename = 'body_measurements'
             AND policyname = 'Coaches can view client body measurements'
         ) THEN
-            CREATE POLICY "Coaches can view client body measurements"
-            ON body_measurements FOR SELECT
+            DROP POLICY IF EXISTS "Coaches can view client body measurements" ON body_measurements;
+            CREATE POLICY "Coaches can view client body measurements" ON body_measurements FOR SELECT
             TO authenticated
             USING (user_id = auth.uid() OR is_coach_of(user_id));
         END IF;
@@ -220,8 +182,8 @@ BEGIN
             WHERE tablename = 'progress_media'
             AND policyname = 'Coaches can view client progress media'
         ) THEN
-            CREATE POLICY "Coaches can view client progress media"
-            ON progress_media FOR SELECT
+            DROP POLICY IF EXISTS "Coaches can view client progress media" ON progress_media;
+            CREATE POLICY "Coaches can view client progress media" ON progress_media FOR SELECT
             TO authenticated
             USING (user_id = auth.uid() OR is_coach_of(user_id));
         END IF;
@@ -236,8 +198,8 @@ BEGIN
         WHERE tablename = 'training_plan_assignments'
         AND policyname = 'Coaches can view client plan assignments'
     ) THEN
-        CREATE POLICY "Coaches can view client plan assignments"
-        ON training_plan_assignments FOR SELECT
+        DROP POLICY IF EXISTS "Coaches can view client plan assignments" ON training_plan_assignments;
+        CREATE POLICY "Coaches can view client plan assignments" ON training_plan_assignments FOR SELECT
         TO authenticated
         USING (user_id = auth.uid() OR is_coach_of(user_id));
     END IF;
@@ -251,8 +213,8 @@ BEGIN
         WHERE tablename = 'training_plan_assignments'
         AND policyname = 'Coaches can assign plans to clients'
     ) THEN
-        CREATE POLICY "Coaches can assign plans to clients"
-        ON training_plan_assignments FOR INSERT
+        DROP POLICY IF EXISTS "Coaches can assign plans to clients" ON training_plan_assignments;
+        CREATE POLICY "Coaches can assign plans to clients" ON training_plan_assignments FOR INSERT
         TO authenticated
         WITH CHECK (
             assigned_by_id = auth.uid()
@@ -269,8 +231,8 @@ BEGIN
         WHERE tablename = 'notifications'
         AND policyname = 'Users can view own notifications'
     ) THEN
-        CREATE POLICY "Users can view own notifications"
-        ON notifications FOR SELECT
+        DROP POLICY IF EXISTS "Users can view own notifications" ON notifications;
+        CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT
         TO authenticated
         USING (user_id = auth.uid());
     END IF;
@@ -284,8 +246,8 @@ BEGIN
         WHERE tablename = 'notifications'
         AND policyname = 'Users can update own notifications'
     ) THEN
-        CREATE POLICY "Users can update own notifications"
-        ON notifications FOR UPDATE
+        DROP POLICY IF EXISTS "Users can update own notifications" ON notifications;
+        CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE
         TO authenticated
         USING (user_id = auth.uid());
     END IF;

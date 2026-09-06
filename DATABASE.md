@@ -1,6 +1,63 @@
-# SHaiPT Database Documentation
+# SHaiPT Database
 
-This document provides a comprehensive overview of the SHaiPT application database schema, including tables, functions, triggers, and Row Level Security (RLS) policies.
+Supabase Postgres. The schema lives in `supabase/migrations/*.sql` and is applied by
+`scripts/migrate.ts`; nothing is created by hand in the dashboard any more. Every file is
+idempotent, so re-running the whole set on an existing project is safe.
+
+## Rebuilding the database from scratch
+
+1. Create the Supabase project (dashboard). Put the URL, anon key and service role key in
+   `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`) and the Postgres connection string in `SUPABASE_DB_URL`
+   (Project Settings → Database → Connection string, "Transaction" pooler or direct).
+2. `pnpm db:migrate` — applies the files below in name order and records them in
+   `public.schema_migrations`. `pnpm db:migrate -- --status` lists what is applied,
+   `-- --force` re-applies everything.
+3. `pnpm db:seed:exercises` — ~870 exercises from free-exercise-db (public domain) with the
+   4Dcoach mapping (`fourd_id`).
+4. `pnpm db:seed:foods` — ~440 USDA Foundation Foods (public domain), macros per 100 g.
+5. `pnpm db:rls-check` — creates three throw-away users and asserts the row-level security
+   (a stranger reads nothing, a linked coach reads the trainee's logs). Must print
+   `RLS check green`.
+6. `pnpm db:test-users -- friend@example.com` — tester accounts (see TESTERS.md).
+
+Local dry run without Supabase: `pnpm db:local` starts `postgres:17` in Docker on port 55432,
+then `SUPABASE_DB_URL=postgres://postgres:postgres@localhost:55432/postgres pnpm db:migrate -- --auth-stub`
+applies `scripts/local/auth-stub.sql` (a stand-in for the `auth` schema, the API roles and
+`storage`) before the migrations. The seeders and the RLS check need the real project (they go
+through the Supabase HTTP API).
+
+### Migration files, in order
+
+| File | What it does |
+|---|---|
+| `0001_base.sql` | The original dashboard-built schema, reconstructed: profiles, exercises, exercise_instructions, workout_sessions, training_plans, training_plan_sessions, training_plan_assignments, workout_plans (legacy), workout_logs, exercise_logs, personal_records, user_follows, user_favorites, activity_posts, post_likes, post_comments, coaching_relationships, direct_messages, notifications, ai_chats, progress_media; `handle_new_user`, the notification triggers, `update_updated_at_column`, RLS on all of them. |
+| `0010_workout_plans_metadata.sql` | `workout_plans.assigned_at / expires_at` (was `migration.sql`). |
+| `0020_subscriptions.sql` | `subscriptions` + the 14-day trial trigger on profiles. |
+| `0030_workout_tracking.sql` | `phone_verifications`, `consistency_challenges`, `consistency_logs`, `user_preferences`, `workout_drafts`; columns on training_plan_sessions, workout_sessions, exercise_logs, subscriptions, profiles. |
+| `0040_ai_features_flag.sql` | `profiles.ai_features`. |
+| `0050_nutrition_plans.sql` | `nutrition_plans`. |
+| `0060_food_tracking.sql` | `food_database`, `food_logs`, `grocery_lists`, 25 starter foods. |
+| `0070_human_trainer.sql` | trainer columns on profiles, coaching status check. |
+| `0080_trigger_security_and_coach_policies.sql` | `is_coach_of()`, coach read policies on profiles, workout_logs, exercise_logs, body_measurements, progress_media, plan assignments; notification policies. |
+| `0090_undocumented_tables.sql` | Tables the code used but nothing created: `onboarding`, `coach_interviews`, `body_measurements`, `body_weight_logs`, `user_stats`, `user_stats_history`; `recompute_user_stats()` (trigger on completed workouts), `get_recent_stats()`, `increment_phone_verification_attempts()`. |
+| `0100_exercise_library.sql` | `exercises.slug / source / fourd_id / is_fourd_primary`. |
+| `0110_invites_and_testers.sql` | `invites`, `profiles.tester / onboarding_completed`, the invite-aware `handle_new_user`. |
+| `0120_ai_usage.sql` | `ai_usage`, `ai_budget`, `ai_cache`, `ai_usage_today()` for the AI gateway. |
+| `0130_storage_progress_media.sql` | private bucket `progress-media` with per-user folder policies. |
+| `0140_food_database_source.sql` | `food_database.source / source_id` so the USDA seed can upsert. |
+
+Dependencies: 0030 alters `subscriptions` (0020) and 0060 references `nutrition_plans` (0050);
+0130 uses `is_coach_of` from 0080. The runner applies them in name order, which satisfies all of
+that. When you change a file, re-run `pnpm db:migrate -- --force`.
+
+### Conventions
+
+- Every table has RLS enabled. Policies are permissive and OR together: "own rows" in 0001/0030/0050/0060/0090, coach access in 0080. Service-role clients (`lib/supabaseDb.ts` admin, the scripts) bypass RLS.
+- `auth.uid()` is the user; API routes pass the user's Bearer token to a Supabase client, so they run under RLS as that user unless they deliberately use the service role.
+- Functions that insert on behalf of another user (notifications, stats) are `SECURITY DEFINER` with `search_path = public`.
+- Timestamps are `timestamptz`; ids are `uuid` with `gen_random_uuid()`; exercise ids are `text` (free-exercise-db ids, up to 58 characters).
+- `exercise_logs.exercise_id` and `personal_records.exercise_id` are not foreign keys: a generated plan may name an exercise the library does not have and logging must never fail because of it.
 
 ## Tables
 
@@ -64,7 +121,7 @@ Specific step-by-step instructions for exercises.
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | id | integer | NO | nextval | Primary Key |
-| exercise_id | varchar(20) | NO | | FK to exercises.exercise_id |
+| exercise_id | text | NO | | FK to exercises.exercise_id (unique with step_number) |
 | step_number | integer | NO | | |
 | instruction | text | NO | | |
 | created_at | timestamptz | YES | now() | |
@@ -76,14 +133,15 @@ Logs of individual exercises performed within a workout.
 |--------|------|----------|---------|-------------|
 | id | uuid | NO | gen_random_uuid() | Primary Key |
 | workout_log_id | uuid | NO | | FK to workout_logs.id |
-| exercise_id | varchar(20) | NO | | FK to exercises.exercise_id |
+| exercise_id | text | NO | | exercise id (no FK: an AI plan may name an exercise the library lacks) |
 | exercise_order | integer | NO | | |
 | sets | jsonb | NO | '[]' | Array of set data (reps, weight, etc.) |
 | total_sets | integer | YES | | |
 | total_reps | integer | YES | | |
 | max_weight | numeric | YES | | |
 | average_rest_seconds | integer | YES | | |
-| notes | text | YES | | |
+| rpe | numeric | YES | | 1–10 |
+| exercise_notes, notes | text | YES | | |
 | created_at | timestamptz | YES | now() | |
 
 ### `exercises`
@@ -91,7 +149,7 @@ Master catalog of available exercises.
 
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
-| exercise_id | varchar(20) | NO | | Primary Key (e.g. 'squat') |
+| exercise_id | text | NO | | Primary Key: the free-exercise-db id (e.g. `Barbell_Squat`) |
 | name | text | NO | | Display name |
 | force | varchar(20) | YES | | push, pull, static |
 | level | varchar(20) | YES | | beginner, intermediate, expert |
@@ -102,8 +160,14 @@ Master catalog of available exercises.
 | instructions | ARRAY | YES | | Legacy array of instructions |
 | category | varchar(50) | YES | | strength, cardio, etc. |
 | images | ARRAY | YES | | |
-| gif_url | text | YES | | |
-| created_at | timestamptz | YES | now() | |
+| gif_url | text | YES | | full URL of the first image |
+| body_parts, target_muscles, equipments | text[] | YES | | ExerciseDB-style mirrors of the columns above (lib/types.ts `Exercise`) |
+| difficulty | varchar(20) | YES | | = level |
+| slug | text | YES | | URL-safe name, unique |
+| source | text | YES | 'shaipt' | 'free-exercise-db' for seeded rows |
+| fourd_id | text | YES | | 4Dcoach exercise this maps to (bench, squat, deadlift, lateral-raise, curl, bw-squat, pushup, crunch, plank, pullup, hip-thrust) |
+| is_fourd_primary | boolean | NO | false | the canonical row per fourd_id |
+| created_at / updated_at | timestamptz | YES | now() | |
 
 ### `notifications`
 User notifications.
@@ -127,7 +191,7 @@ Tracks max weight, reps, etc. for exercises.
 |--------|------|----------|---------|-------------|
 | id | uuid | NO | gen_random_uuid() | Primary Key |
 | user_id | uuid | NO | | FK to profiles.id |
-| exercise_id | varchar(20) | NO | | FK to exercises.exercise_id |
+| exercise_id | text | NO | | exercise id |
 | max_weight | numeric | YES | | |
 | max_volume | numeric | YES | | |
 | max_reps | integer | YES | | |
@@ -174,8 +238,8 @@ User profiles.
 | weight_kg | numeric | YES | | |
 | preferred_weight_unit | varchar(10) | YES | 'lbs' | 'lbs' or 'kg' |
 | timezone | varchar(50) | YES | 'America/New_York' | |
-| workout_privacy | varchar(20) | YES | 'public' | 'public', 'followers', 'private' |
-| auto_post_workouts | boolean | YES | true | |
+| workout_privacy | varchar(20) | YES | 'private' | 'public', 'followers', 'private' (private by default since the rebuild) |
+| auto_post_workouts | boolean | YES | false | |
 | avatar_url | text | YES | | |
 | bio | text | YES | | |
 | fitness_goals | ARRAY | YES | | |
@@ -187,6 +251,12 @@ User profiles.
 | is_accepting_clients | boolean | YES | true | Whether trainer accepts new clients |
 | rating | numeric(3,2) | YES | | Trainer rating (e.g. 4.90) |
 | trainer_bio | text | YES | | Extended trainer biography |
+| trainer_id | uuid | YES | | FK to profiles.id, the linked trainer (api/users/link) |
+| terms_accepted_at | timestamptz | YES | | |
+| ai_features | jsonb | YES | all false | per-user AI feature switches (api/users/features) |
+| phone_verified, intake_photos_uploaded, account_completed | boolean | YES | false | account completion flags |
+| tester | boolean | NO | false | test account: full feature access without Stripe |
+| onboarding_completed | boolean | NO | false | set when the onboarding interview produced a plan |
 | created_at | timestamptz | YES | now() | |
 | updated_at | timestamptz | YES | now() | |
 
@@ -230,6 +300,8 @@ Links Workouts to Plans (defines the schedule).
 | session_id | uuid | NO | | FK to workout_sessions.id |
 | day_number | integer | NO | | Day 1-7 (Weekly cycle) |
 | week_number | integer | YES | | Optional multi-week support |
+| is_rest_day | boolean | YES | false | |
+| expected_duration_minutes | integer | YES | | |
 
 ### `training_plans`
 Top-level container for a program (e.g., "PPL Split").
@@ -245,6 +317,9 @@ Top-level container for a program (e.g., "PPL Split").
 | is_template | boolean | YES | true | |
 | is_public | boolean | YES | true | |
 | is_shareable | boolean | YES | true | |
+| phase_type | varchar(20) | YES | | hypertrophy, strength, endurance, deload, power, general |
+| phase_duration_weeks | integer | YES | | |
+| periodization_blocks | jsonb | YES | | |
 | created_at | timestamptz | YES | now() | |
 | updated_at | timestamptz | YES | now() | |
 
@@ -280,9 +355,9 @@ A completed or active workout instance.
 | started_at | timestamptz | YES | | |
 | finished_at | timestamptz | YES | | |
 | completed_at | timestamptz | YES | | Marks final completion |
-| total_duration_seconds | integer | YES | | |
+| total_duration_seconds | integer | YES | | generated from started_at/finished_at |
 | total_rest_seconds | integer | YES | | |
-| total_work_seconds | integer | YES | | |
+| total_work_seconds | integer | YES | | generated: duration − total_rest_seconds |
 | notes | text | YES | | |
 | created_at | timestamptz | YES | now() | |
 
@@ -302,75 +377,82 @@ Definition of a single workout day (e.g., "Push Day").
 | created_at | timestamptz | YES | now() | |
 | updated_at | timestamptz | YES | now() | |
 
----
+### `workout_plans` (legacy)
+One JSON blob per plan, still used by `app/api/plans` and `components/PlanCreator`. New code uses `training_plans` + `training_plan_sessions`.
 
-## Database Functions
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| trainee_id, trainer_id | uuid | FK profiles |
+| name, description | text | |
+| exercises | jsonb | the sessions array |
+| assigned_at, expires_at | timestamptz | |
+| is_active | boolean | |
+| created_at, updated_at | timestamptz | |
 
-| Function Name | Return Type | Description |
-|---------------|-------------|-------------|
-| `add_set_to_exercise_log` | void | Updates `sets`, `total_sets`, `total_reps`, `max_weight` in `exercise_logs`. |
-| `create_activity_post_on_workout_complete` | trigger | Automatically creates an `activity_posts` entry when a `workout_log` is marked complete, respecting user privacy settings. |
-| `handle_new_user` | trigger | Creates a `profiles` entry when a new user signs up via Auth. |
-| `notify_coaching_accepted` | trigger | Sends `coaching_accepted` notification. |
-| `notify_coaching_request` | trigger | Sends `coaching_request` notification. |
-| `notify_new_follower` | trigger | Sends `new_follower` notification. |
-| `notify_new_message` | trigger | Sends `new_message` notification. |
-| `notify_plan_assigned` | trigger | Sends `plan_assigned` notification. |
-| `notify_post_comment` | trigger | Sends `post_comment` notification. |
-| `notify_post_like` | trigger | Sends `post_like` notification. |
-| `update_last_set_rest` | void | Updates `rest_after_seconds` for the last set in an exercise log. |
-| `update_personal_records` | trigger | Checks `exercise_logs` on update/insert to detect if a new PR is achieved. If so, updates `personal_records` and creates a `pr_achieved` activity post. |
-| `update_updated_at_column` | trigger | Utility to automatically update `updated_at` column to `now()`. |
+### `subscriptions`
+One row per user (unique `user_id`), created by trigger with a 14-day `trialing` starter tier. Testers bypass it through `profiles.tester`.
+Columns: `stripe_customer_id`, `stripe_subscription_id`, `tier` (starter/pro/elite), `status` (trialing/active/canceled/past_due/incomplete), `trial_start`, `trial_end`, `current_period_start`, `current_period_end`, `cancel_at_period_end`, `earned_via_consistency`, `consistency_challenge_id`, `pro_lost_at`, `pro_regain_streak_start`.
 
----
+### `phone_verifications`, `consistency_challenges`, `consistency_logs`, `user_preferences`, `workout_drafts`
+From `0030_workout_tracking.sql`. Unique keys the upserts rely on: `phone_verifications(user_id)`, `consistency_logs(user_id, date)`, `user_preferences(user_id)` (PK), `workout_drafts(user_id, session_id)`.
 
-## Database Triggers
+### `nutrition_plans`
+`user_id`, `name`, `dietary_preferences text[]`, `plan_overview jsonb`, `daily_schedule jsonb`, `shopping_list jsonb`, `nutrition_tips text[]`.
 
-| Table | Trigger Name | Function | Timing | Event |
-|-------|--------------|----------|--------|-------|
-| `auth.users` | `on_auth_user_created` | `handle_new_user` | AFTER | INSERT/UPDATE |
-| `ai_chats` | `update_ai_chats_updated_at` | `update_updated_at_column` | BEFORE | UPDATE |
-| `coaching_relationships` | `trigger_notify_coaching_accepted` | `notify_coaching_accepted` | AFTER | UPDATE |
-| `coaching_relationships` | `trigger_notify_coaching_request` | `notify_coaching_request` | AFTER | INSERT |
-| `coaching_relationships` | `update_coaching_updated_at` | `update_updated_at_column` | BEFORE | UPDATE |
-| `direct_messages` | `trigger_notify_new_message` | `notify_new_message` | AFTER | INSERT |
-| `exercise_logs` | `trigger_update_prs` | `update_personal_records` | AFTER | INSERT/UPDATE |
-| `post_comments` | `trigger_notify_post_comment` | `notify_post_comment` | AFTER | INSERT |
-| `post_likes` | `trigger_notify_post_like` | `notify_post_like` | AFTER | INSERT |
-| `profiles` | `update_profiles_updated_at` | `update_updated_at_column` | BEFORE | UPDATE |
-| `training_plan_assignments` | `trigger_notify_plan_assigned` | `notify_plan_assigned` | AFTER | INSERT |
-| `training_plans` | `update_training_plans_updated_at` | `update_updated_at_column` | BEFORE | UPDATE |
-| `user_follows` | `trigger_notify_new_follower` | `notify_new_follower` | AFTER | INSERT |
-| `workout_logs` | `trigger_create_activity_post` | `create_activity_post_on_workout_complete` | AFTER | UPDATE |
-| `workout_sessions` | `update_workout_sessions_updated_at` | `update_updated_at_column` | BEFORE | UPDATE |
+### `food_database`
+Per-serving macros. Seeded rows have `serving_size = 100`, `serving_unit = 'g'`, `is_verified = true`, `source = 'usda-foundation'`, `source_id = 'usda:<fdc_id>'`. Unique on `source_id` and on `(lower(name), coalesce(brand, ''))`. Users may add their own rows (`created_by`).
 
----
+### `food_logs`, `grocery_lists`
+From `0060_food_tracking.sql`, own rows only.
 
-## Row Level Security (RLS) Policies
+### `onboarding`
+One row per completed onboarding interview: `fitness_goals`, `experience_level`, `available_equipment`, `training_frequency`, `injuries_limitations`, `dietary_preferences`, `answers jsonb`, `completed_at`.
 
-All tables have RLS enabled. Policies use a "Permissive" model.
+### `coach_interviews`
+Per-coach intake (`user_id`, `coach_id text`, unique together): `intake_data jsonb`, `chat_messages jsonb`, `is_complete`.
 
-### Key Policies
+### `body_measurements`, `body_weight_logs`
+Measurements per `(user_id, date)`; a trigger mirrors `weight_kg` into `body_weight_logs(date, weight)` for the analytics page.
 
-#### Privacy & Permissions
-- **Profiles:** Public profiles are read-only for everyone. Users can edit only their own.
-- **Workouts Logs:** 
-    - Users can CRUD their own logs.
-    - Followers can VIEW logs if user privacy is 'followers'.
-    - Public can VIEW logs if user privacy is 'public'.
-    - Active coaches can VIEW athlete logs.
-- **Activity Posts:**
-    - Users can CRUD own posts.
-    - Viewable based on `visibility` column ('public', 'followers', 'private').
-- **Direct Messages:** Users can only see messages sent by them or to them.
+### `user_stats`, `user_stats_history`
+Aggregates recomputed by `recompute_user_stats(user_id)` whenever a `workout_logs` row gets `completed_at`: totals, streaks, last 7/30 days, and one history row per workout day (90 days). Read-only for users.
 
-#### Social & Engagement
-- **Follows:** Users can manage who they follow. Viewing follows is public.
-- **Comments/Likes:** Users can comment/like on any post they are allowed to see.
-- **Notifications:** Users can only see and manage their own notifications.
+### `invites`
+`email` (lower-case, unique), `role`, `invited_by`, `note`, `used_at`, `used_by`. Service role only. `handle_new_user` marks the profile `tester = true` when the sign-up email has an unused invite.
 
-#### Content Management
-- **Training Plans:** Users CRUD own. Public plans are viewable by all.
-- **Workout Sessions:** Users CRUD own. Public sessions viewable by followed users.
-- **Exercises:** (Master data management policies depending on setup, usually read-only for users if system-managed, or CRUD if user-defined).
-- **AI Chats:** Strictly private to the user (`user_id = auth.uid()`).
+### `ai_usage`, `ai_budget`, `ai_cache`
+Written by `lib/ai/gateway.ts` with the service role. `ai_usage`: one row per model call (`user_id`, `feature`, `model`, `input_tokens`, `output_tokens`, `cached_tokens`, `cost_usd`, `cache_hit`, `status`, `latency_ms`). A trigger adds each row to `ai_budget` (`month` 'YYYY-MM', `spent_usd`, `cap_usd`, `calls`). `ai_cache` keys a JSON response by a prompt hash with `expires_at`. `ai_usage_today(user_id)` returns today's calls and tokens for the per-user daily limit. Users can read their own `ai_usage`; the other two are service-role only.
+
+## Functions
+
+| Function | Kind | Notes |
+|---|---|---|
+| `update_updated_at_column()` | trigger | sets `updated_at` on profiles, workout_sessions, training_plans, coaching_relationships, ai_chats, nutrition_plans, coach_interviews, body_measurements, exercises |
+| `handle_new_user()` | trigger on `auth.users` | creates the profile; reads `invites` (0110) |
+| `create_trial_subscription()` | trigger on profiles | 14-day starter trial |
+| `notify_new_follower / notify_post_like / notify_post_comment / notify_coaching_request / notify_coaching_accepted / notify_plan_assigned / notify_new_message` | triggers, SECURITY DEFINER | rows in `notifications`; the coaching ones notify whichever side did not send the request |
+| `is_coach_of(uuid)` | RLS helper | active coaching relationship from `auth.uid()` to the given user |
+| `can_view_activity_of(uuid, text)`, `can_view_plan(uuid)`, `owns_workout_log(uuid)` | RLS helpers | |
+| `add_set_to_exercise_log(uuid, jsonb)`, `update_last_set_rest(uuid, int)` | helpers | documented in the first schema, kept |
+| `sets_volume_kg(jsonb)`, `recompute_user_stats(uuid)`, `trigger_recompute_user_stats()` | stats | |
+| `get_recent_stats(uuid, int)`, `increment_phone_verification_attempts(uuid)` | RPC | called with `.rpc()` |
+| `ai_usage_add_to_budget()`, `ai_usage_today(uuid)` | AI gateway | |
+| `sync_body_weight_log()` | trigger | body_measurements → body_weight_logs |
+
+Not recreated from the old schema: `create_activity_post_on_workout_complete` and
+`update_personal_records`. The app writes activity posts and personal records itself
+(`hooks/useWorkout.ts`, the workout page); a trigger would double them.
+
+## Row level security, in one paragraph
+
+A signed-in user reads every profile (search, trainer cards) and every exercise, and otherwise
+only their own rows: logs, exercise logs, records, chats, plans, nutrition, food logs,
+measurements, drafts, preferences, notifications, messages they sent or received, media. Public
+training plans and workout sessions are readable by all; a plan assigned to you is readable too.
+Other users' workout logs and posts are visible only when that user's `workout_privacy` /
+post `visibility` is `public`, or `followers` and you follow them — the default is `private`.
+A trainer with an *active* `coaching_relationships` row reads the trainee's profile, workout
+logs, exercise logs, body measurements, progress media and plan assignments, and may assign
+plans; never their AI chats. `invites`, `ai_budget`, `ai_cache` and `schema_migrations` are
+service-role only. `scripts/rls-check.ts` asserts all of this against the live project.

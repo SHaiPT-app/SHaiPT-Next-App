@@ -8,12 +8,19 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed:exercises": "tsx scripts/seed-exercises.ts",
+    "db:seed:foods": "tsx scripts/seed-foods.ts",
+    "db:rls-check": "tsx scripts/rls-check.ts",
+    "db:test-users": "tsx scripts/create-test-users.ts",
+    "db:local": "docker run -d --rm --name shaipt-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.44",
     "@google/generative-ai": "^0.24.1",
     "@mediapipe/tasks-vision": "^0.10.22-rc.20250304",
+    "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.84.0",
     "@types/uuid": "^10.0.0",
     "ai": "^5.0.108",
@@ -38,6 +45,7 @@
     "three": "^0.167.1",
     "uuid": "^13.0.0",
     "workbox-window": "^7.4.0",
+    "zod": "^4.5.4",
     "zustand": "^5.0.10"
   },
   "pnpm": {
@@ -64,8 +72,10 @@
     "jest-environment-jsdom": "^30.2.0",
     "node-mocks-http": "^1.17.2",
     "postcss": "^8.5.6",
+    "postgres": "^3.4.9",
     "tailwindcss": "^4.1.17",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   },
   "packageManager": "pnpm@10.23.0"

@@ -133,56 +133,63 @@ ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workout_drafts ENABLE ROW LEVEL SECURITY;
 
 -- phone_verifications policies
-CREATE POLICY "Users can view their own phone verifications"
-    ON phone_verifications FOR SELECT
+DROP POLICY IF EXISTS "Users can view their own phone verifications" ON phone_verifications;
+CREATE POLICY "Users can view their own phone verifications" ON phone_verifications FOR SELECT
     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own phone verifications"
-    ON phone_verifications FOR INSERT
+DROP POLICY IF EXISTS "Users can insert their own phone verifications" ON phone_verifications;
+
+CREATE POLICY "Users can insert their own phone verifications" ON phone_verifications FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own phone verifications"
-    ON phone_verifications FOR UPDATE
+DROP POLICY IF EXISTS "Users can update their own phone verifications" ON phone_verifications;
+
+CREATE POLICY "Users can update their own phone verifications" ON phone_verifications FOR UPDATE
     USING (auth.uid() = user_id);
 
 -- consistency_challenges policies
-CREATE POLICY "Users can view their own consistency challenges"
-    ON consistency_challenges FOR SELECT
+DROP POLICY IF EXISTS "Users can view their own consistency challenges" ON consistency_challenges;
+CREATE POLICY "Users can view their own consistency challenges" ON consistency_challenges FOR SELECT
     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own consistency challenges"
-    ON consistency_challenges FOR INSERT
+DROP POLICY IF EXISTS "Users can insert their own consistency challenges" ON consistency_challenges;
+
+CREATE POLICY "Users can insert their own consistency challenges" ON consistency_challenges FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own consistency challenges"
-    ON consistency_challenges FOR UPDATE
+DROP POLICY IF EXISTS "Users can update their own consistency challenges" ON consistency_challenges;
+
+CREATE POLICY "Users can update their own consistency challenges" ON consistency_challenges FOR UPDATE
     USING (auth.uid() = user_id);
 
 -- consistency_logs policies
-CREATE POLICY "Users can view their own consistency logs"
-    ON consistency_logs FOR SELECT
+DROP POLICY IF EXISTS "Users can view their own consistency logs" ON consistency_logs;
+CREATE POLICY "Users can view their own consistency logs" ON consistency_logs FOR SELECT
     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can manage their own consistency logs"
-    ON consistency_logs FOR ALL
+DROP POLICY IF EXISTS "Users can manage their own consistency logs" ON consistency_logs;
+
+CREATE POLICY "Users can manage their own consistency logs" ON consistency_logs FOR ALL
     USING (auth.uid() = user_id);
 
 -- user_preferences policies
-CREATE POLICY "Users can view their own preferences"
-    ON user_preferences FOR SELECT
+DROP POLICY IF EXISTS "Users can view their own preferences" ON user_preferences;
+CREATE POLICY "Users can view their own preferences" ON user_preferences FOR SELECT
     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can manage their own preferences"
-    ON user_preferences FOR ALL
+DROP POLICY IF EXISTS "Users can manage their own preferences" ON user_preferences;
+
+CREATE POLICY "Users can manage their own preferences" ON user_preferences FOR ALL
     USING (auth.uid() = user_id);
 
 -- workout_drafts policies
-CREATE POLICY "Users can view their own workout drafts"
-    ON workout_drafts FOR SELECT
+DROP POLICY IF EXISTS "Users can view their own workout drafts" ON workout_drafts;
+CREATE POLICY "Users can view their own workout drafts" ON workout_drafts FOR SELECT
     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can manage their own workout drafts"
-    ON workout_drafts FOR ALL
+DROP POLICY IF EXISTS "Users can manage their own workout drafts" ON workout_drafts;
+
+CREATE POLICY "Users can manage their own workout drafts" ON workout_drafts FOR ALL
     USING (auth.uid() = user_id);
 
 -- ============================================
