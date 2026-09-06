@@ -152,7 +152,7 @@ export default function DemoPricingPage() {
                   left: '50%',
                   transform: 'translateX(-50%)',
                   padding: '0.3rem 1rem',
-                  background: 'linear-gradient(135deg, #da0023, #CC5200)',
+                  background: '#da0023',
                   borderRadius: '50px',
                   fontSize: '0.75rem',
                   fontWeight: 700,
@@ -247,7 +247,7 @@ export default function DemoPricingPage() {
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 ...(tier.highlighted
                   ? {
-                      background: 'linear-gradient(135deg, #da0023, #CC5200)',
+                      background: '#da0023',
                       color: '#fff',
                       boxShadow: '0 0 25px rgba(218, 0, 35, 0.3)',
                       border: 'none',

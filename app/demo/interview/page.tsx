@@ -125,8 +125,8 @@ export default function DemoInterviewPage() {
                   borderRadius: '50%',
                   background:
                     msg.role === 'user'
-                      ? 'linear-gradient(135deg, var(--primary), #ff6b35)'
-                      : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      ? 'var(--primary)'
+                      : '#27272b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -191,7 +191,7 @@ export default function DemoInterviewPage() {
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  background: '#27272b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

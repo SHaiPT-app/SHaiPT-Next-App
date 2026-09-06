@@ -93,7 +93,7 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
                       background: isCompleted
                         ? 'var(--primary)'
                         : isActive
-                          ? 'linear-gradient(90deg, var(--primary), rgba(242, 95, 41, 0.3))'
+                          ? 'var(--primary)'
                           : 'rgba(255, 255, 255, 0.1)',
                       transition: 'background 0.3s',
                       padding: 0,

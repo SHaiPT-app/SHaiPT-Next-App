@@ -105,7 +105,7 @@ export function ShareCard({ summary, userName, isOpen, onClose }: ShareCardProps
                 {/* Share Card Preview */}
                 <div
                     ref={cardRef}
-                    className="bg-[image:linear-gradient(135deg,var(--surface-0),var(--card))] rounded-2xl border border-line-soft overflow-hidden"
+                    className="bg-[var(--card)] rounded-2xl border border-line-soft overflow-hidden"
                     style={{ padding: '24px' }}
                 >
                     {/* Header */}

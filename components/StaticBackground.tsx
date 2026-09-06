@@ -16,9 +16,9 @@ function CSSFallbackBackground() {
         position: 'absolute',
         inset: 0,
         background:
-          'radial-gradient(ellipse at 30% 50%, rgba(217, 78, 27, 0.08), transparent 60%), ' +
-          'radial-gradient(ellipse at 70% 80%, rgba(99, 102, 241, 0.06), transparent 60%), ' +
-          'radial-gradient(ellipse at 50% 20%, rgba(139, 92, 246, 0.05), transparent 60%)',
+          'radial-gradient(ellipse at 30% 50%, rgba(218, 0, 35, 0.10), transparent 60%), ' +
+          'radial-gradient(ellipse at 70% 80%, rgba(255, 51, 82, 0.06), transparent 60%), ' +
+          'radial-gradient(ellipse at 50% 20%, rgba(122, 0, 20, 0.08), transparent 60%)',
       }}
     />
   );
@@ -69,11 +69,11 @@ export default function StaticBackground({ children }: StaticBackgroundProps) {
               interactive={false}
               parallax={false}
               linesGradient={[
-                '#34304d',
-                '#d94e1b',
-                '#6366f1',
-                '#8b5cf6',
-                '#f5f5f7',
+                '#000000',
+                '#da0023',
+                '#ffffff',
+                '#da0023',
+                '#000000',
               ]}
               enabledWaves={['middle', 'bottom']}
               lineCount={[6, 8]}

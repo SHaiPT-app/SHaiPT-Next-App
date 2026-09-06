@@ -70,7 +70,7 @@ export function BottomTabBar() {
                                     className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
                                     style={{
                                         background: workout.isActive
-                                            ? 'linear-gradient(135deg, #10b981, #059669)'
+                                            ? '#10b981'
                                             : 'var(--brand-gradient)',
                                         boxShadow: workout.isActive
                                             ? '0 4px 20px rgba(16, 185, 129, 0.4)'
@@ -136,7 +136,7 @@ export function BottomTabBar() {
                 >
                     <button
                         onClick={() => router.push(`/workout/${workout.sessionId}`)}
-                        className="w-full py-2 px-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20
+                        className="w-full py-2 px-4 bg-green-500/20
                                  border border-green-500/30 rounded-lg flex items-center justify-between"
                     >
                         <div className="flex items-center gap-2">

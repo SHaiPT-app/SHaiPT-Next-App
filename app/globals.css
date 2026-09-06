@@ -16,7 +16,7 @@
   --brand-deep: #b8001e;
   --brand-glow: rgba(218, 0, 35, 0.35);
   --brand-glow-soft: rgba(218, 0, 35, 0.12);
-  --brand-gradient: linear-gradient(135deg, var(--brand-hot) 0%, var(--brand) 55%, var(--brand-deep) 100%);
+  --brand-gradient: linear-gradient(0deg, var(--brand), var(--brand)); /* flat: the brand is one red, no gradients */
   --surface-0: #08080C;
   --surface-1: rgba(31, 31, 41, 0.72);
   --surface-2: rgba(42, 42, 53, 0.85);
@@ -71,11 +71,11 @@
 
   --ring: #da0023;
 
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-1: #da0023;
+  --chart-2: #ffffff;
+  --chart-3: #ff3352;
+  --chart-4: #9a9aa1;
+  --chart-5: #b8001e;
 
   --sidebar: #1F1F29;
   --sidebar-foreground: #E5E5E7;
@@ -520,13 +520,13 @@ button, a, input, select, textarea {
 .quick-reply-chip:hover {
   background: rgba(218, 0, 35, 0.12);
   border-color: rgba(218, 0, 35, 0.4);
-  color: #CC5200;
+  color: #b8001e;
 }
 
 .quick-reply-chip[data-selected="true"] {
   background: rgba(218, 0, 35, 0.15);
   border-color: var(--neon-orange);
-  color: #CC5200;
+  color: #b8001e;
 }
 
 .quick-reply-chip-badge {
@@ -673,7 +673,7 @@ button, a, input, select, textarea {
 }
 
 .text-gradient-brand {
-  background: linear-gradient(120deg, var(--brand-hot), var(--brand) 60%, #FF3D00);
+  background: var(--brand);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

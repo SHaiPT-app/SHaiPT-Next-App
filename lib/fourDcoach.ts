@@ -4,6 +4,8 @@
  * to point somewhere else; on a LAN or localhost dev server the Vite dev server on port 5174 of
  * the same host is used, so the phone can reach it during development.
  */
+import { useSyncExternalStore } from 'react';
+
 export const FOURD_COACH_DEFAULT = 'https://sh-ai-pt-simple.vercel.app/';
 
 export function fourDcoachUrl(): string {
@@ -13,4 +15,10 @@ export function fourDcoachUrl(): string {
   const { protocol, hostname } = window.location;
   const lan = protocol === 'http:' && (hostname === 'localhost' || /^\d+(\.\d+){3}$/.test(hostname) || hostname.endsWith('.local'));
   return lan ? `http://${hostname}:5174/` : FOURD_COACH_DEFAULT;
+}
+
+const subscribe = () => () => {};
+/** The 4Dcoach URL for client components: the default during SSR, the resolved one after hydration. */
+export function useFourDcoachUrl(): string {
+  return useSyncExternalStore(subscribe, fourDcoachUrl, () => FOURD_COACH_DEFAULT);
 }

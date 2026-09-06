@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Orbitron, Caveat } from "next/font/google";
+import { Geist, Geist_Mono, Orbitron, Caveat, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,6 +22,14 @@ const caveat = Caveat({
   variable: "--font-caveat",
   subsets: ["latin"],
   weight: ['400', '500', '600', '700'],
+});
+
+/** Editorial display serif for the landing page (title sequence, chapters, statements). */
+const editorial = Instrument_Serif({
+  variable: "--font-editorial",
+  subsets: ["latin"],
+  weight: ['400'],
+  style: ['normal', 'italic'],
 });
 
 export const metadata: Metadata = {
@@ -92,7 +100,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#15151F" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${caveat.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${caveat.variable} ${editorial.variable}`}>
         {children}
       </body>
     </html>

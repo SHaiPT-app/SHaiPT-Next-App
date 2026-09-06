@@ -101,7 +101,7 @@ export function ConsistencyDashboard({
 
     if (!challenge) {
         return (
-            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/30 p-6">
+            <div className="bg-brand/10 rounded-xl border border-brand/30 p-6">
                 <div className="text-center">
                     <div className="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
                         <Trophy className="w-8 h-8 text-purple-400" />
@@ -131,7 +131,7 @@ export function ConsistencyDashboard({
 
                     <button
                         onClick={onEnroll}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium"
+                        className="w-full py-3 rounded-xl bg-brand text-white font-medium"
                     >
                         Start Challenge
                     </button>
@@ -143,7 +143,7 @@ export function ConsistencyDashboard({
     return (
         <div className="space-y-4">
             {/* Header Card */}
-            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/30 p-4">
+            <div className="bg-brand/10 rounded-xl border border-brand/30 p-4">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
@@ -165,7 +165,7 @@ export function ConsistencyDashboard({
                 {/* Progress Bar */}
                 <div className="h-2 bg-gray-800 rounded-full overflow-hidden mb-2">
                     <motion.div
-                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                        className="h-full bg-brand"
                         initial={{ width: 0 }}
                         animate={{ width: `${stats.progress}%` }}
                         transition={{ duration: 0.5 }}

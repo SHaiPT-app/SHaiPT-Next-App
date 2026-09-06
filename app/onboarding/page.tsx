@@ -360,7 +360,7 @@ export default function OnboardingPage() {
                                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base ${
                                         message.role === 'user'
                                             ? 'bg-[image:var(--brand-gradient)]'
-                                            : 'bg-[linear-gradient(135deg,#6366f1,#8b5cf6)]'
+                                            : 'bg-[#27272b]'
                                     }`}
                                 >
                                     {message.role === 'user' ? '\u{1F464}' : '\u{1F916}'}
@@ -393,7 +393,7 @@ export default function OnboardingPage() {
                             animate="visible"
                             className="flex items-start gap-3"
                         >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#6366f1,#8b5cf6)] text-base">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#27272b] text-base">
                                 {'\u{1F916}'}
                             </div>
                             <div className="rounded-xl border border-[var(--line-soft)] bg-[var(--surface-1)] p-4">

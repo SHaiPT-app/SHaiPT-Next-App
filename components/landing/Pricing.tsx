@@ -1,10 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
-import { ScrollReveal } from '@/components/ScrollReveal';
-import { fadeInUp, staggerContainer } from '@/lib/animations';
 import type { SubscriptionTier } from '@/lib/types';
 
 interface PricingTier {
@@ -114,90 +110,204 @@ export default function Pricing() {
   }, []);
 
   return (
-    <section id="pricing" className="relative overflow-hidden px-4 py-24 sm:px-8">
-      <div className="glow-orb left-1/2 top-[30%] h-[40vw] w-[60vw] -translate-x-1/2" />
-
-      <div className="relative z-[1] mx-auto max-w-6xl">
-        <ScrollReveal>
-          <div className="mb-16 flex flex-col items-center text-center">
-            <span className="eyebrow mb-4">Pricing</span>
-            <h2 className="display mb-4 text-[clamp(2rem,5vw,3.5rem)]">
-              Train Hard. <span className="text-gradient-brand">Pay Smart.</span>
-            </h2>
-            <p className="max-w-lg text-lg text-ink-mid">
-              Stay consistent and your Pro month is free. That&apos;s the SHaiPT deal.
-            </p>
-          </div>
-        </ScrollReveal>
-
-        <ScrollReveal variants={staggerContainer}>
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.15 }}
-            className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3"
-          >
-            {tiers.map((tier) => (
-              <motion.div
-                key={tier.tier}
-                variants={fadeInUp}
-                className={`glass-card glass-card-hover relative flex flex-col p-8 ${
-                  tier.highlighted
-                    ? 'border-brand/40 shadow-[0_0_48px_var(--brand-glow-soft)] md:-my-4 md:py-12'
-                    : ''
-                }`}
-              >
-                {tier.highlighted && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[image:var(--brand-gradient)] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_4px_16px_var(--brand-glow)]">
-                    Most Popular
-                  </span>
-                )}
-
-                <h3 className="font-display mb-2 text-xl font-bold text-white">{tier.name}</h3>
-                <div className="mb-3 flex items-baseline gap-1">
-                  <span
-                    className={`font-display text-5xl font-extrabold ${
-                      tier.highlighted ? 'text-gradient-brand' : 'text-white'
-                    }`}
-                  >
-                    {tier.price}
-                  </span>
-                  <span className="text-sm text-ink-low">{tier.period}</span>
-                </div>
-                <p className="mb-7 text-sm leading-relaxed text-ink-mid">{tier.description}</p>
-
-                <ul className="mb-8 flex flex-col gap-3">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3 text-sm text-ink-mid">
-                      <Check
-                        className={`h-4 w-4 shrink-0 ${
-                          tier.highlighted ? 'text-brand' : 'text-ink-low'
-                        }`}
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => handleSubscribe(tier.tier)}
-                  disabled={loadingTier !== null}
-                  className={`mt-auto w-full ${tier.highlighted ? 'btn-brand' : 'btn-outline'}`}
-                >
-                  {loadingTier === tier.tier ? 'Redirecting…' : tier.ctaText}
-                </button>
-              </motion.div>
-            ))}
-          </motion.div>
-        </ScrollReveal>
-
-        <ScrollReveal>
-          <p className="mt-12 text-center text-sm text-ink-low">
-            All plans include a free trial. Cancel anytime, no questions asked.
-          </p>
-        </ScrollReveal>
+    <section id="pricing" className="pr" aria-label="Pricing">
+      <div className="pr-head">
+        <div className="pr-kicker">Pricing — 03</div>
+        <h2 className="pr-title">
+          Train hard. <em>Pay smart.</em>
+        </h2>
+        <p className="pr-lede">Stay consistent and your Pro month is free. Every plan starts with a trial; cancel any time.</p>
       </div>
+
+      <div className="pr-ledger" role="table">
+        {tiers.map((tier, i) => (
+          <div key={tier.tier} className={`pr-col${tier.highlighted ? ' is-hi' : ''}`} role="row">
+            <div className="pr-n">
+              {String(i + 1).padStart(2, '0')}
+              {tier.highlighted && <span className="pr-tag">Most chosen</span>}
+            </div>
+            <h3 className="pr-name">{tier.name}</h3>
+            <div className="pr-price">
+              <span>{tier.price}</span>
+              <small>{tier.period}</small>
+            </div>
+            <p className="pr-desc">{tier.description}</p>
+            <ul className="pr-list">
+              {tier.features.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => handleSubscribe(tier.tier)}
+              disabled={loadingTier !== null}
+              className={`pr-btn${tier.highlighted ? ' is-hi' : ''}`}
+            >
+              {loadingTier === tier.tier ? 'Redirecting…' : tier.ctaText}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <style jsx>{`
+        .pr {
+          position: relative;
+          z-index: 1;
+          padding: clamp(5rem, 12vh, 9rem) clamp(1.25rem, 5vw, 4.5rem);
+          color: #fff;
+          background: rgba(5, 5, 7, 0.86);
+          border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .pr-head {
+          max-width: 60rem;
+          margin-bottom: 3.5rem;
+        }
+        .pr-kicker,
+        .pr-n,
+        .pr-list,
+        .pr-btn,
+        .pr-price small {
+          font-family: var(--font-geist-mono), ui-monospace, monospace;
+          font-size: 0.7rem;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+        }
+        .pr-kicker {
+          color: var(--brand);
+          margin-bottom: 1.2rem;
+        }
+        .pr-title {
+          margin: 0 0 1.2rem;
+          font-family: var(--font-editorial), 'Times New Roman', serif;
+          font-weight: 400;
+          font-size: clamp(2.6rem, 6vw, 5.6rem);
+          line-height: 0.96;
+          letter-spacing: -0.02em;
+        }
+        .pr-title em {
+          font-style: italic;
+          color: rgba(255, 255, 255, 0.5);
+        }
+        .pr-lede {
+          margin: 0;
+          max-width: 46ch;
+          color: rgba(255, 255, 255, 0.7);
+          line-height: 1.6;
+        }
+        .pr-ledger {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          border-top: 1px solid rgba(255, 255, 255, 0.2);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .pr-col {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          padding: 2.2rem clamp(1rem, 2.5vw, 2.4rem);
+          border-right: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .pr-col:last-child {
+          border-right: 0;
+        }
+        .pr-col.is-hi {
+          background: rgba(218, 0, 35, 0.06);
+          box-shadow: inset 0 2px 0 var(--brand);
+        }
+        .pr-n {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          color: rgba(255, 255, 255, 0.5);
+        }
+        .pr-tag {
+          color: var(--brand);
+        }
+        .pr-name {
+          margin: 0.4rem 0 0;
+          font-family: var(--font-editorial), 'Times New Roman', serif;
+          font-weight: 400;
+          font-size: 2rem;
+          line-height: 1;
+        }
+        .pr-price {
+          display: flex;
+          align-items: baseline;
+          gap: 0.5rem;
+          font-family: var(--font-editorial), 'Times New Roman', serif;
+          font-size: clamp(2.6rem, 4vw, 3.6rem);
+          line-height: 1;
+          letter-spacing: -0.02em;
+          font-variant-numeric: tabular-nums;
+        }
+        .pr-price small {
+          color: rgba(255, 255, 255, 0.5);
+        }
+        .pr-desc {
+          margin: 0;
+          color: rgba(255, 255, 255, 0.7);
+          line-height: 1.6;
+          font-size: 0.95rem;
+          min-height: 3.2em;
+        }
+        .pr-list {
+          list-style: none;
+          margin: 0.4rem 0 0;
+          padding: 0;
+          border-top: 1px solid rgba(255, 255, 255, 0.14);
+          color: rgba(255, 255, 255, 0.8);
+          text-transform: none;
+          letter-spacing: 0.06em;
+          font-size: 0.78rem;
+        }
+        .pr-list li {
+          padding: 0.65rem 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .pr-list li::before {
+          content: '—';
+          color: var(--brand);
+          margin-right: 0.6rem;
+        }
+        .pr-btn {
+          margin-top: auto;
+          padding: 0.95rem 1.2rem;
+          border: 1px solid rgba(255, 255, 255, 0.5);
+          background: transparent;
+          color: #fff;
+          cursor: pointer;
+          transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .pr-btn:hover:not(:disabled) {
+          background: #fff;
+          color: #050507;
+        }
+        .pr-btn.is-hi {
+          background: var(--brand);
+          border-color: var(--brand);
+        }
+        .pr-btn.is-hi:hover:not(:disabled) {
+          background: #fff;
+          border-color: #fff;
+          color: #050507;
+        }
+        .pr-btn:disabled {
+          opacity: 0.6;
+          cursor: wait;
+        }
+        @media (max-width: 900px) {
+          .pr-ledger {
+            grid-template-columns: 1fr;
+          }
+          .pr-col {
+            border-right: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+          }
+          .pr-col:last-child {
+            border-bottom: 0;
+          }
+        }
+      `}</style>
     </section>
   );
 }

@@ -110,7 +110,7 @@ export function TopNavBar({ userName, avatarUrl, notificationCount = 0 }: TopNav
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => router.push(`/workout/${workout.sessionId}`)}
-                                    className="px-4 py-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500
+                                    className="px-4 py-2 rounded-full bg-green-500
                                              text-white font-medium flex items-center gap-2 shadow-lg shadow-green-500/20"
                                 >
                                     <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
@@ -172,7 +172,7 @@ export function TopNavBar({ userName, avatarUrl, notificationCount = 0 }: TopNav
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-green-500/20"
+                    className="bg-green-500/10 border-b border-green-500/20"
                 >
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
                         <button

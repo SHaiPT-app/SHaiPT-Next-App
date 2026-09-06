@@ -219,8 +219,8 @@ export default function DemoAnalyticsPage() {
                       height: `${height}px`,
                       background:
                         i === DEMO_ANALYTICS.weeklyVolume.length - 1
-                          ? 'linear-gradient(180deg, var(--primary), rgba(242, 95, 41, 0.3))'
-                          : 'linear-gradient(180deg, rgba(218, 0, 35, 0.6), rgba(218, 0, 35, 0.2))',
+                          ? 'var(--primary)'
+                          : 'rgba(218, 0, 35, 0.35)',
                       borderRadius: '4px 4px 0 0',
                       transition: 'height 0.5s ease',
                     }}
@@ -319,7 +319,7 @@ export default function DemoAnalyticsPage() {
                       width: '8px',
                       height: `${height}px`,
                       background:
-                        'linear-gradient(180deg, #10b981, rgba(16, 185, 129, 0.3))',
+                        '#10b981',
                       borderRadius: '4px',
                     }}
                   />

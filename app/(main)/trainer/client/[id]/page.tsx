@@ -406,7 +406,7 @@ function PlansTab({
                                     <span style={{
                                         fontSize: '0.75rem',
                                         color: 'var(--primary)',
-                                        background: 'rgba(242, 95, 41, 0.1)',
+                                        background: 'rgba(218, 0, 35, 0.1)',
                                         padding: '0.15rem 0.5rem',
                                         borderRadius: '4px',
                                     }}>

@@ -261,7 +261,7 @@ export function ExerciseScreen({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         onClick={() => onNavigate('next')}
-                        className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500
+                        className="w-full py-4 rounded-xl bg-green-500
                                  text-white font-medium flex items-center justify-center gap-2"
                     >
                         <CheckCircle2 className="w-5 h-5" />

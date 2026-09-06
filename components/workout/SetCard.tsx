@@ -100,7 +100,7 @@ export function SetCard({
             className={`
                 relative rounded-xl overflow-hidden
                 ${isCompleted
-                    ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30'
+                    ? 'bg-green-500/10 border border-green-500/30'
                     : 'bg-[var(--surface-1)] border border-line-soft'
                 }
             `}

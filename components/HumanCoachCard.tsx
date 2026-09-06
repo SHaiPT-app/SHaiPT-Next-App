@@ -92,7 +92,7 @@ export default function HumanCoachCard({ trainer, onClick }: HumanCoachCardProps
                 width: '80px',
                 height: '80px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #2A2A35, #3A3A45)',
+                background: '#2A2A35',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

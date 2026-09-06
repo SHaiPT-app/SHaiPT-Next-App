@@ -211,7 +211,7 @@ export default function AIPage() {
                                         background: 'rgba(255, 255, 255, 0.05)'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'rgba(242, 95, 41, 0.1)';
+                                        e.currentTarget.style.background = 'rgba(218, 0, 35, 0.1)';
                                         e.currentTarget.style.borderColor = 'var(--primary)';
                                     }}
                                     onMouseLeave={(e) => {
@@ -250,8 +250,8 @@ export default function AIPage() {
                                     height: '36px',
                                     borderRadius: '50%',
                                     background: message.role === 'user'
-                                        ? 'linear-gradient(135deg, var(--primary), #ff6b35)'
-                                        : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                        ? 'var(--primary)'
+                                        : '#27272b',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -268,7 +268,7 @@ export default function AIPage() {
                                         flex: 1,
                                         padding: '1rem',
                                         background: message.role === 'user'
-                                            ? 'rgba(242, 95, 41, 0.1)'
+                                            ? 'rgba(218, 0, 35, 0.1)'
                                             : 'rgba(255, 255, 255, 0.05)'
                                     }}
                                 >
@@ -297,7 +297,7 @@ export default function AIPage() {
                                     width: '36px',
                                     height: '36px',
                                     borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                    background: '#27272b',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',

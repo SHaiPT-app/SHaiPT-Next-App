@@ -60,7 +60,7 @@ export default function GlobalError({
               fontSize: '1rem',
               fontWeight: 600,
               color: '#fff',
-              background: 'linear-gradient(135deg, #da0023, #CC5200)',
+              background: '#da0023',
               border: 'none',
               borderRadius: '10px',
               cursor: 'pointer',

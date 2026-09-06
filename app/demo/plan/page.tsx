@@ -105,7 +105,7 @@ export default function DemoPlanPage() {
               style={{
                 display: 'inline-block',
                 padding: '0.2rem 0.75rem',
-                background: 'rgba(242, 95, 41, 0.1)',
+                background: 'rgba(218, 0, 35, 0.1)',
                 color: 'var(--primary)',
                 borderRadius: '20px',
                 fontSize: '0.8rem',
@@ -127,7 +127,7 @@ export default function DemoPlanPage() {
                     padding: '1.25rem',
                     cursor: 'pointer',
                     border: isExpanded
-                      ? '1px solid rgba(242, 95, 41, 0.3)'
+                      ? '1px solid rgba(218, 0, 35, 0.3)'
                       : '1px solid rgba(255, 255, 255, 0.08)',
                     transition: 'border-color 0.2s',
                   }}

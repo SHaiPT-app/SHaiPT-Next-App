@@ -3,11 +3,11 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import Hero, { HeroCopy } from '@/components/landing/Hero';
+import TitleSequence from '@/components/landing/TitleSequence';
 import ScrollVideoSection from '@/components/landing/ScrollVideoSection';
-import AppShowcase from '@/components/landing/AppShowcase';
-import Features from '@/components/landing/Features';
-import Comparison from '@/components/landing/Comparison';
+import Chapters from '@/components/landing/Chapters';
+import SpecSheet from '@/components/landing/SpecSheet';
+import Statement from '@/components/landing/Statement';
 import Pricing from '@/components/landing/Pricing';
 import Footer from '@/components/landing/Footer';
 import StaticBackground from '@/components/StaticBackground';
@@ -33,14 +33,16 @@ export default function Home() {
 
   return (
     <StaticBackground>
-      <Hero />
-      {/* Video pins in the left column; this content scrolls down the right. */}
+      {/* A24 title sequence: black, type, a red rule, a ticking HUD. */}
+      <TitleSequence />
+      {/* Apple-style reveal: the storyboard pins on the left; the chapters scroll on the right. */}
       <ScrollVideoSection>
-        <HeroCopy />
-        <AppShowcase />
-        <Features />
+        <Chapters />
       </ScrollVideoSection>
-      <Comparison />
+      {/* Sci-fi spec sheet: what the camera measures, as an editorial table. */}
+      <SpecSheet />
+      {/* Fashion editorial statement over a monochrome still. */}
+      <Statement />
       <Pricing />
       <Footer />
     </StaticBackground>

@@ -32,7 +32,7 @@ export default function DemoTrainerPage() {
             border: '1px solid rgba(139, 92, 246, 0.3)',
             borderRadius: '20px',
             fontSize: '0.75rem',
-            color: '#8b5cf6',
+            color: '#da0023',
             fontWeight: 600,
             marginBottom: '0.75rem',
           }}

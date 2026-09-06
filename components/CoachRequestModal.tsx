@@ -106,7 +106,7 @@ export default function CoachRequestModal({ trainer, athleteId, onClose, onSucce
                         width: '60px',
                         height: '60px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #2A2A35, #3A3A45)',
+                        background: '#2A2A35',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
