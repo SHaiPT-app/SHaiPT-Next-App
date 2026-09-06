@@ -62,7 +62,7 @@ export default function StaticBackground({ children }: StaticBackgroundProps) {
   return (
     <div className="relative min-h-screen">
       {/* Fixed Background */}
-      <div className="fixed inset-0 w-full h-full pointer-events-none z-0">
+      <div className="fixed inset-0 w-full h-full pointer-events-none z-0" style={{ opacity: 0.42 }}>
         <WebGLErrorBoundary>
           <Suspense fallback={<CSSFallbackBackground />}>
             <FloatingLines
@@ -70,9 +70,9 @@ export default function StaticBackground({ children }: StaticBackgroundProps) {
               parallax={false}
               linesGradient={[
                 '#000000',
-                '#da0023',
-                '#ffffff',
-                '#da0023',
+                '#8a0016',
+                '#5a5a5e',
+                '#8a0016',
                 '#000000',
               ]}
               enabledWaves={['middle', 'bottom']}

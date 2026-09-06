@@ -34,6 +34,9 @@ export default function TitleSequence() {
 
     return (
         <section className="ts" aria-label="SHaiPT">
+            {/* A bench press, filmed on a phone, plays quietly behind the titles: the product is the footage. */}
+            <video className="ts-film" src="/hero/bench.mp4" autoPlay muted loop playsInline preload="auto" aria-hidden />
+            <div className="ts-veil" aria-hidden />
             <div className="ts-grain" aria-hidden />
 
             <nav className="ts-nav">
@@ -98,6 +101,25 @@ export default function TitleSequence() {
                     overflow: hidden;
                     isolation: isolate;
                 }
+                .ts-film {
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    object-position: center 40%;
+                    filter: grayscale(1) contrast(1.12) brightness(0.5);
+                    transform: scale(1.04);
+                    z-index: 0;
+                    pointer-events: none;
+                }
+                .ts-veil {
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(to right, rgba(5, 5, 7, 0.92) 0%, rgba(5, 5, 7, 0.72) 45%, rgba(5, 5, 7, 0.35) 100%), linear-gradient(to top, rgba(5, 5, 7, 0.95) 0%, rgba(5, 5, 7, 0) 40%);
+                    z-index: 0;
+                    pointer-events: none;
+                }
                 .ts-grain {
                     position: absolute;
                     inset: -50%;
@@ -106,7 +128,7 @@ export default function TitleSequence() {
                     mix-blend-mode: overlay;
                     pointer-events: none;
                     animation: ts-grain 0.9s steps(4) infinite;
-                    z-index: 0;
+                    z-index: 1;
                 }
                 @keyframes ts-grain {
                     0% { transform: translate(0, 0); }
