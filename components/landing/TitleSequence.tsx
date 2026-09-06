@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 import { useFourDcoachUrl } from '@/lib/fourDcoach';
 
-const LINES = ['Film the set.', 'See it in 4D.', 'Know the rep.'];
+const LINES = ['Real-time', 'smart 4D', 'form check.'];
 
 /**
  * Title sequence: a black screen, three lines of editorial type revealed one
@@ -71,7 +71,7 @@ export default function TitleSequence() {
                     </h1>
                 ))}
                 <div className="ts-rule" />
-                <p className="ts-sub">One phone. No wearable. No coach standing over you. Every rep measured, replayed in 3D, scored.</p>
+                <p className="ts-sub">All you want from a personal trainer. One phone, no wearable: every rep measured, replayed in 3D, scored.</p>
                 <div className="ts-actions">
                     <Link href="/login" className="ts-btn">
                         Get started

@@ -54,3 +54,4 @@ node_modules/
 
 # Development mockups
 /mockups
+.env*.local
