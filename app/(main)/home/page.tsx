@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dumbbell, ClipboardList, Bot, UtensilsCrossed, Trash2, Pencil, ChevronRight, X } from 'lucide-react';
+import { Dumbbell, ClipboardList, Bot, UtensilsCrossed, Trash2, Pencil, ChevronRight, X, Video } from 'lucide-react';
+import { fourDcoachUrl } from '@/lib/fourDcoach';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import EmptyState from '@/components/EmptyState';
 import { db } from '@/lib/supabaseDb';
@@ -272,6 +273,29 @@ export default function HomePage() {
                     </div>
                     <ChevronRight size={20} className="shrink-0 text-ink-low" />
                 </button>
+
+                {/* 4Dcoach: film a set, get a 4D replay with reps, tempo and a technique score */}
+                <a
+                    data-testid="fourd-coach-card"
+                    href={fourDcoachUrl()}
+                    className="glass-card glass-card-hover relative flex cursor-pointer items-center gap-4 overflow-hidden !border-brand/40 !bg-[var(--brand-glow-soft)] px-6 py-8 text-left no-underline"
+                >
+                    <div className="absolute right-2 top-2 rounded bg-brand px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.5px] text-ink-hi shadow-[0_0_12px_var(--brand-glow-soft)]">
+                        New
+                    </div>
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-[image:var(--brand-gradient)] shadow-[0_0_24px_var(--brand-glow)]">
+                        <Video size={28} className="text-ink-hi" />
+                    </div>
+                    <div className="flex-1">
+                        <div className="font-display mb-1 text-[1.1rem] font-semibold text-ink-hi">
+                            4Dcoach
+                        </div>
+                        <div className="text-sm text-ink-mid">
+                            Film a set, get a 4D replay: reps, tempo, technique score
+                        </div>
+                    </div>
+                    <ChevronRight size={20} className="shrink-0 text-ink-low" />
+                </a>
 
                 {/* AI Coach Card */}
                 <button

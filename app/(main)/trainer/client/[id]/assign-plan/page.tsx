@@ -194,14 +194,14 @@ export default function AssignPlanPage() {
             <button
                 onClick={() => router.push(`/trainer/client/${clientId}`)}
                 style={{
-                    background: 'rgba(255, 102, 0, 0.15)',
-                    border: '1px solid rgba(255, 102, 0, 0.3)',
+                    background: 'rgba(218, 0, 35, 0.15)',
+                    border: '1px solid rgba(218, 0, 35, 0.3)',
                     borderRadius: '8px',
                     padding: '0.5rem 0.85rem',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.4rem',
-                    color: '#FF6600',
+                    color: '#da0023',
                     cursor: 'pointer',
                     fontSize: '0.85rem',
                     fontWeight: '600',
@@ -402,7 +402,7 @@ export default function AssignPlanPage() {
                         onClick={handleGenerateAIPlan}
                         disabled={assigning}
                         style={{
-                            background: assigning ? 'rgba(255, 102, 0, 0.5)' : 'var(--primary)',
+                            background: assigning ? 'rgba(218, 0, 35, 0.5)' : 'var(--primary)',
                             border: 'none',
                             borderRadius: '10px',
                             padding: '0.75rem 2rem',

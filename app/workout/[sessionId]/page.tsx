@@ -62,8 +62,8 @@ function RestTimer({ seconds, totalSeconds, onSkip }: RestTimerProps) {
             style={{
                 padding: '2rem 1.5rem',
                 marginBottom: '1.5rem',
-                background: 'rgba(255, 102, 0, 0.05)',
-                border: '1px solid rgba(255, 102, 0, 0.3)',
+                background: 'rgba(218, 0, 35, 0.05)',
+                border: '1px solid rgba(218, 0, 35, 0.3)',
                 borderRadius: '16px',
                 textAlign: 'center',
             }}
@@ -78,7 +78,7 @@ function RestTimer({ seconds, totalSeconds, onSkip }: RestTimerProps) {
                     <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
                     <circle
                         cx="60" cy="60" r="54" fill="none"
-                        stroke="#FF6600"
+                        stroke="#da0023"
                         strokeWidth="6"
                         strokeLinecap="round"
                         strokeDasharray={circumference}
@@ -94,7 +94,7 @@ function RestTimer({ seconds, totalSeconds, onSkip }: RestTimerProps) {
                     justifyContent: 'center',
                     fontSize: '2rem',
                     fontFamily: 'var(--font-orbitron)',
-                    color: '#FF6600',
+                    color: '#da0023',
                 }}>
                     {minutes}:{secs.toString().padStart(2, '0')}
                 </div>
@@ -104,8 +104,8 @@ function RestTimer({ seconds, totalSeconds, onSkip }: RestTimerProps) {
                 onClick={onSkip}
                 style={{
                     background: 'none',
-                    border: '1px solid rgba(255, 102, 0, 0.4)',
-                    color: '#FF6600',
+                    border: '1px solid rgba(218, 0, 35, 0.4)',
+                    color: '#da0023',
                     padding: '0.5rem 1.5rem',
                     borderRadius: '8px',
                     cursor: 'pointer',
@@ -267,7 +267,7 @@ function SetEntryForm({
                 style={{
                     width: '100%',
                     padding: '0.85rem',
-                    background: disabled ? '#333' : '#FF6600',
+                    background: disabled ? '#333' : '#da0023',
                     color: disabled ? '#666' : '#000',
                     border: 'none',
                     borderRadius: '10px',
@@ -303,9 +303,9 @@ function ExerciseProgress({ currentIndex, total }: ExerciseProgressProps) {
                         height: '4px',
                         borderRadius: '2px',
                         background: i < currentIndex
-                            ? '#FF6600'
+                            ? '#da0023'
                             : i === currentIndex
-                                ? 'rgba(255, 102, 0, 0.5)'
+                                ? 'rgba(218, 0, 35, 0.5)'
                                 : 'rgba(255, 255, 255, 0.1)',
                         transition: 'background 0.3s',
                     }}
@@ -510,7 +510,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                 <h1 style={{
                     fontFamily: 'var(--font-orbitron)',
                     fontSize: '1.75rem',
-                    color: '#FF6600',
+                    color: '#da0023',
                     marginBottom: '0.5rem',
                 }}>
                     Workout Complete
@@ -539,7 +539,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                         className="glass-panel"
                         style={{ padding: '1.25rem', textAlign: 'center' }}
                     >
-                        <div style={{ fontSize: '1.5rem', fontFamily: 'var(--font-orbitron)', color: '#FF6600', marginBottom: '0.25rem' }}>
+                        <div style={{ fontSize: '1.5rem', fontFamily: 'var(--font-orbitron)', color: '#da0023', marginBottom: '0.25rem' }}>
                             {stat.value}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -552,7 +552,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
             {/* PRs */}
             {prsAchieved.length > 0 && (
                 <motion.div variants={fadeInUp} style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ marginBottom: '1rem', color: '#FF6600', fontFamily: 'var(--font-orbitron)', fontSize: '1rem' }}>
+                    <h3 style={{ marginBottom: '1rem', color: '#da0023', fontFamily: 'var(--font-orbitron)', fontSize: '1rem' }}>
                         Personal Records
                     </h3>
                     <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -565,11 +565,11 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    border: '1px solid rgba(255, 102, 0, 0.3)',
+                                    border: '1px solid rgba(218, 0, 35, 0.3)',
                                 }}
                             >
                                 <span>{pr.exerciseName}</span>
-                                <span style={{ color: '#FF6600', fontWeight: 600 }}>
+                                <span style={{ color: '#da0023', fontWeight: 600 }}>
                                     {pr.weight} {pr.unit} x {pr.reps}
                                 </span>
                             </div>
@@ -580,14 +580,14 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
 
             {/* AI Feedback */}
             <motion.div variants={fadeInUp} style={{ marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', fontFamily: 'var(--font-orbitron)', fontSize: '1rem', color: '#FF6600' }}>
+                <h3 style={{ marginBottom: '1rem', fontFamily: 'var(--font-orbitron)', fontSize: '1rem', color: '#da0023' }}>
                     AI Coach Feedback
                 </h3>
                 <div
                     className="glass-panel"
                     style={{
                         padding: '1.25rem',
-                        border: '1px solid rgba(255, 102, 0, 0.15)',
+                        border: '1px solid rgba(218, 0, 35, 0.15)',
                     }}
                 >
                     {aiFeedbackLoading && (
@@ -610,7 +610,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                                 <>
                                     <div style={{
                                         fontSize: '0.8rem',
-                                        color: '#FF6600',
+                                        color: '#da0023',
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.05em',
                                         marginBottom: '0.5rem',
@@ -638,7 +638,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                                                 <span style={{
                                                     position: 'absolute',
                                                     left: 0,
-                                                    color: '#FF6600',
+                                                    color: '#da0023',
                                                 }}>
                                                     &bull;
                                                 </span>
@@ -655,13 +655,13 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
 
             {/* Plan Adaptation */}
             <motion.div variants={fadeInUp} style={{ marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', fontFamily: 'var(--font-orbitron)', fontSize: '1rem', color: '#FF6600' }}>
+                <h3 style={{ marginBottom: '1rem', fontFamily: 'var(--font-orbitron)', fontSize: '1rem', color: '#da0023' }}>
                     Plan Adaptation
                 </h3>
                 {adaptationLoading && (
                     <div
                         className="glass-panel"
-                        style={{ padding: '1.25rem', border: '1px solid rgba(255, 102, 0, 0.15)' }}
+                        style={{ padding: '1.25rem', border: '1px solid rgba(218, 0, 35, 0.15)' }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#888' }}>
                             <div className="spinner" style={{ width: '16px', height: '16px' }} />
@@ -672,9 +672,9 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                 {adaptationApplied && (
                     <div
                         className="glass-panel"
-                        style={{ padding: '1.25rem', border: '1px solid rgba(255, 102, 0, 0.3)' }}
+                        style={{ padding: '1.25rem', border: '1px solid rgba(218, 0, 35, 0.3)' }}
                     >
-                        <p style={{ color: '#FF6600', fontSize: '0.9rem', margin: 0 }}>
+                        <p style={{ color: '#da0023', fontSize: '0.9rem', margin: 0 }}>
                             Adaptations recorded. Your upcoming sessions will reflect these changes.
                         </p>
                     </div>
@@ -730,7 +730,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                     style={{
                         width: '100%',
                         padding: '1rem',
-                        background: '#FF6600',
+                        background: '#da0023',
                         color: '#000',
                         border: 'none',
                         borderRadius: '10px',
@@ -1136,7 +1136,7 @@ export default function WorkoutExecutionPage() {
                     onClick={() => router.push('/home')}
                     style={{
                         padding: '0.75rem 1.5rem',
-                        background: '#FF6600',
+                        background: '#da0023',
                         color: '#000',
                         border: 'none',
                         borderRadius: '8px',
@@ -1211,7 +1211,7 @@ export default function WorkoutExecutionPage() {
                     style={{
                         background: 'none',
                         border: 'none',
-                        color: '#FF6600',
+                        color: '#da0023',
                         cursor: 'pointer',
                         fontSize: '0.9rem',
                         padding: '0.5rem 0',
@@ -1250,7 +1250,7 @@ export default function WorkoutExecutionPage() {
                         fontSize: '1.15rem',
                         marginBottom: '1rem',
                         textAlign: 'center',
-                        color: '#FF6600',
+                        color: '#da0023',
                     }}>
                         {currentExercise?.name || 'Loading...'}
                     </h2>
@@ -1295,10 +1295,10 @@ export default function WorkoutExecutionPage() {
                             }}
                             style={{
                                 background: showPoseDetection
-                                    ? 'rgba(255, 102, 0, 0.15)'
+                                    ? 'rgba(218, 0, 35, 0.15)'
                                     : 'rgba(255, 255, 255, 0.05)',
-                                border: `1px solid ${showPoseDetection ? 'rgba(255, 102, 0, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
-                                color: showPoseDetection ? '#FF6600' : '#aaa',
+                                border: `1px solid ${showPoseDetection ? 'rgba(218, 0, 35, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
+                                color: showPoseDetection ? '#da0023' : '#aaa',
                                 padding: '0.5rem 1rem',
                                 borderRadius: '8px',
                                 cursor: 'pointer',
@@ -1459,7 +1459,7 @@ export default function WorkoutExecutionPage() {
                                 transition={{ delay: 0.1 * i }}
                             >
                                 <span style={{ color: '#888' }}>Set {set.set_number}</span>
-                                <span style={{ color: '#FF6600', fontWeight: 600 }}>
+                                <span style={{ color: '#da0023', fontWeight: 600 }}>
                                     {set.weight} {set.weight_unit} x {set.reps}
                                     {set.rpe ? ` @ RPE ${set.rpe}` : ''}
                                 </span>
@@ -1494,7 +1494,7 @@ export default function WorkoutExecutionPage() {
                         style={{
                             width: '100%',
                             padding: '1rem',
-                            background: '#FF6600',
+                            background: '#da0023',
                             color: '#000',
                             border: 'none',
                             borderRadius: '10px',

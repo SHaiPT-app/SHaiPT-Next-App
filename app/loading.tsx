@@ -15,8 +15,8 @@ export default function Loading() {
             width: 48,
             height: 48,
             margin: '0 auto 1rem',
-            border: '3px solid rgba(255, 102, 0, 0.2)',
-            borderTopColor: '#FF6600',
+            border: '3px solid rgba(218, 0, 35, 0.2)',
+            borderTopColor: '#da0023',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
           }}

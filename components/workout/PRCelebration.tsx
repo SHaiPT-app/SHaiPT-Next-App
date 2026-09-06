@@ -65,7 +65,7 @@ export function PRCelebration({ prs, isOpen, onClose, onShare }: PRCelebrationPr
                             height={windowSize.height}
                             recycle={false}
                             numberOfPieces={200}
-                            colors={['#FF8A00', '#FF6600', '#E04E00', '#FF8533', '#FF3D00']}
+                            colors={['#ff3352', '#da0023', '#b8001e', '#ff3352', '#FF3D00']}
                         />
                     )}
 

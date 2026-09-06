@@ -219,7 +219,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
                                 style={{
                                     background: 'none',
                                     border: 'none',
-                                    color: 'var(--neon-orange, #FF6600)',
+                                    color: 'var(--neon-orange, #da0023)',
                                     cursor: 'pointer',
                                     fontSize: '0.8rem',
                                     fontWeight: '500',
@@ -259,7 +259,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
                                             alignItems: 'flex-start',
                                             background: notification.is_read
                                                 ? 'transparent'
-                                                : 'rgba(255, 102, 0, 0.04)',
+                                                : 'rgba(218, 0, 35, 0.04)',
                                             cursor: notification.is_read ? 'default' : 'pointer',
                                             transition: 'background 0.2s',
                                         }}
@@ -268,13 +268,13 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
                                             width: '32px',
                                             height: '32px',
                                             borderRadius: '8px',
-                                            background: 'rgba(255, 102, 0, 0.1)',
+                                            background: 'rgba(218, 0, 35, 0.1)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             flexShrink: 0,
                                         }}>
-                                            <IconComponent size={16} color="#FF6600" />
+                                            <IconComponent size={16} color="#da0023" />
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <p style={{
@@ -299,7 +299,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
                                                 width: '8px',
                                                 height: '8px',
                                                 borderRadius: '50%',
-                                                background: '#FF6600',
+                                                background: '#da0023',
                                                 flexShrink: 0,
                                                 marginTop: '6px',
                                             }} />

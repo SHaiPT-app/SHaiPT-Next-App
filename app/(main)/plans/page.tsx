@@ -55,9 +55,9 @@ interface ResolvedPlanSession extends TrainingPlanSession {
 // ============================================
 
 const BLOCK_COLORS: Record<BlockType, string> = {
-    hypertrophy: '#FF6600',
-    strength: '#ff007f',
-    endurance: '#FF6600',
+    hypertrophy: '#da0023',
+    strength: '#ff3352',
+    endurance: '#da0023',
     deload: '#f59e0b',
     power: '#c084fc',
     general: '#6ee7b7',
@@ -514,7 +514,7 @@ export default function PlansViewerPage() {
                     <h1 style={{
                         fontFamily: 'var(--font-orbitron)',
                         fontSize: '1.5rem',
-                        color: '#FF6600',
+                        color: '#da0023',
                         margin: 0,
                     }}>
                         Training Plans
@@ -542,7 +542,7 @@ export default function PlansViewerPage() {
                     <h1 style={{
                         fontFamily: 'var(--font-orbitron)',
                         fontSize: '1.5rem',
-                        color: '#FF6600',
+                        color: '#da0023',
                         margin: 0,
                     }}>
                         Training Plans
@@ -571,7 +571,7 @@ export default function PlansViewerPage() {
 
     const totalWeeks = activePlan.duration_weeks || 4;
     const currentBlock = getBlockForWeek(blocks, selectedWeek);
-    const currentBlockColor = currentBlock ? BLOCK_COLORS[currentBlock.type] : '#FF6600';
+    const currentBlockColor = currentBlock ? BLOCK_COLORS[currentBlock.type] : '#da0023';
     const scheduleType = activePlan.tags?.find(t => t.startsWith('schedule:'))?.split(':')[1] || 'weekly';
     const daysInCycle = scheduleType === 'weekly' ? 7 : parseInt(activePlan.tags?.find(t => t.startsWith('cycle:'))?.split(':')[1] || '7');
 
@@ -589,7 +589,7 @@ export default function PlansViewerPage() {
                     <h1 style={{
                         fontFamily: 'var(--font-orbitron)',
                         fontSize: '1.5rem',
-                        color: '#FF6600',
+                        color: '#da0023',
                         margin: 0,
                     }}>
                         Training Plans
@@ -601,7 +601,7 @@ export default function PlansViewerPage() {
                     style={{
                         padding: '0.5rem 1rem',
                         fontSize: '0.85rem',
-                        background: '#FF6600',
+                        background: '#da0023',
                         color: '#000',
                     }}
                 >
@@ -646,8 +646,8 @@ export default function PlansViewerPage() {
                         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
                             <span style={{
                                 padding: '0.2rem 0.6rem',
-                                background: 'rgba(255, 102, 0, 0.1)',
-                                color: '#FF6600',
+                                background: 'rgba(218, 0, 35, 0.1)',
+                                color: '#da0023',
                                 borderRadius: '4px',
                                 fontSize: '0.8rem',
                             }}>
@@ -656,8 +656,8 @@ export default function PlansViewerPage() {
                             {activeAssignment && (
                                 <span style={{
                                     padding: '0.2rem 0.6rem',
-                                    background: 'rgba(255, 102, 0, 0.15)',
-                                    color: '#FF6600',
+                                    background: 'rgba(218, 0, 35, 0.15)',
+                                    color: '#da0023',
                                     borderRadius: '4px',
                                     fontSize: '0.8rem',
                                     fontWeight: 600,
@@ -745,7 +745,7 @@ export default function PlansViewerPage() {
                 }}>
                     {getWeeksArray(totalWeeks).map(week => {
                         const weekBlock = getBlockForWeek(blocks, week);
-                        const color = weekBlock ? BLOCK_COLORS[weekBlock.type] : '#FF6600';
+                        const color = weekBlock ? BLOCK_COLORS[weekBlock.type] : '#da0023';
                         const isSelected = week === selectedWeek;
 
                         return (
@@ -932,11 +932,11 @@ export default function PlansViewerPage() {
                             gap: '0.75rem',
                             fontSize: '1rem',
                             fontWeight: 600,
-                            background: '#FF6600',
+                            background: '#da0023',
                             color: '#000',
                             border: 'none',
                             cursor: saving ? 'not-allowed' : 'pointer',
-                            boxShadow: '0 4px 20px rgba(255, 102, 0, 0.3)',
+                            boxShadow: '0 4px 20px rgba(218, 0, 35, 0.3)',
                             transition: 'all 0.2s',
                             opacity: saving ? 0.7 : 1,
                         }}

@@ -124,7 +124,7 @@ export default function DemoWorkoutPage() {
                   alignItems: 'center',
                   padding: '0.75rem 0.25rem',
                   background: isCompleted
-                    ? 'rgba(255, 102, 0, 0.05)'
+                    ? 'rgba(218, 0, 35, 0.05)'
                     : 'transparent',
                   borderRadius: '8px',
                   transition: 'background 0.2s',
@@ -141,12 +141,12 @@ export default function DemoWorkoutPage() {
                     height: '28px',
                     borderRadius: '50%',
                     border: isCompleted
-                      ? '2px solid #FF6600'
+                      ? '2px solid #da0023'
                       : '2px solid rgba(255, 255, 255, 0.2)',
                     background: isCompleted
-                      ? 'rgba(255, 102, 0, 0.2)'
+                      ? 'rgba(218, 0, 35, 0.2)'
                       : 'transparent',
-                    color: isCompleted ? '#FF6600' : '#666',
+                    color: isCompleted ? '#da0023' : '#666',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -222,12 +222,12 @@ export default function DemoWorkoutPage() {
                   padding: '0.75rem',
                   background:
                     fb.type === 'good'
-                      ? 'rgba(255, 102, 0, 0.05)'
+                      ? 'rgba(218, 0, 35, 0.05)'
                       : 'rgba(245, 158, 11, 0.05)',
                   borderRadius: '8px',
                   border: `1px solid ${
                     fb.type === 'good'
-                      ? 'rgba(255, 102, 0, 0.15)'
+                      ? 'rgba(218, 0, 35, 0.15)'
                       : 'rgba(245, 158, 11, 0.15)'
                   }`,
                 }}
@@ -245,7 +245,7 @@ export default function DemoWorkoutPage() {
                     fontSize: '0.9rem',
                     color:
                       fb.type === 'good'
-                        ? 'rgba(255, 102, 0, 0.9)'
+                        ? 'rgba(218, 0, 35, 0.9)'
                         : '#f59e0b',
                     lineHeight: 1.5,
                   }}

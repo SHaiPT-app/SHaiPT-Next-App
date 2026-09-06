@@ -221,7 +221,7 @@ export function ConsistencyDashboard({
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-3">
                 <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3 text-center">
-                    <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
+                    <Flame className="w-5 h-5 text-[#ff3352] mx-auto mb-1" />
                     <div className="text-xl font-bold text-white">{stats.currentStreak}</div>
                     <div className="text-xs text-gray-500">Streak</div>
                 </div>

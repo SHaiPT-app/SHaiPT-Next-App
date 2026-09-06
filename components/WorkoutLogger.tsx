@@ -248,8 +248,8 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
                         style={{
                             padding: '1.5rem',
                             marginBottom: '1.5rem',
-                            border: '1px solid rgba(255, 102, 0, 0.3)',
-                            background: 'rgba(255, 102, 0, 0.05)',
+                            border: '1px solid rgba(218, 0, 35, 0.3)',
+                            background: 'rgba(218, 0, 35, 0.05)',
                         }}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -264,7 +264,7 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
                             <div>
                                 <div style={{
                                     fontSize: '0.75rem',
-                                    color: '#FF6600',
+                                    color: '#da0023',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.1em',
                                     fontWeight: 600,
@@ -278,7 +278,7 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
                             </div>
                             {todayDayNumber !== null && (
                                 <span style={{
-                                    background: '#FF6600',
+                                    background: '#da0023',
                                     color: '#000',
                                     padding: '0.25rem 0.75rem',
                                     borderRadius: '20px',
@@ -303,7 +303,7 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
                                 onClick={handleStartTodayWorkout}
                                 style={{
                                     padding: '0.6rem 1.25rem',
-                                    background: '#FF6600',
+                                    background: '#da0023',
                                     color: '#000',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -611,7 +611,7 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
                     style={{
                         background: 'none',
                         border: 'none',
-                        color: '#FF6600',
+                        color: '#da0023',
                         cursor: 'pointer',
                         fontSize: '0.9rem',
                     }}
@@ -634,7 +634,7 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
                 <h3 style={{
                     fontFamily: 'var(--font-orbitron)',
                     fontSize: '1.1rem',
-                    color: '#FF6600',
+                    color: '#da0023',
                     marginBottom: '0.75rem',
                 }}>
                     {session.name}
@@ -658,7 +658,7 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
                 style={{
                     padding: '1.5rem',
                     marginBottom: '1.5rem',
-                    border: formCheckerEnabled ? '1px solid rgba(255, 102, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    border: formCheckerEnabled ? '1px solid rgba(218, 0, 35, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
                     transition: 'border-color 0.2s',
                 }}
                 initial={{ opacity: 0, y: 20 }}
@@ -686,7 +686,7 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
                             height: '28px',
                             borderRadius: '14px',
                             border: 'none',
-                            background: formCheckerEnabled ? '#FF6600' : 'rgba(255, 255, 255, 0.15)',
+                            background: formCheckerEnabled ? '#da0023' : 'rgba(255, 255, 255, 0.15)',
                             cursor: 'pointer',
                             position: 'relative',
                             transition: 'background 0.2s',
@@ -719,7 +719,7 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
                     style={{
                         width: '100%',
                         padding: '1rem',
-                        background: '#FF6600',
+                        background: '#da0023',
                         color: '#000',
                         border: 'none',
                         borderRadius: '10px',
@@ -1119,10 +1119,10 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
                             onClick={() => setShowPoseDetection(prev => !prev)}
                             style={{
                                 background: showPoseDetection
-                                    ? 'rgba(255, 102, 0, 0.15)'
+                                    ? 'rgba(218, 0, 35, 0.15)'
                                     : 'rgba(255, 255, 255, 0.05)',
-                                border: `1px solid ${showPoseDetection ? 'rgba(255, 102, 0, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
-                                color: showPoseDetection ? '#FF6600' : '#aaa',
+                                border: `1px solid ${showPoseDetection ? 'rgba(218, 0, 35, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
+                                color: showPoseDetection ? '#da0023' : '#aaa',
                                 padding: '0.5rem 1rem',
                                 borderRadius: '8px',
                                 cursor: 'pointer',

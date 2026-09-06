@@ -134,10 +134,10 @@ export default function DirectMessageThread({
                                 fontSize: '0.9rem',
                                 lineHeight: 1.5,
                                 background: isMine
-                                    ? 'rgba(255, 102, 0, 0.2)'
+                                    ? 'rgba(218, 0, 35, 0.2)'
                                     : 'rgba(255, 255, 255, 0.06)',
                                 border: isMine
-                                    ? '1px solid rgba(255, 102, 0, 0.3)'
+                                    ? '1px solid rgba(218, 0, 35, 0.3)'
                                     : '1px solid rgba(255, 255, 255, 0.08)',
                                 color: isMine ? '#fff' : '#ddd',
                             }}>
@@ -145,7 +145,7 @@ export default function DirectMessageThread({
                                 <p style={{
                                     fontSize: '0.7rem',
                                     marginTop: '0.25rem',
-                                    color: isMine ? 'rgba(255, 102, 0, 0.7)' : '#666',
+                                    color: isMine ? 'rgba(218, 0, 35, 0.7)' : '#666',
                                     margin: 0,
                                 }}>
                                     {msg.created_at
@@ -199,8 +199,8 @@ export default function DirectMessageThread({
                     disabled={sending || !input.trim()}
                     style={{
                         background: sending || !input.trim()
-                            ? 'rgba(255, 102, 0, 0.3)'
-                            : 'var(--neon-orange, #FF6600)',
+                            ? 'rgba(218, 0, 35, 0.3)'
+                            : 'var(--neon-orange, #da0023)',
                         border: 'none',
                         borderRadius: '50%',
                         width: '40px',

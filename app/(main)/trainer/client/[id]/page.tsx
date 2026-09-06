@@ -147,14 +147,14 @@ export default function ClientDetailPage() {
             <button
                 onClick={() => router.push('/trainer')}
                 style={{
-                    background: 'rgba(255, 102, 0, 0.15)',
-                    border: '1px solid rgba(255, 102, 0, 0.3)',
+                    background: 'rgba(218, 0, 35, 0.15)',
+                    border: '1px solid rgba(218, 0, 35, 0.3)',
                     borderRadius: '8px',
                     padding: '0.5rem 0.85rem',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.4rem',
-                    color: '#FF6600',
+                    color: '#da0023',
                     cursor: 'pointer',
                     fontSize: '0.85rem',
                     fontWeight: '600',

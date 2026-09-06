@@ -24,7 +24,7 @@ export default function Error({
           style={{
             fontSize: '1.5rem',
             fontWeight: 700,
-            color: '#FF6600',
+            color: '#da0023',
             marginBottom: '1rem',
           }}
         >
@@ -58,11 +58,11 @@ export default function Error({
             fontSize: '1rem',
             fontWeight: 600,
             color: '#fff',
-            background: 'linear-gradient(135deg, #FF6600, #CC5200)',
+            background: 'linear-gradient(135deg, #da0023, #CC5200)',
             border: 'none',
             borderRadius: '10px',
             cursor: 'pointer',
-            boxShadow: '0 0 20px rgba(255, 102, 0, 0.3)',
+            boxShadow: '0 0 20px rgba(218, 0, 35, 0.3)',
           }}
         >
           Try Again

@@ -25,14 +25,14 @@ import type { Profile, NutritionPlan, Meal, DayMeals, MealNutrition } from '@/li
 // ============================================
 
 const DIETARY_TAG_COLORS: Record<string, string> = {
-    vegan: '#FF6600',
+    vegan: '#da0023',
     vegetarian: '#10b981',
-    keto: '#FF8A00',
+    keto: '#ff3352',
     paleo: '#f59e0b',
-    'gluten_free': '#FF6600',
-    'dairy_free': '#FF8A00',
+    'gluten_free': '#da0023',
+    'dairy_free': '#ff3352',
     halal: '#10b981',
-    kosher: '#E04E00',
+    kosher: '#b8001e',
 };
 
 const MEAL_TYPE_ORDER = ['breakfast', 'lunch', 'dinner', 'snacks'] as const;
@@ -116,9 +116,9 @@ function MacroSummaryRow({ nutrition, compact }: { nutrition: MealNutrition; com
     return (
         <div className={`grid grid-cols-4 ${compact ? 'gap-1 text-[0.75rem]' : 'gap-2 text-[0.85rem]'}`}>
             <MacroBar label="Calories" value={nutrition.calories} unit=" kcal" color="#f59e0b" icon={Flame} />
-            <MacroBar label="Protein" value={nutrition.protein_g} unit="g" color="#FF6600" icon={Beef} />
-            <MacroBar label="Carbs" value={nutrition.carbs_g} unit="g" color="#FF8A00" icon={Wheat} />
-            <MacroBar label="Fats" value={nutrition.fat_g} unit="g" color="#E04E00" icon={Droplets} />
+            <MacroBar label="Protein" value={nutrition.protein_g} unit="g" color="#da0023" icon={Beef} />
+            <MacroBar label="Carbs" value={nutrition.carbs_g} unit="g" color="#ff3352" icon={Wheat} />
+            <MacroBar label="Fats" value={nutrition.fat_g} unit="g" color="#b8001e" icon={Droplets} />
         </div>
     );
 }
@@ -476,9 +476,9 @@ export default function NutritionPage() {
                                         key={tag}
                                         className="rounded-full border px-3 py-1 text-xs font-semibold"
                                         style={{
-                                            background: `${DIETARY_TAG_COLORS[tag] || '#FF6600'}15`,
-                                            color: DIETARY_TAG_COLORS[tag] || '#FF6600',
-                                            borderColor: `${DIETARY_TAG_COLORS[tag] || '#FF6600'}33`,
+                                            background: `${DIETARY_TAG_COLORS[tag] || '#da0023'}15`,
+                                            color: DIETARY_TAG_COLORS[tag] || '#da0023',
+                                            borderColor: `${DIETARY_TAG_COLORS[tag] || '#da0023'}33`,
                                         }}
                                     >
                                         {formatDietaryTag(tag)}

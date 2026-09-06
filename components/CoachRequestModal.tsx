@@ -219,7 +219,7 @@ export default function CoachRequestModal({ trainer, athleteId, onClose, onSucce
                             style={{
                                 width: '100%',
                                 padding: '0.75rem',
-                                background: sending ? 'rgba(255, 102, 0, 0.5)' : 'var(--neon-orange, #FF6600)',
+                                background: sending ? 'rgba(218, 0, 35, 0.5)' : 'var(--neon-orange, #da0023)',
                                 border: 'none',
                                 borderRadius: '10px',
                                 color: 'white',

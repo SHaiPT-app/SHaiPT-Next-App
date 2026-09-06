@@ -96,14 +96,14 @@ export function HeroCopy() {
           pauseDuration={5000}
           deletingSpeed={50}
           loop={true}
-          textColors={['#FF6600']}
+          textColors={['#da0023']}
           cursorCharacter="|"
           showCursor={true}
           cursorClassName=""
           style={{
-            color: '#FF6600',
+            color: '#da0023',
             display: 'inline',
-            textShadow: '0 0 30px rgba(255, 102, 0, 0.4)',
+            textShadow: '0 0 30px rgba(218, 0, 35, 0.4)',
           }}
         />
       </motion.h1>

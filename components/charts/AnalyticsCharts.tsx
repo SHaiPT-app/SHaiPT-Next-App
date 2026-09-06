@@ -17,9 +17,9 @@ import type {
 // ============================================
 
 const CHART_COLORS = {
-    neonOrange: '#FF6600',
-    neonOrangeDim: 'rgba(255, 102, 0, 0.3)',
-    neonPink: '#ff007f',
+    neonOrange: '#da0023',
+    neonOrangeDim: 'rgba(218, 0, 35, 0.3)',
+    neonPink: '#ff3352',
     purple: '#8884d8',
     orange: '#ff8042',
     yellow: '#ffc658',
@@ -31,8 +31,8 @@ const CHART_COLORS = {
 };
 
 const MUSCLE_COLORS = [
-    '#FF6600', '#E55C00', '#ff007f', '#ffc658',
-    '#8884d8', '#ff8042', '#FF8533', '#e879f9',
+    '#da0023', '#b8001e', '#ff3352', '#ffc658',
+    '#8884d8', '#ff8042', '#ff3352', '#e879f9',
 ];
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -403,9 +403,9 @@ export function WorkoutFrequencyHeatmap({ logs }: WorkoutFrequencyHeatmapProps) 
     const getCellColor = (count: number) => {
         if (count === 0) return 'rgba(255,255,255,0.04)';
         const intensity = Math.min(count / Math.max(maxCount, 1), 1);
-        if (intensity <= 0.33) return 'rgba(255, 102, 0, 0.2)';
-        if (intensity <= 0.66) return 'rgba(255, 102, 0, 0.45)';
-        return 'rgba(255, 102, 0, 0.8)';
+        if (intensity <= 0.33) return 'rgba(218, 0, 35, 0.2)';
+        if (intensity <= 0.66) return 'rgba(218, 0, 35, 0.45)';
+        return 'rgba(218, 0, 35, 0.8)';
     };
 
     const CELL_SIZE = 14;

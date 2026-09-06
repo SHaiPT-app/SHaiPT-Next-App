@@ -8,6 +8,7 @@ import type { Profile } from '@/lib/types';
 import PillNav from '@/components/PillNav';
 import NotificationBell from '@/components/NotificationBell';
 import { User, Mail, Settings, LogOut } from 'lucide-react';
+import { fourDcoachUrl, FOURD_COACH_DEFAULT } from '@/lib/fourDcoach';
 
 /** Circular icon action button used in the app header. */
 function HeaderIconButton({
@@ -31,6 +32,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  // resolved on the client: on a LAN dev server it points at the Vite dev server of the same host
+  const [fourD, setFourD] = useState(FOURD_COACH_DEFAULT);
+  useEffect(() => setFourD(fourDcoachUrl()), []);
 
   useEffect(() => {
     // Check authentication
@@ -95,6 +99,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             { label: 'Activity', href: '/activity' },
             { label: 'Home', href: '/home' },
             { label: 'Coach List', href: '/coach' },
+            { label: '4Dcoach', href: fourD },
             ...(user?.role === 'trainer' ? [{ label: 'Trainer', href: '/trainer' }] : []),
           ]}
           activeHref={pathname}

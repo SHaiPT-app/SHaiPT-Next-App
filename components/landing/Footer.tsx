@@ -30,7 +30,7 @@ export default function Footer() {
       {/* CTA banner */}
       <ScrollReveal>
         <div className="mx-auto mb-16 max-w-5xl px-4">
-          <div className="glass-card relative overflow-hidden border-brand/20 bg-[linear-gradient(135deg,rgba(255,102,0,0.1),rgba(255,102,0,0.04))] px-8 py-16 text-center">
+          <div className="glass-card relative overflow-hidden border-brand/20 bg-[linear-gradient(135deg,rgba(218,0,35,0.1),rgba(218,0,35,0.04))] px-8 py-16 text-center">
             <div className="absolute -top-1/2 left-1/2 h-full w-3/5 -translate-x-1/2 bg-[radial-gradient(ellipse,var(--brand-glow-soft),transparent_70%)] blur-[60px]" />
             <div className="relative z-[1] flex flex-col items-center">
               <div className="brand-bars mb-6">
