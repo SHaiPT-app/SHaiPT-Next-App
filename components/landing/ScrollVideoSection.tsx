@@ -49,8 +49,7 @@ const BRAND = 'var(--brand)';
  *  - a beat rail (five dots) jumps between the stops; ← → do the same;
  *  - the stage can be dragged sideways to scrub the storyboard (touch too);
  *  - the stage tilts toward the pointer with a light sheen;
- *  - a live HUD (reps, tempo, depth, form score) plays over the last two beats,
- *    driven by the same progress, and the final beat offers the 4D replay.
+ *  - the final beat offers the 4D replay.
  */
 export default function ScrollVideoSection({ children }: { children?: ReactNode }) {
     const sectionRef = useRef<HTMLDivElement>(null);
@@ -65,13 +64,6 @@ export default function ScrollVideoSection({ children }: { children?: ReactNode 
     const v2Ref = useRef<HTMLVideoElement | null>(null);
     const v3Ref = useRef<HTMLVideoElement | null>(null);
     const progressBarRef = useRef<HTMLDivElement>(null);
-    const hudRef = useRef<HTMLDivElement>(null);
-    const hudRepRef = useRef<HTMLSpanElement>(null);
-    const hudPhaseRef = useRef<HTMLSpanElement>(null);
-    const hudTempoRef = useRef<HTMLSpanElement>(null);
-    const hudDepthRef = useRef<HTMLDivElement>(null);
-    const hudScoreRef = useRef<HTMLSpanElement>(null);
-    const hudRingRef = useRef<SVGCircleElement>(null);
     const hintRef = useRef<HTMLDivElement>(null);
     const indexRef = useRef<HTMLDivElement>(null);
     const wrapRef = useRef<HTMLDivElement>(null);
@@ -93,7 +85,6 @@ export default function ScrollVideoSection({ children }: { children?: ReactNode 
                 finalCaption.style.opacity = '1';
                 finalCaption.style.transform = 'translateY(0)';
             }
-            if (hudRef.current) hudRef.current.style.opacity = '1';
             return;
         }
 
@@ -178,32 +169,6 @@ export default function ScrollVideoSection({ children }: { children?: ReactNode 
 
             if (progressBarRef.current) {
                 progressBarRef.current.style.transform = `scaleX(${progress})`;
-            }
-
-            // Live HUD over "Move." and "See every rep.": five reps play out with the scroll.
-            const hud = hudRef.current;
-            if (hud) {
-                const lo = CAPTION_BANDS[3];
-                const hi = CAPTION_BANDS[5];
-                const local = clamp((progress - lo) / (hi - lo), 0, 1);
-                const show = progress >= lo - 0.02;
-                hud.style.opacity = show ? '1' : '0';
-                hud.style.transform = show ? 'translateY(0)' : 'translateY(-8px)';
-                if (show) {
-                    const reps = 5;
-                    const x = local * reps;
-                    const rep = Math.min(reps, 1 + Math.floor(x));
-                    const phase = x - Math.floor(x); // 0 → 1 inside a rep: down, then up
-                    const down = phase < 0.55;
-                    const depth = down ? phase / 0.55 : 1 - (phase - 0.55) / 0.45;
-                    if (hudRepRef.current) hudRepRef.current.textContent = `${local >= 1 ? reps : rep}`;
-                    if (hudPhaseRef.current) hudPhaseRef.current.textContent = local >= 1 ? 'set done' : down ? 'down' : 'up';
-                    if (hudTempoRef.current) hudTempoRef.current.textContent = `${(2.6 + 0.25 * (rep - 1)).toFixed(1)} s down · ${(1.1 + 0.15 * (rep - 1)).toFixed(1)} s up`;
-                    if (hudDepthRef.current) hudDepthRef.current.style.transform = `scaleX(${local >= 1 ? 1 : Math.max(0.04, depth)})`;
-                    const score = Math.round(62 + 30 * local);
-                    if (hudScoreRef.current) hudScoreRef.current.textContent = `${score}`;
-                    if (hudRingRef.current) hudRingRef.current.style.strokeDashoffset = String(100 - score);
-                }
             }
 
             if (!hintShown && progress > 0.03 && hintRef.current) {
@@ -424,28 +389,6 @@ export default function ScrollVideoSection({ children }: { children?: ReactNode 
 
                         <div ref={sheenRef} className="sb-sheen" aria-hidden />
 
-                        {/* Live HUD: the numbers the app shows, played by the scroll. */}
-                        <div ref={hudRef} className="sb-hud" aria-hidden>
-                            <div className="sb-hud-row">
-                                <div className="sb-hud-rep">
-                                    <span ref={hudRepRef} className="sb-hud-big">1</span>
-                                    <span className="sb-hud-k">rep</span>
-                                </div>
-                                <span ref={hudPhaseRef} className="sb-hud-phase">down</span>
-                            </div>
-                            <div className="sb-hud-depth"><div ref={hudDepthRef} className="sb-hud-depth-fill" /></div>
-                            <div className="sb-hud-row sb-hud-meta">
-                                <span ref={hudTempoRef}>2.6 s down · 1.1 s up</span>
-                                <span className="sb-hud-score">
-                                    <svg viewBox="0 0 36 36" className="sb-hud-ring" aria-hidden>
-                                        <circle cx="18" cy="18" r="15.9" className="sb-hud-ring-bg" />
-                                        <circle ref={hudRingRef} cx="18" cy="18" r="15.9" className="sb-hud-ring-fg" style={{ strokeDashoffset: 38 }} />
-                                    </svg>
-                                    <span ref={hudScoreRef}>62</span>
-                                </span>
-                            </div>
-                        </div>
-
                         <div ref={hintRef} className="sb-hint" aria-hidden>Scroll, drag, or use ← →</div>
 
                         {/* HUD framing: corner brackets, centre ticks, chapter index. */}
@@ -632,107 +575,6 @@ export default function ScrollVideoSection({ children }: { children?: ReactNode 
                     transition: opacity 0.4s ease;
                     pointer-events: none;
                     mix-blend-mode: screen;
-                }
-
-                /* Live HUD chip, top-left of the stage. */
-                .sb-hud {
-                    position: absolute;
-                    top: 0.9rem;
-                    left: 0.9rem;
-                    width: min(62%, 15rem);
-                    padding: 0.7rem 0.85rem;
-                    border-radius: 14px;
-                    background: rgba(8, 8, 12, 0.66);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(10px);
-                    -webkit-backdrop-filter: blur(10px);
-                    color: var(--ink-hi);
-                    opacity: 0;
-                    transform: translateY(-8px);
-                    transition: opacity 0.35s ease, transform 0.35s ease;
-                    pointer-events: none;
-                    font-family: var(--font-sans);
-                }
-                .sb-hud-row {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 0.5rem;
-                }
-                .sb-hud-rep {
-                    display: flex;
-                    align-items: baseline;
-                    gap: 0.35rem;
-                }
-                .sb-hud-big {
-                    font-size: 1.7rem;
-                    font-weight: 800;
-                    line-height: 1;
-                    letter-spacing: -0.02em;
-                    font-variant-numeric: tabular-nums;
-                }
-                .sb-hud-k {
-                    font-size: 0.7rem;
-                    letter-spacing: 0.14em;
-                    text-transform: uppercase;
-                    color: var(--ink-low);
-                }
-                .sb-hud-phase {
-                    font-size: 0.72rem;
-                    font-weight: 700;
-                    letter-spacing: 0.12em;
-                    text-transform: uppercase;
-                    color: ${BRAND};
-                }
-                .sb-hud-depth {
-                    height: 4px;
-                    margin: 0.55rem 0 0.5rem;
-                    border-radius: 999px;
-                    background: rgba(255, 255, 255, 0.1);
-                    overflow: hidden;
-                }
-                .sb-hud-depth-fill {
-                    height: 100%;
-                    background: var(--brand-gradient);
-                    box-shadow: 0 0 10px var(--brand-glow);
-                    transform-origin: left center;
-                    transform: scaleX(0.04);
-                    will-change: transform;
-                }
-                .sb-hud-meta {
-                    font-size: 0.72rem;
-                    color: var(--ink-mid);
-                    font-variant-numeric: tabular-nums;
-                }
-                .sb-hud-score {
-                    position: relative;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 2rem;
-                    height: 2rem;
-                    font-size: 0.68rem;
-                    font-weight: 800;
-                    color: var(--ink-hi);
-                    flex: none;
-                }
-                .sb-hud-ring {
-                    position: absolute;
-                    inset: 0;
-                    transform: rotate(-90deg);
-                }
-                .sb-hud-ring-bg {
-                    fill: none;
-                    stroke: rgba(255, 255, 255, 0.12);
-                    stroke-width: 3;
-                }
-                .sb-hud-ring-fg {
-                    fill: none;
-                    stroke: ${BRAND};
-                    stroke-width: 3;
-                    stroke-linecap: round;
-                    stroke-dasharray: 100;
-                    transition: stroke-dashoffset 0.2s linear;
                 }
 
                 .sb-hint {
