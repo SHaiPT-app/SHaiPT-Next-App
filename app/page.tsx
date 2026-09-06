@@ -4,8 +4,9 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import TitleSequence from '@/components/landing/TitleSequence';
-import ScrollVideoSection from '@/components/landing/ScrollVideoSection';
-import Chapters from '@/components/landing/Chapters';
+import PhoneReveal from '@/components/landing/PhoneReveal';
+import Faq from '@/components/landing/Faq';
+import ClosingBeat from '@/components/landing/ClosingBeat';
 import SpecSheet from '@/components/landing/SpecSheet';
 import Statement from '@/components/landing/Statement';
 import Pricing from '@/components/landing/Pricing';
@@ -33,17 +34,18 @@ export default function Home() {
 
   return (
     <StaticBackground>
-      {/* A24 title sequence: black, type, a red rule, a ticking HUD. */}
-      <TitleSequence />
-      {/* Apple-style reveal: the storyboard pins on the left; the chapters scroll on the right. */}
-      <ScrollVideoSection>
-        <Chapters />
-      </ScrollVideoSection>
+      {/* The layered reveal: the A24 title sequence is the hero state; the phone rises out of it and
+          pins while its screen cycles through the five 4Dcoach views, one chapter of type at a time. */}
+      <PhoneReveal hero={<TitleSequence />} />
       {/* Sci-fi spec sheet: what the camera measures, as an editorial table. */}
       <SpecSheet />
       {/* Fashion editorial statement over a monochrome still. */}
       <Statement />
       <Pricing />
+      {/* Editorial FAQ: mono questions, thin rules, no cards. */}
+      <Faq />
+      {/* Closing beat: the opening scene again, the phone, one last pair of links. */}
+      <ClosingBeat />
       <Footer />
     </StaticBackground>
   );

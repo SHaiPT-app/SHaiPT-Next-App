@@ -196,6 +196,22 @@ export default function TitleSequence() {
                     pointer-events: none;
                     z-index: 1;
                 }
+                /* Inside the layered reveal the parent drives --reveal (0 at rest, 1 once the phone has
+                   risen): the type, the HUD and the frame give way; the film, the veil and the nav stay. */
+                .ts-corners,
+                .ts-meta,
+                .ts-hud {
+                    opacity: calc(1 - var(--reveal, 0));
+                }
+                .ts-title {
+                    opacity: calc(1 - var(--reveal, 0) * 1.25);
+                    transform: translate3d(0, calc(var(--reveal, 0) * -6vh), 0);
+                    will-change: opacity, transform;
+                }
+                :global([data-hero='off']) .ts-title,
+                :global([data-hero='off']) .ts-hud {
+                    pointer-events: none;
+                }
                 .ts-corners i {
                     position: absolute;
                     width: 22px;
