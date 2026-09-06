@@ -7,7 +7,7 @@
 const ITEMS: { q: string; a: string }[] = [
     {
         q: 'Which lifts does it score?',
-        a: 'In the gym: bench press, squat, deadlift, lateral raise and barbell curl. At home: bodyweight squats, push-ups, crunches, the plank and pull-ups. The bench press is measured in 3D when the body scan runs; from the foot end of a bench, angles that cannot be read in 2D are left unscored rather than guessed.',
+        a: 'In the gym: bench press, squat, deadlift, lateral raise and barbell curl. At home: bodyweight squats, push-ups, crunches, the plank, pull-ups and hip thrusts. The live coach counts reps from the selfie camera without recording, calls the rest and the next set. The bench press is measured in 3D when the body scan runs; from the foot end of a bench, angles that cannot be read in 2D are left unscored rather than guessed.',
     },
     {
         q: 'Do I need a wearable or a fixed camera?',
