@@ -11,7 +11,7 @@ export default function Statement() {
     return (
         <section className="st" aria-label="One phone">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/storyboard/4.png" alt="" className="st-img" decoding="async" loading="lazy" />
+            <img src="/storyboard/1.png" alt="" className="st-img" decoding="async" loading="lazy" />
             <div className="st-veil" aria-hidden />
             <div className="st-corners" aria-hidden>
                 <i /><i /><i /><i />
