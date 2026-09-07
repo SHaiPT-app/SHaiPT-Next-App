@@ -1,346 +1,302 @@
-# Handoff: make SHaiPT tenable — database, auth, AI coach, trainer/trainee, workouts, diet, cost limits
+# Handoff: SHaiPT platform, continued — trainee loop verified, trainer loop and tester smoke test next
 
 Paste everything below this line into a fresh session started in `~/SHaiPT/SHaiPT-Next-App`.
 
 ---
 
-You are continuing work for Ali (they/them) on **SHaiPT**, a training app: a Next.js web app
-(landing, login, onboarding interview, AI coach chat, AI training plans, workout logging,
-nutrition, trainer-lite tools) plus **4Dcoach** (a separate Vite PWA: film a set on a phone → 4D
-replay, reps, tempo, technique score, AR, and a live rep counter from the selfie camera). Read this
-whole prompt, then the files it names, before changing anything. Commit in small steps with
-descriptive messages, end every commit message with
-`Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`, push, and deploy when a step is done.
-Ali watches from a phone and interjects mid-turn: lead with the outcome, keep answers short, put
-anything Ali must do themselves (dashboard clicks, keys, money) in a numbered list.
+You are continuing work for Ali (they/them) on **SHaiPT**: a Next.js 16 web app (landing, login,
+onboarding interview, AI coach chat, AI training plans, workout logging, nutrition, trainer-lite
+tools) plus **4Dcoach** (a separate Vite PWA in `~/SHaiPT/SHaiPT_simple/4Dcoach`: film a set on a
+phone → 4D replay, reps, tempo, technique score, AR, live rep counter). Read this whole prompt,
+then the files it names, before changing anything. Commit in small steps with descriptive
+messages, end every commit message with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`
+(keep that trailer as-is), write commit messages to a file and use `git commit -F` (quotes inside
+`-m` break it), push after each step. Ali watches from a phone and interjects mid-turn: lead with
+the outcome, keep answers short, put anything Ali must do themselves in a numbered list.
 
-## The goal of this session
+The previous session (Fable) did the first four of six workstreams from the original handoff and
+verified the trainee loop in a real browser against the real database. This prompt is the state
+as of **2026-09-07 evening**. The old handoff text is in git history (`git show cb1532c:HANDOFF-platform.md`)
+if you need the original wording of a workstream.
 
-Ali wants to hand **a couple of test accounts to friends**. That means the app must work end to
-end for a stranger: sign up (invite only), do the onboarding interview, get a training plan and a
-nutrition plan, log a workout, talk to the AI coach, see analytics, optionally be linked to a
-trainer account, and open 4Dcoach; with **no way to run up a bill**. Ali's words: "I want to have
-limits and do not end up with a $100 bill." Target: **under $20 a month all in** for a handful of
-testers, with hard caps, not hopes.
+## The goal (unchanged)
 
-Six workstreams, in this order (each is a deliverable on its own; finish one before the next):
-
-1. **Database** rebuilt (the Supabase project was deleted) with an exercise library.
-2. **Authentication** that works for invited testers, with roles.
-3. **AI gateway with cost limits** (every Gemini call goes through one module with caps and a log).
-4. **AI coach, workouts, diet** made to work on the new database.
-5. **Trainer / trainee** loop made to work.
-6. **Tenable**: invite flow, test accounts, a scripted end-to-end smoke test, monitoring, docs.
+Ali wants to hand **a couple of test accounts to friends**. The app must work end to end for a
+stranger: sign up (invite only), do the onboarding interview, get a training plan and macro
+targets, log a workout, talk to the AI coach, see analytics, optionally be linked to a trainer,
+open 4Dcoach; with **no way to run up a bill**. Target under $20 a month for a handful of testers,
+with hard caps.
 
 ## Repositories, branches, what is live
 
 | What | Where | Branch | Live |
 |---|---|---|---|
-| SHaiPT Next app | `~/SHaiPT/SHaiPT-Next-App`, GitHub `SHaiPT-app/SHaiPT-Next-App` | `v2-overhaul` (work here; `main` is stale) | www.shaipt.com via Vercel project `s-hai-pt-de3g` (team `alis-projects-e60465e8`). The Vercel project is Git-linked to the **old** repo `Alihomaei/SHaiPT`, so production deploys come from the local checkout: `cd ~/SHaiPT/SHaiPT-Next-App && vercel deploy --prod --yes --scope alis-projects-e60465e8` (this worked from the assistant's shell in the last session; if the permission classifier blocks it, ask Ali to run it). |
-| 4Dcoach app + Mac server | `~/SHaiPT/SHaiPT_simple/4Dcoach/app` and `/server`, GitHub `Alihomaei/shaipt-simple` | `4dcoach-spec`, merged into `main` with `git merge --no-ff` (use a temporary worktree so the running dev servers are not disturbed) | https://sh-ai-pt-simple.vercel.app builds from `main` on push. Read `~/SHaiPT/SHaiPT_simple/4Dcoach/HANDOFF.md` for its state; do not change it in this session unless a workstream needs it. |
+| SHaiPT Next app | `~/SHaiPT/SHaiPT-Next-App`, GitHub `SHaiPT-app/SHaiPT-Next-App` | `v2-overhaul` (work here; `main` is stale). Last commit `033d088`. | www.shaipt.com via Vercel project `s-hai-pt-de3g` (team `alis-projects-e60465e8`). **Nothing from this rebuild is deployed yet** (see "Deploy"). The Vercel project is Git-linked to the old repo `Alihomaei/SHaiPT`, so production deploys come from the local checkout: `cd ~/SHaiPT/SHaiPT-Next-App && vercel deploy --prod --yes --scope alis-projects-e60465e8`. The permission classifier blocked this and `vercel env add/rm` in the last session; if it blocks you too, give Ali the exact command. |
+| 4Dcoach app + Mac server | `~/SHaiPT/SHaiPT_simple/4Dcoach/app` and `/server`, GitHub `Alihomaei/shaipt-simple` | `4dcoach-spec` (last commit `7481dfb`), merged into `main` with `git merge --no-ff` in a temporary worktree when you want to deploy (https://sh-ai-pt-simple.vercel.app builds from `main`). Two unmerged commits: the build-time server URL (`VITE_4DCOACH_SERVER`) and the Vultr deploy notes. `app/design/` is untracked: leave it out of git. |
 
-Both repos commit as `alihomaei1997@gmail.com`. `prd.md` (lower case) in the Next repo has an
-uncommitted edit by Ali: leave it alone. `app/design/` in 4Dcoach is untracked: leave it out of git.
+Both repos commit as `alihomaei1997@gmail.com`.
 
-Dev server: `cd ~/SHaiPT/SHaiPT-Next-App && pnpm dev` (port 3000). **Never run `pnpm build`
-while `pnpm dev` runs**: it corrupts `.next` (fix: `rm -rf .next`, restart). Type-check with
-`npx tsc --noEmit -p tsconfig.json` (the `__tests__/api/*.test.ts` errors are pre-existing; do
-not let new ones in), lint with `npx eslint <paths>`, unit tests with `pnpm test` (Jest, 29 suites
-under `__tests__/`; several will be red until the database exists again), e2e with Playwright
-(`playwright.config.ts`, `e2e/`).
+## Accounts and secrets (never commit, never print)
 
-## Read first
+- **Supabase**: org `shaiptapp@gmail.com` (free plan), project **`shaipt`**, ref
+  `ayaynfcdoumhzledqoec`, region West US (Oregon), created 2026-09-07. URL, anon key, service
+  role key, the database password and `SUPABASE_DB_URL` (session pooler
+  `aws-0-us-west-2.pooler.supabase.com:5432`, user `postgres.ayaynfcdoumhzledqoec`) are all in
+  `.env.local` (gitignored, mode 600). Dashboard: https://supabase.com/dashboard/project/ayaynfcdoumhzledqoec
+- **OpenAI**: `OPENAI_API_KEY` in `.env.local` (valid; the account had **no credits** at the end
+  of the session, so real calls returned a billing 429). Ali pasted the key into chat; suggest
+  they rotate it once things run.
+- **Tester account** (Ali's own): `alihomaei1997@gmail.com`, password given to Ali in chat,
+  role trainee, `tester = true`, id `ab455050-e410-499c-ba87-0cd9c3f5b280`. It already has one
+  saved plan, ~12 workout logs (test runs; 3 completed) and 5 personal records.
+- **Vultr VM**: `45.77.142.86`, Ubuntu 24.04, root over SSH with the Mac's key (`ssh root@45.77.142.86`
+  works without a password). It also serves other sites with Caddy (medaitimes.com): do not
+  replace `/etc/caddy/Caddyfile`, only edit the `coach-api.shaipt.com` block.
+- **Vercel env** (`vercel env ls --scope alis-projects-e60465e8`): still the OLD Supabase keys
+  (dead project) plus dead `OPENAI_API_KEY` (112 days old, unknown validity) and ten Firebase
+  vars. None of the new variables are set. See "Deploy".
+- `.env.local` has `AI_MOCK=1` (canned AI replies in dev, added because OpenAI has no credits).
+  Remove it when the account has credits.
 
-`PRD.md` (the product: features, tiers, flows; section 11 has the hard constraints), `API.md`,
-`DATABASE.md`, `TESTING.md`, `README.md`, `agent_communication.md`, `PHASE4-QA-REPORT.md`,
-`HANDOFF-scrollcraft-ar.md` (the previous handoff, for the landing and AR context), and
-`git log --oneline | head -40`. Then the code map below.
+## What is done and verified
 
-## Code map (what exists today)
+### Database (workstream 1) — done, verified on the live project
+`supabase/migrations/0001…0140` applied by `pnpm db:migrate` (`scripts/migrate.ts`, records in
+`public.schema_migrations`, `--status`, `--force` re-applies all, `--auth-stub` for a local
+`postgres:17` in Docker via `pnpm db:local`). All files idempotent; `--force` was run several
+times against the live project without incident. Seeded: **876 exercises** (free-exercise-db,
+36 mapped to 4Dcoach `fourd_id`, 11 primary) and **384 foods** (USDA Foundation Foods, per 100 g).
+`pnpm db:rls-check` is **green** on the live project (three throw-away users; stranger reads
+nothing; linked coach reads logs, exercise logs, measurements, never chats). `DATABASE.md` is
+the rebuild guide. `pnpm db:sql "select …"` runs ad-hoc SQL. `pnpm db:test-users -- email…`
+creates testers (`--trainer`, `--reset`, `--revoke`).
 
-- **Pages** (`app/(main)/…`, all client components on Supabase): `home` (dashboard, `home/workout`),
-  `ai` (coach chat), `plans` (+ `plans/new`), `workouts` (+ `workouts/new`), `nutrition`
-  (+ `tracking`, `grocery`), `body`, `activity`, `dms`, `profile`, `trainer` (+ `trainer/client/[id]`).
-  `app/demo/*` is a no-login investor demo on `data/*.json` (keep it working). `app/login`,
-  `app/auth/callback` (OAuth return). Landing is `app/page.tsx` with `components/landing/*`
-  (done last session; do not redesign it).
-- **API routes** (`app/api/…/route.ts`, Bearer token from Supabase Auth checked per route, often
-  with `lib/requireSubscription.ts` → `requireFeatureAccess(request, feature)`): `ai-coach/{chat,
-  chat/history, interview, dietitian-interview, generate-plan, generate-nutrition-plan, diet,
-  workout, workout-summary, weekly-insights, plan-adaptation, photo-assessment}`, `plans`,
-  `plans/generate`, `onboarding`, `onboarding/generate-plans`, `workout/{start,[logId]/set,
-  [logId]/draft,[logId]/complete}`, `logs`, `sync/workout`, `nutrition`, `nutrition/generate`,
-  `nutrition/macro-targets`, `food-database`, `food-logs`, `grocery-lists(+/generate)`,
-  `body-measurements`, `progress-media`, `coaching/{request,respond,trainers}`,
-  `trainer/clients(+/alerts,/progress)`, `users/{search,link,trainees,features}`,
-  `plan-assignments`, `direct-messages`, `notifications`, `consistency/*`, `subscriptions/{status,
-  checkout,webhook}` (Stripe), `verify/{send,confirm}` (phone, no SMS provider wired: it only
-  validates the number), `migrate` and `seed` (dangerous helpers: lock or delete them).
-- **AI**: `@google/generative-ai` with `gemini-2.5-flash` in about 20 places, each route creating
-  its own client and prompt (`genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })`); no shared
-  gateway, no token caps, no usage log, no caching, no budget check. `@ai-sdk/google` and `ai` are
-  installed but barely used. `OPENAI_API_KEY` and the Firebase keys in `.env.local` are not
-  referenced by any code: remove them from the file and from Vercel.
-- **Data**: `lib/supabase.ts` (lazy client), `lib/supabaseDb.ts` (helpers), `lib/types.ts`,
-  `lib/subscriptions.ts` (tiers and feature keys), `lib/offlineDb.ts` + `lib/syncManager.ts` +
-  `stores/offlineStore.ts` (offline workout logging), `hooks/*` (workout, rest timer, wake, sync).
-- **Schema** (SQL in the repo root, 838 lines, run in this order on a fresh project):
-  `migration.sql` (profiles, exercises, workout_plans, workout_logs, personal_records, social,
-  coaching_relationships, direct_messages, notifications, training_plans/sessions/assignments,
-  progress_media, RLS, triggers) → `migration_fix_trigger_security.sql` →
-  `migration_workout_tracking.sql` (workout_sessions, exercise_logs, workout_drafts) →
-  `migration_ai_features.sql` (ai_chats, coach_interviews, onboarding, user_preferences) →
-  `migration_nutrition_plans.sql` → `migration_food_tracking.sql` (food_database, food_logs,
-  grocery_lists) → `migration_subscriptions.sql` (subscriptions, consistency_challenges/logs,
-  phone_verifications) → `migration_human_trainer.sql` + `seed_human_trainer.sql`. Tables the
-  code reads (by count): profiles, workout_logs, coaching_relationships, exercise_logs,
-  training_plans, consistency_challenges, workout_drafts, workout_sessions,
-  training_plan_assignments, phone_verifications, notifications, training_plan_sessions,
-  direct_messages, workout_plans, nutrition_plans, body_measurements, user_follows,
-  user_favorites, progress_media, consistency_logs, subscriptions, personal_records,
-  grocery_lists, food_logs, coach_interviews, ai_chats, activity_posts, post_likes,
-  food_database, exercises, user_preferences, post_comments, onboarding, user_stats(_history),
-  exercise_instructions, body_weight_logs. **There is no exercise seed**: `exercises` is empty
-  after the migrations, which is why plan generation and exercise search have nothing to stand on.
-- **Auth**: `components/LoginForm.tsx` does email + password (`signInWithPassword`, `signUp`) and
-  OAuth (`google`, `apple`) through Supabase Auth; `app/auth/callback` completes OAuth. There is no
-  middleware protecting `(main)` routes: pages check the session client-side. Roles live in
-  `profiles.role` (`trainee` | `trainer`).
-- **Tests**: Jest suites in `__tests__/` (component and API), Playwright `e2e/`.
+Fixes made after the first live walk (all committed): `training_plans` SELECT policy is inlined
+(a SECURITY DEFINER helper reading the same table cannot see a row inside `INSERT … RETURNING`,
+so every plan save failed); `food_database.source_id` is a real unique constraint (PostgREST
+cannot target a partial index); the coach policy on `body_measurements` moved to 0090 (0080 ran
+before the table existed); `ai_usage_today()` ignores `status = 'mock'`; `recompute_user_stats()`
+derives set/rep counts from the sets JSON.
 
-## Brand and product rules (Ali's standing decisions)
+Not done from the Supabase checklist: **Authentication → URL configuration** (site URL
+`https://www.shaipt.com`, redirect URLs `https://www.shaipt.com/auth/callback` and
+`http://localhost:3000/auth/callback`) and **Confirm email** (currently the project default,
+which is ON; `create-test-users` confirms the email itself, so scripted accounts work either
+way, but self-service sign-up with an invite will need the confirm mail or the setting off).
+Google/Apple OAuth are not configured (the login page shows the buttons; hide them or configure).
 
-- Colours black, white, red `#da0023` only (hot `#ff3352`, deep `#b8001e`); no other accent, **no
-  gradients**. The landing direction is "A24 title sequence × Apple product reveal × sci-fi HUD ×
-  editorial"; the app screens are dark, Fitbod/Strava-like. Reuse the existing tokens in
-  `app/globals.css` (`--brand`, `--ink-*`, `--line-soft`, fonts `--font-editorial`,
-  `--font-geist-mono`).
-- The AI coach must never give medical advice; keep the safety guardrails that exist
-  (`c5741be` "safety & liability guardrails").
-- Tiers from `PRD.md` section 7 stay in the data model, but **testers must not touch Stripe**:
-  give test accounts full access through a flag, not a checkout.
+### Auth (workstream 2) — done, verified
+`lib/auth.ts` (`getUser`, `getAdmin`, `requireTrainer`, `isActiveCoachOf`) is used by every API
+route; nothing trusts a client-sent user id. `proxy.ts` (Next 16 middleware) sends signed-out
+visitors of `/home /ai /plans /workouts /nutrition /body /activity /dms /profile /trainer /coach
+/dashboard /settings /onboarding /workout /feed` to `/login?next=…` using the `@supabase/ssr`
+cookie session written by `lib/supabase.ts`. `/api/invites/check` + `invites` table +
+`ALLOW_SIGNUP_EMAILS`; LoginForm says "SHaiPT is invite-only for now". `profiles.tester = true`
+is the top tier in `lib/requireSubscription.ts` and `FeatureGate`; checkout returns 403 for
+testers. Phone verification routes deleted. `e2e/access.spec.ts` (12 checks, no DB) passes.
+`lib/apiClient.ts` (`apiFetch`/`apiFetchRaw`, `ApiError`, `errorMessage`) is what every page and
+component uses; the only raw `fetch('/api…')` left is the public invite check in LoginForm.
 
-## Workstream 1: database
+### AI gateway (workstream 3) — done, unit-tested, live calls blocked only by credits
+`lib/ai/gateway.ts` is the one door to the model, now **OpenAI** (Ali asked to switch from
+Gemini): `gpt-5-nano` for chat/interviews/summaries, `gpt-5-mini` for plan and nutrition
+generation (`AI_MODEL_CHEAP` / `AI_MODEL_STRONG` override), `reasoning_effort: 'minimal'` on the
+gpt-5 family, `max_completion_tokens` per feature (chat 600, summaries 400, plans 4000,
+nutrition 3000), 12 turns of history, per-user daily limit (40 calls / 200k tokens, 429 with a
+friendly message), global monthly budget (`AI_MONTHLY_CAP_USD`, 15), `ai_usage` row per call
+priced from `lib/ai/prices.ts` (read 2026-09-07), 24 h `ai_cache` for plan/nutrition prompts,
+`json_schema` response format validated with zod (one repair attempt), streaming for chat,
+mock mode (`AI_MOCK=1` or no key outside production). `pnpm ai:smoke` makes three tiny live
+calls (it reached OpenAI and got "no credits remaining"). `/api/admin/usage?month=` for
+`ADMIN_EMAILS` (default Ali). `lib/ai/plans.ts`: plans are built from `exercises` (≈120
+candidates by equipment and level; the model returns ids; the server joins names, muscles,
+`fourd_id`). `lib/ai/nutrition.ts`: macro targets are arithmetic; meals from `food_database`
+rows with server-computed macros. Deleted: `/api/chat`, `ai-coach/diet`, `ai-coach/workout`,
+`ai-coach/photo-assessment`, `/api/verify/*`, `/api/migrate`, `/api/seed`, and the components
+`AIDietitian`, `AIWorkoutPlanner`. `API.md` describes every route as it is now.
 
-Ali must create the project (needs their account and card on file, free tier is fine):
+Month's AI spend so far: **$0.00** (76 calls, all mock). `ai_budget` row for 2026-09 exists.
 
-1. https://supabase.com → New project (region close to Ali, EU or US East), Postgres password
-   saved in a password manager.
-2. Project Settings → API: copy the URL, the anon key and the service role key into
-   `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `SUPABASE_SERVICE_ROLE_KEY`) and into the Vercel project's environment variables
-   (`vercel env add … production` from the repo, or the dashboard).
-3. Authentication → Providers: Email on; **Confirm email off** for the test phase (or on with
-   Supabase's built-in mailer, 3 emails/hour on free) — Ali decides; Google/Apple off unless Ali
-   configures OAuth clients (then `app/auth/callback` needs the redirect URL registered).
-4. Authentication → URL configuration: site URL `https://www.shaipt.com`, redirect URLs
-   `https://www.shaipt.com/auth/callback` and `http://localhost:3000/auth/callback`.
+### Trainee loop (workstream 4) — verified through the workout; nutrition, chat, analytics not yet
+Verified in Chromium at 375 px against the live project with mock AI (screenshots in the last
+session's scratchpad are gone; re-take yours): login → `/home` (dashboard, no errors) → Coach
+List → `Sam 'The Guide'` → Start Training → waiver checkbox + Accept → interview chat (6 answers)
+→ split choice → Generate My Plan (candidates from the live library) → **Saved** (training_plans,
+workout_sessions with `exercise_id` + `fourd_id`, training_plan_sessions, assignment) → `/home`
+shows "1 saved plan" → Start Workout → today's session → Start → form-checker prompt → Start
+Workout → log 3 sets × 5 exercises (Skip Rest between sets) → Finish Workout → **summary screen**
+(new: numbers, PRs with previous best, coach feedback from one gated call) → Done. `user_stats`
+recomputed by trigger (15 sets, 120 reps, 5443 kg, streak 1). `personal_records` written.
 
-You do the rest with the SQL editor or `psql` (connection string in Settings → Database):
+Known rough edges seen on the way (not fixed):
+- `app/coach/[coachId]/page.tsx` uses `.single()` on `coach_interviews` reads → two harmless
+  406s in the console per visit; the interview state is not persisted until the plan is
+  generated (a reload restarts the interview). Change those to `.maybeSingle()` and save the
+  interview on completion.
+- The mocked interview extraction returns an empty intake, so mock plans say "3 days/week"
+  regardless of answers; real calls will fill it. Not a bug in the pipeline.
+- Every "Start" creates a `workout_logs` row; abandoned starts stay as incomplete rows (harmless,
+  but the "today's workout" logic could reuse an open log).
+- The "Real-Time Form Checker" prompt (in-app MediaPipe pose overlay, `PoseDetectionOverlay`)
+  is untested; 4Dcoach covers form. Consider defaulting it off/hiding it.
+- Home shows "New Plan Assigned!" for a self-assigned plan (cosmetic).
+- Pre-existing lint errors (`any`, `set-state-in-effect`) in files you touch are fine to leave;
+  do not add new ones. Type-check: `npx tsc --noEmit -p tsconfig.json` (errors under
+  `__tests__/api/*.test.ts` about Request vs NextRequest are pre-existing).
 
-- Run the migrations in the order above; fix whatever fails (they were written against an older
-  Postgres and each other; expect a few `already exists` and missing-column errors; make the
-  files idempotent as you go). Record the exact working order in `DATABASE.md`.
-- Check RLS on every table with a test user token: a user must not read another user's logs,
-  chats, plans, nutrition or measurements; trainers only see linked trainees. Write this as a
-  script (`scripts/rls-check.ts`) that creates two users with the service role, inserts one row
-  each, and asserts with the anon client.
-- **Exercise library**: seed `exercises` (and `exercise_instructions`) with a real dataset.
-  Use the public-domain **free-exercise-db** (github.com/yuhonas/free-exercise-db, ~870
-  exercises with name, force, level, mechanic, equipment, primary/secondary muscles,
-  instructions, category, image paths). Write `scripts/seed-exercises.ts` that downloads its
-  `dist/exercises.json`, maps it onto the `exercises` columns in `DATABASE.md` (add columns if
-  needed by a new `migration_exercises.sql`), inserts with the service role, and is safe to
-  re-run (upsert on a slug). Add a `fourd_id` column that maps the ten 4Dcoach exercises (`bench`,
-  `squat`, `deadlift`, `lateral-raise`, `curl`, `bw-squat`, `pushup`, `crunch`, `plank`,
-  `pullup`, `hip-thrust`) so a plan can link an exercise to the 4D form check
-  (`useFourDcoachUrl()` in `lib/fourDcoach.ts` gives the base URL).
-- `food_database`: seed a small, licence-clean set (a few hundred common foods with macros per
-  100 g; USDA FoodData Central "Foundation Foods" CSV is public domain) with
-  `scripts/seed-foods.ts`.
-- Storage: bucket `progress-media` (private, per-user folder policy) for `api/progress-media`.
-- Delete or lock `app/api/migrate` and `app/api/seed` (require `SUPABASE_SERVICE_ROLE_KEY` in an
-  `Authorization` header and `NODE_ENV !== 'production'`).
+### Tests
+Jest: `npx jest` → 17 suites red, **all red before this rebuild started** (baseline was 19; the
+red ones are component tests such as LoginForm, CoachInterviewPage, Dashboard, landing/*, with
+stale mocks). Do not chase them unless a change of yours is the cause; compare against
+`git stash` or a worktree at the previous commit. Gateway and route suites are green
+(`__tests__/ai/gateway.test.ts`, `__tests__/api/*`, helper in `test-utils/api.ts`; mock
+factories must be called inside `jest.mock` via `jest.requireActual('@/test-utils/api')`
+because `jest.mock` is hoisted). Playwright: `e2e/access.spec.ts` (no DB) and
+`e2e/tester-journey.spec.ts` (needs `TEST_EMAIL` / `TEST_PASSWORD`; currently sign-in + token
+check only; extend it with the loop above).
 
-## Workstream 2: authentication
+### Vultr route (the "permanent https address" section) — built, waiting on DNS
+On the VM: Caddy site block `coach-api.shaipt.com → 127.0.0.1:8787` appended to
+`/etc/caddy/Caddyfile` (backup next to it), reloaded, other sites unaffected; ufw already allows
+22/443 (Caddy gets the certificate over TLS-ALPN, port 80 stays closed). On the Mac: launchd
+agent `~/Library/LaunchAgents/com.shaipt.4dcoach-tunnel.plist` keeps `ssh -N -R
+127.0.0.1:8787:127.0.0.1:8787 root@45.77.142.86` open (KeepAlive; log
+`~/Library/Logs/4dcoach-tunnel.log`); verified `curl http://127.0.0.1:8787/health` on the VM
+answers with the Mac server's name. No Tailscale (the tunnel needed nothing installed); notes in
+`4Dcoach/server/deploy/vultr.md`. Missing: the DNS `A` record `coach-api` → `45.77.142.86` in
+Google Cloud DNS for shaipt.com (Ali), then `curl -s https://coach-api.shaipt.com/health`; and
+`VITE_4DCOACH_SERVER=https://coach-api.shaipt.com` on the Vercel project `sh-ai-pt-simple` plus
+a deploy of 4Dcoach `main`.
 
-- Server-side protection: add `middleware.ts` (Next 16 also calls it `proxy.ts`; check the
-  installed version's convention) that redirects unauthenticated requests for `/(main)/*` pages
-  to `/login`, using `@supabase/ssr` cookies (add the package; the current client-only session
-  with `localStorage` cannot be read by middleware). Keep the API routes on Bearer tokens but
-  factor the token check into one helper (`lib/auth.ts`: `getUser(request)` → user or 401) and
-  use it everywhere instead of the copy-pasted `createClient` blocks.
-- **Invite-only sign-up**: an `invites` table (email, role, invited_by, used_at) plus an
-  `ALLOW_SIGNUP_EMAILS` env fallback; `LoginForm.signUp` checks `/api/invites/check` first and
-  shows "SHaiPT is invite-only for now" otherwise; a Postgres trigger on `auth.users` creates the
-  `profiles` row with the invite's role and sets `profiles.tester = true`.
-- Test accounts: `scripts/create-test-users.ts` (service role) creates N users with emails Ali
-  gives, strong generated passwords printed once, role trainee (and one trainer), `tester = true`,
-  a completed `onboarding` row optional. Feature gating: `lib/requireSubscription.ts` and
-  `components/FeatureGate.tsx` treat `profiles.tester` as the top tier. Stripe stays wired but
-  unreachable for testers (hide the checkout entry points when `tester`).
-- Phone verification: either wire a provider or remove the UI that asks for it; do not leave a
-  dead end in onboarding.
-- Roles: `profiles.role` drives the home screen (`TraineeDashboard` vs `TrainerDashboard`).
-  Verify the switch works after sign-up for both roles.
+## What Ali must do (put this list in your first reply, numbered, and tick off what they confirm)
 
-## Workstream 3: the AI gateway and the cost limits
+1. Add credits to the OpenAI account (https://platform.openai.com/settings/organization/billing/)
+   and set a monthly usage limit there (Billing → Limits, e.g. $10). Then remove `AI_MOCK=1`
+   from `.env.local` and run `pnpm ai:smoke`.
+2. Supabase dashboard → Authentication → URL configuration (site URL and the two redirect URLs
+   above) and decide on Confirm email (off for the test phase is simplest).
+3. Vercel env for `s-hai-pt-de3g`: set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `AI_MONTHLY_CAP_USD=15`,
+   `ALLOW_SIGNUP_EMAILS` (optional), `ADMIN_EMAILS=alihomaei1997@gmail.com`; remove the ten
+   `FIREBASE_*` / `NEXT_PUBLIC_FIREBASE_*` vars. Values are in `.env.local`; `vercel env add NAME production`
+   reads the value from stdin. Then `vercel deploy --prod --yes --scope alis-projects-e60465e8`.
+4. DNS: `A` record `coach-api.shaipt.com` → `45.77.142.86`. Then `VITE_4DCOACH_SERVER` on the
+   `sh-ai-pt-simple` Vercel project and a 4Dcoach deploy.
+5. Vercel Spend Management cap if the team is Pro; Stripe stays in test mode.
+6. Give you the friends' email addresses for `pnpm db:test-users`.
 
-Build `lib/ai/gateway.ts` and route **every** model call through it (grep
-`getGenerativeModel` and `@ai-sdk/google`; there should be none left outside the gateway):
+## Your workstreams, in order
 
-- `callModel({ userId, feature, messages | prompt, schema?, maxOutputTokens, temperature,
-  model? })` returns text or schema-validated JSON (Gemini `responseMimeType: 'application/json'` +
-  `responseSchema`, validated again with `zod`).
-- Model policy by feature: `gemini-2.5-flash-lite` for chat, interviews and summaries;
-  `gemini-2.5-flash` for plan and nutrition generation; photo assessment only for testers/pro.
-  Check current prices and quotas at ai.google.dev/pricing before hard-coding a cost table;
-  put per-million-token prices in `lib/ai/prices.ts` with the date they were read.
-- Hard caps: `maxOutputTokens` on every call (chat 600, summaries 400, plans 4000, nutrition
-  3000); prompt length trimmed (chat history to the last 12 turns; plan prompts must not embed
-  the whole exercise library — pass the filtered candidates only).
-- **Usage log**: table `ai_usage` (user_id, feature, model, input_tokens, output_tokens,
-  cost_usd, created_at) filled from `usageMetadata` on every call, plus a `ai_budget` row
-  (month, spent_usd, cap_usd). Before each call: reject with 429 and a friendly message when
-  the user's daily count (default 40 calls, 200 k tokens) or the global monthly `AI_MONTHLY_CAP_USD`
-  (default 15) is reached. `/api/admin/usage` (service role) shows the month by feature and user;
-  a small page on the trainer dashboard for Ali.
-- Caching: identical plan/nutrition requests within 24 h return the stored result
-  (`ai_cache` keyed by a hash of the prompt).
-- Outside the code, Ali must set the external stops (put these in a numbered list for them):
-  Google AI Studio → the API key's project → **quota** (requests per day) and a **Cloud Billing
-  budget alert** at $10 with email; Vercel → Settings → Billing → **Spend Management** cap
-  (Hobby has none to pay; if the team is Pro set a $5 limit); Supabase free tier has no card
-  charges; Stripe stays in test mode.
-- Tests: unit tests for the gateway (caps, budget refusal, schema validation, usage rows) with
-  the model mocked (`__mocks__` already exists).
+### A. Finish the trainee loop (rest of old workstream 4)
+Each step verified in the browser at 375 px and 1400 px (Playwright from the repo; see
+"Verification recipe"). With `AI_MOCK=1` the steps cost nothing; once credits exist, run each
+AI step once for real and read `/api/admin/usage`.
+1. **Nutrition**: `/home` → Diet Plans / `/nutrition` → generate (`POST /api/nutrition/generate`,
+   meals from `food_database`, server-computed macros) → `/nutrition/tracking` (macro targets
+   arithmetic, food search, log a food) → `/nutrition/grocery` (list from the plan). The coach
+   page also has "Continue to Nutrition Plan" after the plan (dietitian interview →
+   `generate-nutrition-plan`, returned to the client to save into `nutrition_plans`): make sure
+   both paths save and that the nutrition page shows the saved plan.
+2. **AI coach chat** (`/ai`, `AICoachChat`): streamed reply, history in `ai_chats`, the system
+   prompt includes the plan, last three workouts and macro targets, the 40/day limit message
+   shows when hit (it does: seen during the walk).
+3. **Analytics** (`AnalyticsDashboard`, `WeeklyInsightsCard`, `/api/ai-coach/weekly-insights`):
+   charts from `exercise_logs` / `body_measurements` / `user_stats_history`; weekly insight is
+   one cached call per week. The body page (`/body`) writes `body_measurements`; a trigger
+   mirrors weight into `body_weight_logs`.
+4. **Plan adaptation** (`/api/ai-coach/plan-adaptation`, `PlanAdaptationReview`, reached from
+   `app/workout/[sessionId]`): keep if it works within an hour, else hide the entry point.
+5. **Hide what cannot work** rather than leaving a broken button: consistency challenge
+   (`ConsistencyDashboard` on home, `/api/consistency/*`; phone verification is gone), activity
+   feed (`/activity`, `/feed`: posts are private by default now), the human-coach tab, Google/Apple
+   sign-in buttons unless configured, the in-app form checker if untested. List what you hid in
+   the final report and in TESTERS.md.
+6. **4Dcoach link per exercise**: plan sessions carry `fourd_id`; add a "Form check in 4D" link
+   (`fourDcoachExerciseUrl(base, fourdId)` in `lib/exerciseLibrary.ts`, base from
+   `useFourDcoachUrl()` in `lib/fourDcoach.ts`) in the plan viewer and the workout logger.
+   4Dcoach already handles `#live=<exercise>` (its `main.ts`).
 
-## Workstream 4: AI coach, workouts, diet
+### B. Trainer / trainee loop (old workstream 5)
+`pnpm db:test-users -- --trainer coach@example.com` for a trainer account. Two browser contexts
+(Playwright): trainer searches the trainee (`/api/users/search`), sends a coaching request
+(`/api/coaching/request` `{ coachId }` is athlete→coach; check the route for the trainer→athlete
+direction, the DB trigger handles both), trainee accepts (`/api/coaching/respond`), trainer sees
+the client on `/trainer` (`TrainerDashboard`, `/api/trainer/clients`), opens `trainer/client/[id]`
+(progress, alerts, plan), assigns a plan (`trainer/client/[id]/assign-plan`, rewritten last
+session to the real generate → save → assign flow, untested in a browser), they message
+(`/api/direct-messages`, `DirectMessageThread`) and see notifications (`NotificationBell`).
+Write it as `e2e/trainer-loop.spec.ts`. RLS already lets an active coach read the trainee's
+logs, measurements, media and assignments; `is_coach_of()` is the helper.
 
-Make the loop work for a new user on the new database, in this order, each verified in the
-browser at 375 px and 1400 px:
-
-1. **Onboarding interview** (`api/ai-coach/interview`, `app/(main)/…` interview page,
-   `components/…IntakeForm`, `DietIntakeForm`): questions → `onboarding` row → `generate-plans`
-   produces a training plan **and** macro targets in one gated call; the user lands on `home` with
-   both.
-2. **Training plan** (`api/plans/generate`, `api/ai-coach/generate-plan`, `PlanCreator`,
-   `PlanViewer`): exercises must come from the `exercises` table (the model picks from
-   candidates filtered by equipment and goal, returns ids, the server joins names,
-   instructions and `fourd_id`); sessions saved as `training_plan_sessions`; a "Form check in
-   4D" link per exercise that has a `fourd_id`.
-3. **Workout execution** (`app/(main)/home/workout`, `WorkoutLogger`, `api/workout/*`,
-   offline sync): start a session from the plan, log sets (`exercise_logs`), rest timer, complete
-   → `workout-summary` (one gated call, 400 tokens) → `personal_records`.
-4. **AI coach chat** (`api/ai-coach/chat`, `AICoachChat`): streamed replies through the gateway,
-   history in `ai_chats`, the system prompt includes the user's plan, last three workouts and
-   macro targets (trimmed), the safety guardrails kept, 40 messages/day per user.
-5. **Nutrition** (`api/nutrition/*`, `api/ai-coach/generate-nutrition-plan`, `food-logs`,
-   `grocery-lists/generate`, the `nutrition` pages): macro targets from the intake; a plan with
-   meals built from `food_database` rows (the model chooses from candidates, the server computes
-   the macros, no invented numbers); daily tracking; grocery list from the plan.
-6. **Analytics** (`AnalyticsDashboard`, `WeeklyInsightsCard`, `api/ai-coach/weekly-insights`):
-   charts from `exercise_logs`/`body_measurements`; weekly insights as one cached weekly call.
-7. **Plan adaptation** (`api/ai-coach/plan-adaptation`, `PlanAdaptationReview`): keep if it
-   works within an hour; otherwise hide the entry point and note it.
-
-Delete or hide anything that cannot be made to work in this session rather than leaving a broken
-button (photo assessment, consistency challenges, activity feed, phone verification are the
-likely candidates); list what was hidden in the final report.
-
-## Workstream 5: trainer / trainee
-
-The minimal loop: a trainer account searches a trainee (`api/users/search`), sends a coaching
-request (`api/coaching/request`), the trainee accepts (`api/coaching/respond`), the trainer sees
-the trainee on `app/(main)/trainer` (`TrainerDashboard`, `api/trainer/clients`), opens
-`trainer/client/[id]` (progress, alerts, the trainee's plan), assigns or edits a plan
-(`api/plan-assignments`, `PlanCreator`), and they can message (`api/direct-messages`,
-`DirectMessageThread`), with notifications (`api/notifications`, `NotificationBell`). Make each
-step work with two test accounts in two browser contexts (Playwright), fix RLS as needed, and
-write it up as `e2e/trainer-loop.spec.ts`.
-
-## Workstream 6: tenable for testers
-
-- A **smoke test** in Playwright (`e2e/tester-journey.spec.ts`) that signs up with an invite,
-  completes the interview (model mocked in CI, real once locally), sees a plan, logs a workout,
-  chats once, opens nutrition, opens 4Dcoach. Run it against `pnpm dev` before every deploy.
+### C. Tenable for testers (old workstream 6)
+- `e2e/tester-journey.spec.ts`: extend to sign-up with an invite (insert an `invites` row with
+  the service role first), interview, plan, workout, chat, nutrition, open 4Dcoach. Run it
+  against `pnpm dev` before every deploy; `AI_MOCK=1` in CI.
 - Empty and error states on every page (`EmptyState`, `ErrorState` exist): no blank screens, no
-  raw error JSON; a "something went wrong, tell Ali" fallback with the request id.
-- Monitoring: Vercel logs are enough; add `lib/log.ts` that prefixes API errors with the route
-  and user id so `vercel logs` is searchable; optionally Vercel's built-in Web Analytics.
-- A `TESTERS.md` for Ali: how to create an account for a friend (the script), what to tell
-  them (URL, the 4Dcoach link, "at home or in the gym"), what to expect (limits: N AI messages
-  a day), how to read usage (`/api/admin/usage`), how to revoke an account.
-- Update `README.md`, `API.md`, `DATABASE.md`, `env.example` to what is true at the end.
-
-## The Vultr server
-
-Ali has a Vultr Linux VM (ask for the IP, the OS and the SSH user; assume Ubuntu with root over
-SSH; you may install packages with `apt`, but ask before opening any port other than 80/443/22).
-It is **not** for the model calls (Gemini stays the model provider; the VM has no GPU, so do not
-try to self-host an LLM there unless Ali asks) and not for the database (Supabase is the
-database). Use it for the things Vercel and Supabase free tiers cannot do:
-
-1. **A permanent https address for the 4Dcoach server.** Today the phone reaches the Mac's
-   FastAPI server (port 8787) only through a Cloudflare quick tunnel whose URL changes every
-   run. Install **Tailscale** on the Mac and the VM, and **Caddy** on the VM with a subdomain
-   Ali points at it (e.g. `coach-api.shaipt.com`, an A record in the domain's DNS); Caddy
-   reverse-proxies `https://coach-api.shaipt.com` → the Mac's Tailscale IP, port 8787, with the
-   USDZ content type passed through. Then set that URL as the 4Dcoach server URL default when
-   the app runs on Vercel (`DEFAULT_SERVER` in `4Dcoach/app/src/server.ts`) and document it in
-   `4Dcoach/app/README.md`. AR from the phone then works without a tunnel whenever the Mac is on.
-2. Optionally run the **USDZ export** itself on the VM (`server/usdz.py` needs only `usd-core`
-   and numpy, no GPU) so AR works even when the Mac sleeps: a slimmed `server/main.py` mode
-   (`AR_ONLY=1`) that serves `/health`, `/ar`, `/ar/{id}.usdz` and returns 503 for the GPU
-   jobs; Caddy routes `/ar*` to the VM and everything else to the Mac. Only if time allows.
-3. Cron jobs that Vercel Hobby cannot run: the weekly insights batch and the monthly `ai_budget`
-   reset, as a small Node script called from the VM's crontab with the service role key.
-
-Cost: the VM is a fixed monthly price already paid; nothing here adds usage-based cost.
+  raw JSON; `lib/log.ts` gives the request id for the "tell Ali" fallback.
+- `TESTERS.md` exists (how to create accounts, what to tell friends, limits, reading usage,
+  revoking); update it with what you hid and the OpenAI wording (it says the external stop is an
+  OpenAI usage limit).
+- Update `README.md`, `env.example` (already current), `API.md` (current), `DATABASE.md`
+  (current) to what is true at the end.
+- Deploy (see Ali's list), then check `https://www.shaipt.com` with `curl` for a string from
+  the change and run `e2e/access.spec.ts` with `PLAYWRIGHT_BASE_URL`… (the config hardcodes
+  `http://localhost:3000`; add a `baseURL` override from env).
+- Create the two test accounts for Ali's friends and hand the passwords to Ali in chat only.
+- At the end, rewrite this file for the next session: what works, what was hidden, the month's
+  AI spend, the next three things.
 
 ## Verification recipe
 
-`preview_start` with `shaipt-next-dev`, `resize_window` 1400×900 and 375×812. **The browser pane
-runs no requestAnimationFrame while hidden and cannot save screenshots**: for anything scroll- or
-animation-driven, and for screenshots, use Playwright from the repo
-(`node_modules/@playwright/test`, Chromium in `~/Library/Caches/ms-playwright`; write the script
-in the scratchpad, `require` the package by absolute path, run `node` from the repo). For camera
-features stub `getUserMedia` with a hidden `<video>` and `captureStream()` (Playwright's fake
-device flags do not work in this setup). Type-check and lint before each commit; run the affected
-Jest suites; run the e2e smoke test before each deploy. Deploy with the `vercel deploy` line and
-check `https://www.shaipt.com` with `curl` for a string from the change.
+The other chat's `pnpm dev` is usually running on port 3000 from this same checkout, and Next 16
+holds `.next/dev/lock`, so a second `next dev` in this folder fails. Use the running server
+(it hot-reloads your edits and re-reads `.env.local`), probe it with `curl`, and drive it with
+Playwright from the repo: `require('/Users/ali/SHaiPT/SHaiPT-Next-App/node_modules/@playwright/test')`
+in a script in the scratchpad, `chromium.launch()`, log in through `/login` (placeholders "Email
+or Username", "Password", button "Login"), then act. The Browser pane in the desktop app cannot
+reach that server and runs no requestAnimationFrame while hidden; Playwright can take
+screenshots to files that you then `Read`. A step-runner pattern that worked: a JSON list of
+steps (goto / click by role or testid / fill nth input / clickIf / wait / screenshot / dump body
+text, inputs, buttons, and every 4xx/5xx response). Useful selectors: coach cards
+`data-testid="coach-card-<id>"`, waiver `data-testid="accept-waiver-btn"` (enabled after the
+checkbox), interview input placeholder "Type your answer...", logger buttons "Complete Set",
+"Skip Rest", "Next Exercise", "Finish Workout". Never run `pnpm build` while `pnpm dev` runs
+(it corrupts `.next`; fix `rm -rf .next` and restart the other chat's server).
 
-## Gotchas already learned (do not rediscover)
+## Gotchas learned (do not rediscover)
 
-- styled-jsx scopes only intrinsic elements: classes on `next/link` or `motion.*` need
-  `:global(.class)`.
-- `react-hooks/set-state-in-effect` is an error in this repo's ESLint: use refs or
-  `useSyncExternalStore` in scroll and animation paths.
-- `pnpm build` while `pnpm dev` runs corrupts `.next`.
-- Commit messages with double quotes inside a double-quoted `-m` break `git commit`; write the
-  message to a file and use `-F`.
-- A conditional like `test -f x || git checkout -- .` reverts the working tree when the file is
-  missing; never chain a destructive git command behind a test.
-- The 4Dcoach dev server (port 5174) and its Mac server (`uv run uvicorn main:app --host
-  0.0.0.0 --port 8787` in `4Dcoach/server`) are usually running; check `GET /jobs` before
-  restarting the server. The Mac's LAN address changes between networks (`ipconfig getifaddr
-  en0`), which is why the VM route above matters.
-- Gemini 2.5 Flash is what the code uses; `gemini-2.5-flash-lite` is the cheap tier. Never
-  hard-code prices without the date; never leave a route that calls the model without a cap.
+- The permission classifier in Ali's setup blocks `vercel deploy`, `vercel env add/rm` and
+  sometimes long heredocs; `ssh root@45.77.142.86 '…'` and `git push` are fine. Write SQL
+  with `$$` bodies through the Write/Edit tools, not through shell-quoted node one-liners
+  (`$$` gets eaten).
+- `jest.mock` factories are hoisted above imports: reference helpers via
+  `jest.requireActual('@/test-utils/api')` inside the factory.
+- Session usage limits can cut off background agents mid-task; commit early, and check
+  `git status` for their partial work before assuming anything landed.
+- Two agents editing the same checkout must not `git stash` (it stashes the other agent's
+  work); use a `git worktree` for baselines.
+- PostgREST `.single()` on zero rows is a 406; use `.maybeSingle()`. `on_conflict` needs a real
+  unique constraint, not a partial index. A SECURITY DEFINER policy helper that reads the same
+  table breaks `INSERT … RETURNING`.
+- The `postgres` npm driver needs `ssl: 'require'` for the pooler; the direct `db.<ref>.supabase.co`
+  host is IPv6-only on the free tier.
+- OpenAI gpt-5 family: no `temperature`, use `max_completion_tokens` and `reasoning_effort:
+  'minimal'` (the gateway does this by model name); `stream_options.include_usage` puts usage
+  in the last chunk; `prompt_tokens_details.cached_tokens` is the cached share.
+- styled-jsx scopes only intrinsic elements; `react-hooks/set-state-in-effect` is an error in
+  this repo's ESLint (use refs or `useSyncExternalStore` in scroll/animation paths).
+- The 4Dcoach dev server (port 5174) and its Mac server (`uv run uvicorn main:app --host 0.0.0.0
+  --port 8787` in `4Dcoach/server`) are usually running; check `GET /jobs` before restarting.
+- Brand: black, white, red `#da0023` (hot `#ff3352`, deep `#b8001e`) only, no gradients; the
+  app screens are dark, Fitbod/Strava-like; reuse the tokens in `app/globals.css`. The AI coach
+  must never give medical advice (guardrails are in the prompts; keep them).
 
-## Deliverables (in order, each committed, pushed and deployed)
+## Deliverables (in order, each committed, pushed, and deployed once Ali has set the Vercel env)
 
-1. Supabase rebuilt: migrations run and made idempotent, RLS script green, exercises and foods
-   seeded, buckets, dangerous routes locked; `DATABASE.md` updated.
-2. Auth: middleware, `lib/auth.ts`, invites, test-user script, tester flag gating, phone
-   verification resolved.
-3. `lib/ai/gateway.ts` with caps, usage log, budget refusal, cache, admin usage view; every
-   model call migrated; unit tests; Ali's external stops listed for them.
-4. The trainee loop (interview → plan → workout → chat → nutrition → analytics) working on
-   the new database, verified in the browser at both widths, broken features hidden and listed.
-5. The trainer loop working with two accounts, `e2e/trainer-loop.spec.ts`.
-6. `e2e/tester-journey.spec.ts`, empty/error states, logging, `TESTERS.md`, docs updated,
-   the Vultr https route for 4Dcoach, and two test accounts created for Ali's friends with the
-   credentials handed to Ali in the chat (never committed).
-7. At the end, rewrite this file's "state" into a fresh `HANDOFF-platform.md` for the next
-   session: what works, what was hidden, the month's AI spend so far, and the next three things.
+1. Nutrition, chat, analytics, plan adaptation working (or hidden) for the tester account,
+   verified at both widths; the 4D link per exercise; the hidden features listed.
+2. The trainer loop with two accounts, `e2e/trainer-loop.spec.ts`.
+3. `e2e/tester-journey.spec.ts` covering the whole loop, empty/error states, TESTERS.md and
+   docs updated, the deploy checked on www.shaipt.com, the Vultr DNS confirmed, 4Dcoach `main`
+   merged and deployed with `VITE_4DCOACH_SERVER`, two friend accounts created.
+4. A fresh `HANDOFF-platform.md`.
