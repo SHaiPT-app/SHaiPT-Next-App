@@ -67,6 +67,7 @@ RETURNS TABLE (calls bigint, tokens bigint) AS $$
     FROM ai_usage
     WHERE user_id = p_user_id
       AND cache_hit = false
+      AND status <> 'mock'   -- canned replies (tests, CI) cost nothing and do not count
       AND created_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 

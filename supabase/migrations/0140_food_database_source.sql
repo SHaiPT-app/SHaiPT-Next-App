@@ -3,10 +3,10 @@
 ALTER TABLE food_database ADD COLUMN IF NOT EXISTS source text;
 ALTER TABLE food_database ADD COLUMN IF NOT EXISTS source_id text;
 -- a plain constraint (not a partial index): PostgREST upserts name the column as the conflict target
-DROP INDEX IF EXISTS uq_food_database_source_id;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_food_database_source_id') THEN
+        DROP INDEX IF EXISTS uq_food_database_source_id;  -- the earlier partial index, if any
         ALTER TABLE food_database ADD CONSTRAINT uq_food_database_source_id UNIQUE (source_id);
     END IF;
 END $$;

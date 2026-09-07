@@ -602,7 +602,11 @@ CREATE POLICY "workout_sessions_delete_own" ON workout_sessions FOR DELETE TO au
 
 -- training_plans
 DROP POLICY IF EXISTS "training_plans_select" ON training_plans;
-CREATE POLICY "training_plans_select" ON training_plans FOR SELECT TO authenticated USING (can_view_plan(id));
+-- Inline, not can_view_plan(id): a function that reads training_plans cannot see a row being
+-- inserted in the same statement, so INSERT … RETURNING would fail the policy.
+CREATE POLICY "training_plans_select" ON training_plans FOR SELECT TO authenticated
+    USING (creator_id = auth.uid() OR is_public
+           OR EXISTS (SELECT 1 FROM training_plan_assignments a WHERE a.plan_id = training_plans.id AND a.user_id = auth.uid()));
 DROP POLICY IF EXISTS "training_plans_insert_own" ON training_plans;
 CREATE POLICY "training_plans_insert_own" ON training_plans FOR INSERT TO authenticated WITH CHECK (creator_id = auth.uid());
 DROP POLICY IF EXISTS "training_plans_update_own" ON training_plans;
