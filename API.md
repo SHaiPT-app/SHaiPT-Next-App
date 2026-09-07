@@ -27,13 +27,13 @@ never touch Stripe).
 
 ## AI routes
 
-All model calls go through `lib/ai/gateway.ts` (`callModel`, `streamModel`). The gateway picks the
-model per feature (flash-lite for chat, interviews and summaries; flash for plan and nutrition
-generation), caps `maxOutputTokens`, trims chat history to 12 turns, refuses with
+All model calls go through `lib/ai/gateway.ts` (`callModel`, `streamModel`) to OpenAI. The gateway
+picks the model per feature (`gpt-5-nano` for chat, interviews and summaries; `gpt-5-mini` for plan
+and nutrition generation; override with `AI_MODEL_CHEAP` / `AI_MODEL_STRONG`), caps `maxOutputTokens`, trims chat history to 12 turns, refuses with
 `429 { error, reason }` when the caller has used the day's calls or tokens
 (`AI_DAILY_CALLS_PER_USER`, `AI_DAILY_TOKENS_PER_USER`) or the month's budget
 (`AI_MONTHLY_CAP_USD`) is spent, logs every call to `ai_usage`, and serves identical plan or
-nutrition prompts from `ai_cache` for 24 h. Without `GEMINI_API_KEY` outside production (or with
+nutrition prompts from `ai_cache` for 24 h. Without `OPENAI_API_KEY` outside production (or with
 `AI_MOCK=1`) it returns canned responses so tests and the e2e smoke run cost nothing.
 
 | Route | Body | Returns |
@@ -113,5 +113,5 @@ tester can quote it.
 ## Environment
 
 See `env.example`: Supabase URL/keys (+ `SUPABASE_DB_URL` for the migration runner),
-`GEMINI_API_KEY`, the AI caps, `ALLOW_SIGNUP_EMAILS`, `ADMIN_EMAILS`, `NEXT_PUBLIC_4DCOACH_URL`,
+`OPENAI_API_KEY`, the AI caps, `ALLOW_SIGNUP_EMAILS`, `ADMIN_EMAILS`, `NEXT_PUBLIC_4DCOACH_URL`,
 Stripe.

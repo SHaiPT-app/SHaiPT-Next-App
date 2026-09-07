@@ -3,15 +3,11 @@
  */
 import { z } from 'zod';
 
-const mockGenerateContent = jest.fn();
-const mockGenerateContentStream = jest.fn();
-jest.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: jest.fn(() => ({
-        getGenerativeModel: jest.fn(() => ({
-            generateContent: mockGenerateContent,
-            generateContentStream: mockGenerateContentStream,
-        })),
-    })),
+// chat.completions.create: one mock for both plain and streamed calls
+const mockCreate = jest.fn();
+jest.mock('openai', () => ({
+    __esModule: true,
+    default: jest.fn(() => ({ chat: { completions: { create: mockCreate } } })),
 }));
 
 // A tiny in-memory stand-in for the three gateway tables
@@ -42,30 +38,40 @@ function fakeAdmin() {
 }
 jest.mock('@/lib/auth', () => ({ getAdmin: () => fakeAdmin() }));
 
-function geminiResult(text: string, usage = { promptTokenCount: 100, candidatesTokenCount: 50 }) {
-    return { response: { text: () => text, usageMetadata: usage } };
+function completion(text: string, usage = { prompt_tokens: 100, completion_tokens: 50 }) {
+    return { choices: [{ message: { content: text } }], usage };
+}
+async function* chunks(parts: string[], usage: { prompt_tokens: number; completion_tokens: number }) {
+    for (const p of parts) yield { choices: [{ delta: { content: p } }] };
+    yield { choices: [], usage };
 }
 
 describe('AI gateway', () => {
     beforeEach(() => {
         tables.ai_usage = []; tables.ai_budget = []; tables.ai_cache = [];
         usageToday = { calls: 0, tokens: 0 };
-        mockGenerateContent.mockReset();
-        process.env.GEMINI_API_KEY = 'test-key';
+        mockCreate.mockReset();
+        process.env.OPENAI_API_KEY = 'test-key';
         delete process.env.AI_MOCK;
         jest.resetModules();
     });
 
     it('calls the model with the policy model and cap, logs usage with cost', async () => {
         const { callModel } = await import('@/lib/ai/gateway');
-        mockGenerateContent.mockResolvedValue(geminiResult('hello'));
+        mockCreate.mockResolvedValue(completion('hello'));
         const res = await callModel({ userId: 'u1', feature: 'chat', prompt: 'hi' });
         expect(res.text).toBe('hello');
-        expect(res.model).toBe('gemini-2.5-flash-lite');
+        expect(res.model).toBe('gpt-5-nano');
         expect(res.usage.inputTokens).toBe(100);
         expect(res.usage.outputTokens).toBe(50);
-        // 100 * 0.10 + 50 * 0.40 per million
-        expect(res.usage.costUsd).toBeCloseTo(0.00003, 6);
+        // 100 * 0.05 + 50 * 0.40 per million
+        expect(res.usage.costUsd).toBeCloseTo(0.000025, 6);
+        const params = mockCreate.mock.calls[0][0];
+        expect(params.model).toBe('gpt-5-nano');
+        expect(params.max_completion_tokens).toBe(600);
+        expect(params.reasoning_effort).toBe('minimal');
+        expect(params.temperature).toBeUndefined();
+        expect(params.messages).toEqual([{ role: 'user', content: 'hi' }]);
         expect(tables.ai_usage).toHaveLength(1);
         expect(tables.ai_usage[0]).toMatchObject({ user_id: 'u1', feature: 'chat', status: 'ok', cost_usd: res.usage.costUsd });
     });
@@ -77,7 +83,7 @@ describe('AI gateway', () => {
         try { await callModel({ userId: 'u1', feature: 'chat', prompt: 'hi' }); } catch (e) { caught = e; }
         expect(caught).toBeInstanceOf(AiLimitError);
         expect((caught as { reason: string }).reason).toBe('daily_calls');
-        expect(mockGenerateContent).not.toHaveBeenCalled();
+        expect(mockCreate).not.toHaveBeenCalled();
         expect(limitResponse(caught)?.status).toBe(429);
     });
 
@@ -86,47 +92,51 @@ describe('AI gateway', () => {
         const month = new Date().toISOString().slice(0, 7);
         tables.ai_budget.push({ month, spent_usd: 15, cap_usd: 15 });
         await expect(callModel({ userId: 'u1', feature: 'plan', prompt: 'x' })).rejects.toMatchObject({ reason: 'monthly_budget' });
-        expect(mockGenerateContent).not.toHaveBeenCalled();
+        expect(mockCreate).not.toHaveBeenCalled();
     });
 
     it('premium features need a tester', async () => {
         const { callModel } = await import('@/lib/ai/gateway');
         await expect(callModel({ userId: 'u1', feature: 'photo_assessment', prompt: 'x' })).rejects.toMatchObject({ reason: 'premium' });
-        mockGenerateContent.mockResolvedValue(geminiResult('ok'));
+        mockCreate.mockResolvedValue(completion('ok'));
         await expect(callModel({ userId: 'u1', feature: 'photo_assessment', prompt: 'x', tester: true })).resolves.toMatchObject({ text: 'ok' });
     });
 
     it('validates JSON against the schema and repairs once', async () => {
         const { callModel } = await import('@/lib/ai/gateway');
         const schema = z.object({ name: z.string(), days: z.number() });
-        mockGenerateContent
-            .mockResolvedValueOnce(geminiResult('{"name": "PPL"}'))
-            .mockResolvedValueOnce(geminiResult('```json\n{"name": "PPL", "days": 3}\n```'));
+        mockCreate
+            .mockResolvedValueOnce(completion('{"name": "PPL"}'))
+            .mockResolvedValueOnce(completion('```json\n{"name": "PPL", "days": 3}\n```'));
         const res = await callModel({ userId: 'u1', feature: 'plan', prompt: 'plan me', schema });
         expect(res.json).toEqual({ name: 'PPL', days: 3 });
-        expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+        expect(mockCreate).toHaveBeenCalledTimes(2);
+        const params = mockCreate.mock.calls[0][0];
+        expect(params.model).toBe('gpt-5-mini');
+        expect(params.response_format.type).toBe('json_schema');
+        expect(params.response_format.json_schema.schema.properties.days.type).toBe('number');
         expect(res.usage.inputTokens).toBe(200);
     });
 
     it('serves identical plan prompts from the cache', async () => {
         const { callModel } = await import('@/lib/ai/gateway');
         const schema = z.object({ name: z.string() });
-        mockGenerateContent.mockResolvedValue(geminiResult('{"name": "A"}'));
+        mockCreate.mockResolvedValue(completion('{"name": "A"}'));
         const first = await callModel({ userId: 'u1', feature: 'plan', prompt: 'same', schema });
         const second = await callModel({ userId: 'u2', feature: 'plan', prompt: 'same', schema });
         expect(first.cached).toBe(false);
         expect(second.cached).toBe(true);
         expect(second.json).toEqual({ name: 'A' });
-        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+        expect(mockCreate).toHaveBeenCalledTimes(1);
         expect(tables.ai_usage.filter((r) => r.cache_hit)).toHaveLength(1);
     });
 
     it('does not cache chat', async () => {
         const { callModel } = await import('@/lib/ai/gateway');
-        mockGenerateContent.mockResolvedValue(geminiResult('a'));
+        mockCreate.mockResolvedValue(completion('a'));
         await callModel({ userId: 'u1', feature: 'chat', prompt: 'same' });
         await callModel({ userId: 'u1', feature: 'chat', prompt: 'same' });
-        expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+        expect(mockCreate).toHaveBeenCalledTimes(2);
     });
 
     it('uses the mock when AI_MOCK=1 and logs zero cost', async () => {
@@ -135,7 +145,7 @@ describe('AI gateway', () => {
         const res = await callModel({ userId: 'u1', feature: 'chat', prompt: 'hi', mock: () => 'canned' });
         expect(res.mocked).toBe(true);
         expect(res.text).toBe('canned');
-        expect(mockGenerateContent).not.toHaveBeenCalled();
+        expect(mockCreate).not.toHaveBeenCalled();
         expect(tables.ai_usage[0]).toMatchObject({ model: 'mock', cost_usd: 0 });
     });
 
@@ -149,10 +159,7 @@ describe('AI gateway', () => {
 
     it('streams text and logs usage when done', async () => {
         const { streamModel } = await import('@/lib/ai/gateway');
-        mockGenerateContentStream.mockResolvedValue({
-            stream: (async function* () { yield { text: () => 'Hel' }; yield { text: () => 'lo' }; })(),
-            response: Promise.resolve({ usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 2 } }),
-        });
+        mockCreate.mockResolvedValue(chunks(['Hel', 'lo'], { prompt_tokens: 10, completion_tokens: 2 }));
         const { stream, done } = await streamModel({ userId: 'u1', feature: 'chat', messages: [{ role: 'user', content: 'hi' }] });
         const reader = stream.getReader();
         let out = '';
@@ -161,5 +168,16 @@ describe('AI gateway', () => {
         const result = await done;
         expect(result.text).toBe('Hello');
         expect(tables.ai_usage[0]).toMatchObject({ feature: 'chat', input_tokens: 10, output_tokens: 2, status: 'ok' });
+        expect(mockCreate.mock.calls[0][0]).toMatchObject({ stream: true, stream_options: { include_usage: true } });
+    });
+
+    it('sends temperature instead of reasoning_effort to non-reasoning models', async () => {
+        const { callModel } = await import('@/lib/ai/gateway');
+        mockCreate.mockResolvedValue(completion('ok'));
+        await callModel({ userId: 'u1', feature: 'chat', prompt: 'hi', model: 'gpt-4o-mini', system: 'be brief' });
+        const params = mockCreate.mock.calls[0][0];
+        expect(params.temperature).toBe(0.7);
+        expect(params.reasoning_effort).toBeUndefined();
+        expect(params.messages[0]).toEqual({ role: 'system', content: 'be brief' });
     });
 });

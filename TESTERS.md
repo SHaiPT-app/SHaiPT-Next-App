@@ -44,7 +44,7 @@ insert a row in the Supabase table editor: `email` lower-case, `role`) or in the
   `ai_budget` (one row per month: `spent_usd`, `cap_usd`).
 - Caps live in the Vercel env: `AI_MONTHLY_CAP_USD` (default 15), `AI_DAILY_CALLS_PER_USER`
   (40), `AI_DAILY_TOKENS_PER_USER` (200000). Change, redeploy.
-- The external stops (Google AI Studio quota + Cloud Billing budget alert, Vercel Spend
+- The external stops (an OpenAI monthly usage limit on platform.openai.com → Billing → Limits, Vercel Spend
   Management, Stripe in test mode) are the real ceiling; the in-app caps only keep normal use
   well under them.
 

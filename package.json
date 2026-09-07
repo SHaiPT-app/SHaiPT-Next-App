@@ -14,16 +14,14 @@
     "db:seed:foods": "tsx scripts/seed-foods.ts",
     "db:rls-check": "tsx scripts/rls-check.ts",
     "db:test-users": "tsx scripts/create-test-users.ts",
-    "db:local": "docker run -d --rm --name shaipt-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17"
+    "db:local": "docker run -d --rm --name shaipt-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17",
+    "ai:smoke": "tsx scripts/ai-smoke.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.44",
-    "@google/generative-ai": "^0.24.1",
     "@mediapipe/tasks-vision": "^0.10.22-rc.20250304",
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.84.0",
     "@types/uuid": "^10.0.0",
-    "ai": "^5.0.108",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.29.2",
@@ -34,6 +32,7 @@
     "mathjs": "^15.1.0",
     "next": "16.1.6",
     "node-fetch": "^2.7.0",
+    "openai": "^7.10.0",
     "react": "19.2.0",
     "react-confetti": "^6.4.0",
     "react-dom": "19.2.0",

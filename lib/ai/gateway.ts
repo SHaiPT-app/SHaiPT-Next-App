@@ -1,19 +1,19 @@
 /**
- * The one door to the model. Every Gemini call in the app goes through callModel / streamModel:
+ * The one door to the model (OpenAI). Every call in the app goes through callModel / streamModel:
  *
- *   - model policy per feature (cheap flash-lite for chat, flash for plan generation)
+ *   - model policy per feature (gpt-5-nano for chat and summaries, gpt-5-mini for generation)
  *   - a hard maxOutputTokens on every call
  *   - per-user daily limits and a global monthly budget, checked BEFORE the call (429 when hit)
  *   - a usage row per call (ai_usage → ai_budget by trigger) from usageMetadata
  *   - a 24 h response cache for deterministic generations (ai_cache, keyed by a prompt hash)
  *   - JSON mode with a zod schema, validated again on the way out
- *   - a mock mode (no GEMINI_API_KEY outside production, or AI_MOCK=1) for tests and CI
+ *   - a mock mode (no OPENAI_API_KEY outside production, or AI_MOCK=1) for tests and CI
  *
  * Nothing here trusts the caller for identity: pass the user id from lib/auth.
  */
 import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI, type Content, type GenerationConfig, type ResponseSchema } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { z, type ZodType } from 'zod';
 import { getAdmin } from '@/lib/auth';
 import { estimateCost } from './prices';
@@ -28,8 +28,8 @@ export type Feature =
     | 'plan' | 'nutrition' | 'macro_targets' | 'diet' | 'grocery' | 'plan_adaptation'
     | 'photo_assessment';
 
-export const CHEAP_MODEL = process.env.AI_MODEL_CHEAP || 'gemini-2.5-flash-lite';
-export const STRONG_MODEL = process.env.AI_MODEL_STRONG || 'gemini-2.5-flash';
+export const CHEAP_MODEL = process.env.AI_MODEL_CHEAP || 'gpt-5-nano';
+export const STRONG_MODEL = process.env.AI_MODEL_STRONG || 'gpt-5-mini';
 
 interface Policy {
     model: string;
@@ -245,42 +245,14 @@ async function cacheSet(key: string, feature: Feature, model: string, response: 
 }
 
 // ---------------------------------------------------------------------------
-// Schema → Gemini responseSchema (OpenAPI subset)
+// Schema → OpenAI json_schema response format
 // ---------------------------------------------------------------------------
 
-type JsonSchema = Record<string, unknown>;
-
-function toGeminiSchema(node: unknown): JsonSchema {
-    if (!node || typeof node !== 'object') return {};
-    const src = node as JsonSchema;
-    const out: JsonSchema = {};
-    let type = src.type;
-    let nullable = false;
-    if (Array.isArray(type)) {
-        nullable = type.includes('null');
-        type = type.filter((t) => t !== 'null')[0] ?? 'string';
-    }
-    if (Array.isArray(src.anyOf)) {
-        const options = (src.anyOf as JsonSchema[]).filter((o) => o.type !== 'null');
-        nullable = options.length < (src.anyOf as JsonSchema[]).length;
-        if (options.length === 1) return { ...toGeminiSchema(options[0]), ...(nullable ? { nullable: true } : {}) };
-    }
-    if (type) out.type = type;
-    if (nullable) out.nullable = true;
-    if (typeof src.description === 'string') out.description = src.description;
-    if (Array.isArray(src.enum)) out.enum = src.enum;
-    if (src.properties && typeof src.properties === 'object') {
-        out.properties = Object.fromEntries(
-            Object.entries(src.properties as Record<string, unknown>).map(([k, v]) => [k, toGeminiSchema(v)])
-        );
-    }
-    if (Array.isArray(src.required)) out.required = src.required;
-    if (src.items) out.items = toGeminiSchema(src.items);
-    return out;
-}
-
-export function geminiSchema(schema: ZodType): ResponseSchema {
-    return toGeminiSchema(z.toJSONSchema(schema)) as unknown as ResponseSchema;
+/** JSON Schema for the response_format. Not strict: zod validates on the way out anyway. */
+export function responseSchema(schema: ZodType): Record<string, unknown> {
+    const json = z.toJSONSchema(schema) as Record<string, unknown>;
+    delete json.$schema;
+    return json;
 }
 
 // ---------------------------------------------------------------------------
@@ -292,26 +264,56 @@ export function trimHistory(messages: ChatMessage[], turns = LIMITS.chatHistoryT
     return conversation.slice(-turns);
 }
 
-function toContents(opts: CallOptions): Content[] {
-    const contents: Content[] = [];
+type Msg = OpenAI.Chat.Completions.ChatCompletionMessageParam;
+
+function toMessages(opts: CallOptions): Msg[] {
+    const out: Msg[] = [];
+    if (opts.system) out.push({ role: 'system', content: opts.system });
     if (opts.messages?.length) {
-        for (const m of trimHistory(opts.messages)) {
-            contents.push({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] });
+        for (const m of trimHistory(opts.messages)) out.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content });
+    }
+    if (opts.prompt || opts.images?.length) {
+        if (opts.images?.length) {
+            out.push({
+                role: 'user',
+                content: [
+                    ...(opts.prompt ? [{ type: 'text' as const, text: opts.prompt }] : []),
+                    ...opts.images.map((img) => ({ type: 'image_url' as const, image_url: { url: `data:${img.mimeType};base64,${img.data}` } })),
+                ],
+            });
+        } else {
+            out.push({ role: 'user', content: opts.prompt! });
         }
     }
-    const parts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [];
-    if (opts.prompt) parts.push({ text: opts.prompt });
-    for (const img of opts.images ?? []) parts.push({ inlineData: { data: img.data, mimeType: img.mimeType } });
-    if (parts.length) contents.push({ role: 'user', parts });
-    if (contents.length === 0) throw new Error('callModel needs a prompt or messages');
-    // Gemini wants the conversation to start with a user turn
-    if (contents[0].role !== 'user') contents.unshift({ role: 'user', parts: [{ text: '(conversation start)' }] });
-    return contents;
+    if (!out.some((m) => m.role === 'user')) throw new Error('callModel needs a prompt or messages');
+    return out;
 }
 
 function isMocked(): boolean {
     if (process.env.AI_MOCK === '1') return true;
-    return !process.env.GEMINI_API_KEY && process.env.NODE_ENV !== 'production';
+    return !process.env.OPENAI_API_KEY && process.env.NODE_ENV !== 'production';
+}
+
+let client: OpenAI | null = null;
+function openai(): OpenAI {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new AiUnavailableError('AI is not configured.');
+    if (!client) client = new OpenAI({ apiKey, maxRetries: 2, timeout: 120_000 });
+    return client;
+}
+
+/** Request parameters shared by callModel and streamModel. The gpt-5 family is a reasoning
+ *  family: it ignores temperature and needs reasoning kept minimal so the output cap is spent on
+ *  the answer, not on thinking. */
+interface BaseParams { model: string; max_completion_tokens: number; reasoning_effort?: 'minimal'; temperature?: number }
+
+function baseParams(model: string, maxOutputTokens: number, temperature: number): BaseParams {
+    const reasoning = /^(gpt-5|o\d)/.test(model);
+    return {
+        model,
+        max_completion_tokens: maxOutputTokens,
+        ...(reasoning ? { reasoning_effort: 'minimal' as const } : { temperature }),
+    };
 }
 
 function extractJson(text: string): unknown {
@@ -326,10 +328,10 @@ function extractJson(text: string): unknown {
     }
 }
 
-function usageFrom(model: string, meta?: { promptTokenCount?: number; candidatesTokenCount?: number; cachedContentTokenCount?: number; thoughtsTokenCount?: number }): Usage {
-    const inputTokens = meta?.promptTokenCount ?? 0;
-    const outputTokens = (meta?.candidatesTokenCount ?? 0) + (meta?.thoughtsTokenCount ?? 0);
-    const cachedTokens = meta?.cachedContentTokenCount ?? 0;
+function usageFrom(model: string, meta?: OpenAI.Completions.CompletionUsage | null): Usage {
+    const inputTokens = meta?.prompt_tokens ?? 0;
+    const outputTokens = meta?.completion_tokens ?? 0; // includes reasoning tokens
+    const cachedTokens = meta?.prompt_tokens_details?.cached_tokens ?? 0;
     return { inputTokens, outputTokens, cachedTokens, costUsd: estimateCost(model, inputTokens, outputTokens, cachedTokens) };
 }
 
@@ -366,7 +368,7 @@ export async function callModel<T = unknown>(opts: CallOptions<T> & { tester?: b
     }
 
     if (isMocked()) {
-        if (!opts.mock) throw new AiUnavailableError('AI is not configured (GEMINI_API_KEY missing) and no mock was provided.');
+        if (!opts.mock) throw new AiUnavailableError('AI is not configured (OPENAI_API_KEY missing) and no mock was provided.');
         const value = opts.mock();
         const text = typeof value === 'string' ? value : JSON.stringify(value);
         const json = opts.schema ? opts.schema.parse(typeof value === 'string' ? extractJson(value) : value) : undefined;
@@ -374,35 +376,31 @@ export async function callModel<T = unknown>(opts: CallOptions<T> & { tester?: b
         return { text, json, usage: ZERO, model: 'mock', cached: false, mocked: true };
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new AiUnavailableError('AI is not configured.');
-
-    const generationConfig: GenerationConfig = { maxOutputTokens, temperature };
-    if (opts.schema) {
-        generationConfig.responseMimeType = 'application/json';
-        generationConfig.responseSchema = geminiSchema(opts.schema);
-    }
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const gm = genAI.getGenerativeModel({ model, generationConfig, systemInstruction: opts.system || undefined });
-    const contents = toContents(opts);
+    const api = openai();
+    const messages = toMessages(opts);
+    const params = baseParams(model, maxOutputTokens, temperature);
+    const response_format = opts.schema
+        ? { type: 'json_schema' as const, json_schema: { name: 'result', schema: responseSchema(opts.schema), strict: false } }
+        : undefined;
 
     let text = '';
     let usage = ZERO;
     let json: T | undefined;
     try {
-        const result = await gm.generateContent({ contents });
-        text = result.response.text();
-        usage = usageFrom(model, result.response.usageMetadata);
+        const result = await api.chat.completions.create({ ...params, model, messages, ...(response_format ? { response_format } : {}) });
+        text = result.choices[0]?.message?.content ?? '';
+        usage = usageFrom(model, result.usage);
         if (opts.schema) {
             try {
                 json = opts.schema.parse(extractJson(text));
             } catch (parseErr) {
                 // one repair attempt: ask the model to return only the JSON
-                const repair = await gm.generateContent({
-                    contents: [...contents, { role: 'model', parts: [{ text }] }, { role: 'user', parts: [{ text: 'That was not valid JSON for the schema. Return only the corrected JSON object.' }] }],
+                const repair = await api.chat.completions.create({
+                    ...params, model, ...(response_format ? { response_format } : {}),
+                    messages: [...messages, { role: 'assistant', content: text }, { role: 'user', content: 'That was not valid JSON for the schema. Return only the corrected JSON object.' }],
                 });
-                const repairedText = repair.response.text();
-                const u2 = usageFrom(model, repair.response.usageMetadata);
+                const repairedText = repair.choices[0]?.message?.content ?? '';
+                const u2 = usageFrom(model, repair.usage);
                 usage = { inputTokens: usage.inputTokens + u2.inputTokens, outputTokens: usage.outputTokens + u2.outputTokens, cachedTokens: usage.cachedTokens + u2.cachedTokens, costUsd: usage.costUsd + u2.costUsd };
                 try {
                     json = opts.schema.parse(extractJson(repairedText));
@@ -448,7 +446,7 @@ export async function streamModel(opts: CallOptions & { tester?: boolean }): Pro
     if (!opts.unmetered) await checkLimits(opts.userId, opts.feature, opts.tester);
 
     if (isMocked()) {
-        if (!opts.mock) throw new AiUnavailableError('AI is not configured (GEMINI_API_KEY missing) and no mock was provided.');
+        if (!opts.mock) throw new AiUnavailableError('AI is not configured (OPENAI_API_KEY missing) and no mock was provided.');
         const value = opts.mock();
         const text = typeof value === 'string' ? value : JSON.stringify(value);
         let resolveDone!: (v: { text: string; usage: Usage; model: string; mocked: boolean }) => void;
@@ -467,17 +465,12 @@ export async function streamModel(opts: CallOptions & { tester?: boolean }): Pro
         return { stream, done };
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new AiUnavailableError('AI is not configured.');
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const gm = genAI.getGenerativeModel({
-        model,
-        generationConfig: { maxOutputTokens, temperature },
-        systemInstruction: opts.system || undefined,
+    const api = openai();
+    const messages = toMessages(opts);
+    const completion = await api.chat.completions.create({
+        ...baseParams(model, maxOutputTokens, temperature), model, messages,
+        stream: true, stream_options: { include_usage: true },
     });
-    const contents = toContents(opts);
-    const result = await gm.generateContentStream({ contents });
 
     let resolveDone!: (v: { text: string; usage: Usage; model: string; mocked: boolean }) => void;
     let rejectDone!: (e: unknown) => void;
@@ -486,17 +479,17 @@ export async function streamModel(opts: CallOptions & { tester?: boolean }): Pro
     const stream = new ReadableStream<Uint8Array>({
         async start(controller) {
             let text = '';
+            let usage = ZERO;
             try {
-                for await (const chunk of result.stream) {
-                    const piece = chunk.text();
+                for await (const chunk of completion) {
+                    const piece = chunk.choices[0]?.delta?.content ?? '';
                     if (piece) {
                         text += piece;
                         controller.enqueue(encoder.encode(piece));
                     }
+                    if (chunk.usage) usage = usageFrom(model, chunk.usage);
                 }
                 controller.close();
-                const response = await result.response;
-                const usage = usageFrom(model, response.usageMetadata);
                 await logUsage({ userId: opts.userId, feature: opts.feature, model, usage, cacheHit: false, status: 'ok', latencyMs: Date.now() - started });
                 resolveDone({ text, usage, model, mocked: false });
             } catch (err) {

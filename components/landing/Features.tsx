@@ -39,7 +39,7 @@ const features = [
   {
     title: 'AI Nutrition Coach',
     description:
-      'Get personalized meal plans, macro tracking, and dietary recommendations aligned with your training goals, all powered by Gemini AI.',
+      'Get personalized meal plans, macro tracking, and dietary recommendations aligned with your training goals, all powered by the AI coach.',
     image: '/mockups/shaipt_framed_analytics.png',
     bullets: [
       'Custom meal plans',
