@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiFetch, ApiError, errorMessage } from '@/lib/apiClient';
 import {
     ChevronDown,
     ChevronRight,
@@ -311,15 +312,13 @@ export default function NutritionPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`/api/nutrition?userId=${user.id}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.plan) {
-                    setPlan(data.plan);
-                }
+            const data = await apiFetch<{ plan?: NutritionPlan | null }>('/api/nutrition');
+            if (data?.plan) {
+                setPlan(data.plan);
             }
         } catch (err) {
             console.error('Failed to fetch nutrition plan:', err);
+            setError(err instanceof ApiError ? err.message : 'Failed to load your meal plan');
         } finally {
             setLoading(false);
         }
@@ -338,21 +337,14 @@ export default function NutritionPage() {
         setError(null);
 
         try {
-            const res = await fetch('/api/nutrition/generate', {
+            // the plan is generated and saved for the caller (from the token)
+            const data = await apiFetch<{ plan: NutritionPlan }>('/api/nutrition/generate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id }),
+                body: {},
             });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Failed to generate plan');
-            }
-
-            const data = await res.json();
             setPlan(data.plan);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to generate meal plan');
+            setError(errorMessage(err, 'Failed to generate meal plan'));
         } finally {
             setGenerating(false);
         }

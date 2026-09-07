@@ -4,6 +4,9 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useDirectMessages } from '@/lib/useDirectMessages';
 
+// apiFetch with a constant token; still goes through global.fetch
+jest.mock('@/lib/apiClient');
+
 // Mock Supabase - use require to avoid hoisting issues
 jest.mock('@/lib/supabase', () => {
     const mockOn = jest.fn().mockReturnThis();
@@ -71,8 +74,9 @@ describe('useDirectMessages', () => {
 
         expect(result.current.messages).toHaveLength(1);
         expect(result.current.messages[0].content).toBe('Hello');
+        // the caller comes from the token; only the other party is in the query
         expect(mockFetch).toHaveBeenCalledWith(
-            '/api/direct-messages?userId=user-1&otherUserId=user-2',
+            '/api/direct-messages?otherUserId=user-2',
             { headers: { Authorization: 'Bearer test-token' } }
         );
     });

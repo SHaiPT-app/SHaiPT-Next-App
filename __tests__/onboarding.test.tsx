@@ -64,6 +64,10 @@ jest.mock('@/lib/animations', () => ({
     staggerContainer: { hidden: {}, visible: {} },
 }))
 
+// The page calls the API through lib/apiClient; the manual mock attaches `Bearer test-token`
+// and still goes through global.fetch, so the fetch mocks below keep working.
+jest.mock('@/lib/apiClient')
+
 // Mock fetch
 const mockFetch = jest.fn()
 global.fetch = mockFetch

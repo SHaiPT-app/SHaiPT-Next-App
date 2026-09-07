@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/lib/supabaseDb';
+import { apiFetch, ApiError } from '@/lib/apiClient';
 import { fadeInUp, staggerContainer } from '@/lib/animations';
 import type {
     WorkoutSession,
@@ -333,14 +334,16 @@ interface WorkoutSummaryProps {
     weightUnit: 'lbs' | 'kg';
     userGoals?: string[];
     workoutLogId?: string;
-    userId?: string;
     onFinish: () => void;
 }
 
-function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchieved, weightUnit, userGoals, workoutLogId, userId, onFinish }: WorkoutSummaryProps) {
+const AI_FEEDBACK_FALLBACK = 'Could not load AI feedback. Your workout data has been saved.';
+
+function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchieved, weightUnit, userGoals, workoutLogId, onFinish }: WorkoutSummaryProps) {
     const [aiFeedback, setAiFeedback] = useState<AIFeedback | null>(null);
     const [aiFeedbackLoading, setAiFeedbackLoading] = useState(true);
-    const [aiFeedbackError, setAiFeedbackError] = useState(false);
+    /** the message to show when the AI feedback could not be loaded (a 429 carries the AI limit) */
+    const [aiFeedbackError, setAiFeedbackError] = useState<string | null>(null);
     const [adaptation, setAdaptation] = useState<PlanAdaptationResponse | null>(null);
     const [adaptationLoading, setAdaptationLoading] = useState(true);
     const [adaptationApplying, setAdaptationApplying] = useState(false);
@@ -377,10 +380,9 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                     })),
                 }));
 
-                const response = await fetch('/api/ai-coach/workout-summary', {
+                const data = await apiFetch<AIFeedback>('/api/ai-coach/workout-summary', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+                    body: {
                         sessionName: session.name,
                         durationMinutes: totalMinutes,
                         totalVolume,
@@ -390,22 +392,16 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                         exercises,
                         prsAchieved,
                         userGoals,
-                    }),
+                    },
                 });
 
-                if (!response.ok) {
-                    setAiFeedbackError(true);
-                    return;
-                }
-
-                const data = await response.json();
-                if (data.feedback) {
+                if (data?.feedback) {
                     setAiFeedback(data);
                 } else {
-                    setAiFeedbackError(true);
+                    setAiFeedbackError(AI_FEEDBACK_FALLBACK);
                 }
-            } catch {
-                setAiFeedbackError(true);
+            } catch (err) {
+                setAiFeedbackError(err instanceof ApiError ? err.message : AI_FEEDBACK_FALLBACK);
             } finally {
                 setAiFeedbackLoading(false);
             }
@@ -433,26 +429,21 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                     };
                 });
 
-                const response = await fetch('/api/ai-coach/plan-adaptation', {
+                const data = await apiFetch<PlanAdaptationResponse>('/api/ai-coach/plan-adaptation', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: userId || '',
+                    body: {
                         workoutLogId: workoutLogId || '',
                         sessionName: session.name,
                         exercises: exerciseData,
                         userGoals,
-                    }),
+                    },
                 });
-
-                if (response.ok) {
-                    const data: PlanAdaptationResponse = await response.json();
-                    if (data.recommendations) {
-                        setAdaptation(data);
-                    }
+                if (data?.recommendations) {
+                    setAdaptation(data);
                 }
-            } catch {
-                // Adaptation is non-critical; fail silently
+            } catch (err) {
+                // Adaptation is non-critical; the summary still shows without it
+                console.error('Plan adaptation failed:', err);
             } finally {
                 setAdaptationLoading(false);
             }
@@ -598,7 +589,7 @@ function WorkoutSummary({ session, exerciseLogs, startedAt, finishedAt, prsAchie
                     )}
                     {aiFeedbackError && !aiFeedbackLoading && (
                         <p style={{ color: '#888', fontSize: '0.9rem' }}>
-                            Could not load AI feedback. Your workout data has been saved.
+                            {aiFeedbackError}
                         </p>
                     )}
                     {aiFeedback && !aiFeedbackLoading && (
@@ -1163,7 +1154,6 @@ export default function WorkoutExecutionPage() {
                     weightUnit={weightUnit}
                     userGoals={profile?.fitness_goals}
                     workoutLogId={workoutLogId || undefined}
-                    userId={profile?.id}
                     onFinish={() => router.push('/home')}
                 />
             </div>

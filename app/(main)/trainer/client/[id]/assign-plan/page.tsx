@@ -3,8 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 import { db } from '@/lib/supabaseDb';
-import type { Profile, TrainingPlan } from '@/lib/types';
+import type { Profile, TrainingPlan, SessionExercise, IntakeFormData } from '@/lib/types';
+import type { GeneratedPlanData } from '@/app/api/ai-coach/generate-plan/route';
+import type { SplitOption } from '@/components/ai-coach/SplitSelection';
 import { ArrowLeft, FileText, Wrench, Bot, Check } from 'lucide-react';
 
 type MethodTab = 'templates' | 'manual' | 'ai';
@@ -71,14 +74,14 @@ export default function AssignPlanPage() {
         if (user) fetchData();
     }, [user, fetchData]);
 
-    const handleAssignPlan = async (planId: string) => {
+    const handleAssignPlan = async (planId: string, durationWeeks?: number) => {
         if (!user) return;
         setAssigning(true);
         setError(null);
 
         try {
             const selectedPlan = templates.find(p => p.id === planId);
-            const weeks = selectedPlan?.duration_weeks || 12;
+            const weeks = durationWeeks || selectedPlan?.duration_weeks || 12;
             const today = new Date();
             const endDate = new Date(today);
             endDate.setDate(endDate.getDate() + weeks * 7);
@@ -111,31 +114,90 @@ export default function AssignPlanPage() {
         setError(null);
 
         try {
-            // Use the existing generate-plan endpoint with client's intake data
-            const res = await fetch('/api/ai-coach/generate-plan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: clientId,
-                    trainerId: user.id,
-                    // Include any available client data
-                    fitnessGoals: clientProfile.fitness_goals?.join(', ') || 'General fitness',
-                }),
-            });
+            // The generate-plan route takes intake data + a split and returns the plan itself
+            // (the trainer is the token holder); what we know about the client fills the intake.
+            const intakeData: Partial<IntakeFormData> = {
+                name: clientProfile.full_name || clientProfile.username || '',
+                fitness_goals: clientProfile.fitness_goals?.join(', ') || 'General fitness',
+                fitness_level: clientProfile.experience || '',
+                height: clientProfile.height_cm ? `${clientProfile.height_cm} cm` : '',
+                weight: clientProfile.weight_kg ? `${clientProfile.weight_kg} kg` : '',
+            };
 
-            if (!res.ok) {
+            const { splits } = await apiFetch<{ splits?: SplitOption[] }>('/api/ai-coach/generate-plan', {
+                method: 'POST',
+                body: { action: 'recommend_splits', intakeData, messages: [] },
+            });
+            const split = splits?.find(s => s.recommended) ?? splits?.[0];
+            if (!split) {
                 throw new Error('AI plan generation failed. Try using the Manual Builder instead.');
             }
 
-            const data = await res.json();
-            if (data.planId) {
-                // Auto-assign the generated plan
-                await handleAssignPlan(data.planId);
-            } else {
-                throw new Error('Plan generated but no ID returned.');
+            const { plan } = await apiFetch<{ plan?: GeneratedPlanData }>('/api/ai-coach/generate-plan', {
+                method: 'POST',
+                body: { splitType: split.id, intakeData, messages: [] },
+            });
+            if (!plan) {
+                throw new Error('AI plan generation failed. Try using the Manual Builder instead.');
             }
-        } catch (err: any) {
-            setError(err.message);
+
+            // Save it as the trainer's plan, then assign it to the client
+            const trainingPlan = await db.trainingPlans.create({
+                creator_id: user.id,
+                name: plan.name,
+                description: plan.description || '',
+                duration_weeks: plan.duration_weeks,
+                tags: [`split:${plan.split_type}`, `client:${clientId}`],
+                is_template: false,
+                is_public: false,
+            });
+
+            const daysPerWeek = plan.sessions.length > 0
+                ? Math.max(...plan.sessions.map(s => s.day_number))
+                : 1;
+
+            for (const session of plan.sessions) {
+                const exercises: SessionExercise[] = session.exercises.map((ex, exIndex) => {
+                    const row: SessionExercise & { fourd_id: string | null } = {
+                        // library id when the model picked one; else a name-derived id
+                        exercise_id: ex.exercise_id || `${ex.exercise_name
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, '_')
+                            .substring(0, 50)}_d${session.day_number}_e${exIndex}`,
+                        exercise_name: ex.exercise_name,
+                        // 4Dcoach exercise (or null) so the plan can link to the 4D form check
+                        fourd_id: ex.fourd_id ?? null,
+                        sets: ex.sets.map(s => ({
+                            reps: s.reps,
+                            weight: s.weight || '',
+                            rest_seconds: s.rest_seconds || 90,
+                        })),
+                        notes: ex.notes || '',
+                    };
+                    return row;
+                });
+                const workoutSession = await db.workoutSessions.create({
+                    creator_id: user.id,
+                    name: session.name,
+                    description: '',
+                    exercises,
+                    tags: [],
+                    is_template: false,
+                    is_public: false,
+                });
+                await db.trainingPlanSessions.create({
+                    plan_id: trainingPlan.id,
+                    session_id: workoutSession.id,
+                    day_number: session.day_number,
+                    week_number: Math.ceil(session.day_number / daysPerWeek),
+                });
+            }
+
+            // Auto-assign the generated plan
+            await handleAssignPlan(trainingPlan.id, plan.duration_weeks);
+        } catch (err: unknown) {
+            // a 429 carries the daily/monthly AI limit message
+            setError(errorMessage(err, 'AI plan generation failed. Try using the Manual Builder instead.'));
         } finally {
             setAssigning(false);
         }

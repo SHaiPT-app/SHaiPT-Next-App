@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiFetch, apiFetchRaw, ApiError } from '@/lib/apiClient';
 import {
     Scale,
     Ruler,
@@ -293,17 +294,15 @@ export default function BodyCompositionPage() {
         setLoading(true);
         setError(null);
         try {
-            const [measRes, mediaRes] = await Promise.all([
-                fetch(`/api/body-measurements?userId=${user.id}`),
-                fetch(`/api/progress-media?userId=${user.id}`),
+            const [measData, mediaData] = await Promise.all([
+                apiFetch<{ measurements?: BodyMeasurement[] }>('/api/body-measurements'),
+                apiFetch<{ media?: ProgressMediaWithUrl[] }>('/api/progress-media'),
             ]);
-            const measData = await measRes.json();
-            const mediaData = await mediaRes.json();
-            setMeasurements(measData.measurements || []);
-            setMedia(mediaData.media || []);
+            setMeasurements(measData?.measurements || []);
+            setMedia(mediaData?.media || []);
         } catch (err) {
             console.error('Error fetching body composition data:', err);
-            setError('Failed to load body composition data. Please try again.');
+            setError(err instanceof ApiError ? err.message : 'Failed to load body composition data. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -343,7 +342,6 @@ export default function BodyCompositionPage() {
         setSaving(true);
         try {
             const payload: Record<string, unknown> = {
-                user_id: user.id,
                 date: formDate,
                 notes: formNotes || undefined,
             };
@@ -357,23 +355,16 @@ export default function BodyCompositionPage() {
 
             if (editingId) {
                 payload.id = editingId;
-                await fetch('/api/body-measurements', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
+                await apiFetch('/api/body-measurements', { method: 'PUT', body: payload });
             } else {
-                await fetch('/api/body-measurements', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
+                await apiFetch('/api/body-measurements', { method: 'POST', body: payload });
             }
 
             setShowForm(false);
             await fetchData();
         } catch (error) {
             console.error('Error saving measurement:', error);
+            setError(error instanceof ApiError ? error.message : 'Failed to save the measurement. Please try again.');
         } finally {
             setSaving(false);
         }
@@ -381,10 +372,11 @@ export default function BodyCompositionPage() {
 
     const handleDeleteMeasurement = async (id: string) => {
         try {
-            await fetch(`/api/body-measurements?id=${id}`, { method: 'DELETE' });
+            await apiFetch(`/api/body-measurements?id=${id}`, { method: 'DELETE' });
             await fetchData();
         } catch (error) {
             console.error('Error deleting measurement:', error);
+            setError(error instanceof ApiError ? error.message : 'Failed to delete the measurement. Please try again.');
         }
     };
 
@@ -396,20 +388,14 @@ export default function BodyCompositionPage() {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('user_id', user.id);
             formData.append('taken_at', new Date().toISOString());
             formData.append('visibility', 'private');
 
-            const res = await fetch('/api/progress-media', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (res.ok) {
-                await fetchData();
-            }
+            await apiFetchRaw('/api/progress-media', { method: 'POST', body: formData });
+            await fetchData();
         } catch (error) {
             console.error('Error uploading media:', error);
+            setError(error instanceof ApiError ? error.message : 'Failed to upload the photo. Please try again.');
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -418,10 +404,11 @@ export default function BodyCompositionPage() {
 
     const handleDeleteMedia = async (id: string) => {
         try {
-            await fetch(`/api/progress-media?id=${id}`, { method: 'DELETE' });
+            await apiFetch(`/api/progress-media?id=${id}`, { method: 'DELETE' });
             await fetchData();
         } catch (error) {
             console.error('Error deleting media:', error);
+            setError(error instanceof ApiError ? error.message : 'Failed to delete the photo. Please try again.');
         }
     };
 

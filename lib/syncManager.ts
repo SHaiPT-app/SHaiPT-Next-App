@@ -1,63 +1,60 @@
 import { offlineActions, workoutDrafts } from './offlineDb';
 import { useOfflineStore } from '@/stores/offlineStore';
-import type { OfflineAction, OfflineActionType } from './types';
+import { apiFetch, accessToken, ApiError } from '@/lib/apiClient';
+import type { OfflineAction, OfflineActionType, WorkoutDraftData } from './types';
 
-// API endpoint handlers for each action type
+// API endpoint handlers for each action type. The caller comes from the bearer token that
+// apiFetch attaches; any userId in the payload is ignored by the server.
 const actionHandlers: Record<OfflineActionType, (payload: any) => Promise<any>> = {
     create_workout_log: async (payload) => {
-        const response = await fetch('/api/workout/start', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error('Failed to create workout log');
-        return response.json();
+        try {
+            return await apiFetch('/api/workout/start', { method: 'POST', body: payload });
+        } catch (err) {
+            throw new Error(err instanceof ApiError ? err.message : 'Failed to create workout log');
+        }
     },
 
     log_set: async (payload) => {
         const { logId, ...setData } = payload;
-        const response = await fetch(`/api/workout/${logId}/set`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(setData),
-        });
-        if (!response.ok) throw new Error('Failed to log set');
-        return response.json();
+        try {
+            return await apiFetch(`/api/workout/${logId}/set`, { method: 'PATCH', body: setData });
+        } catch (err) {
+            throw new Error(err instanceof ApiError ? err.message : 'Failed to log set');
+        }
     },
 
     update_exercise_log: async (payload) => {
         const { logId, exerciseLogId, ...data } = payload;
-        const response = await fetch(`/api/workout/${logId}/exercise/${exerciseLogId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        if (!response.ok) throw new Error('Failed to update exercise log');
-        return response.json();
+        try {
+            return await apiFetch(`/api/workout/${logId}/exercise/${exerciseLogId}`, { method: 'PATCH', body: data });
+        } catch (err) {
+            throw new Error(err instanceof ApiError ? err.message : 'Failed to update exercise log');
+        }
     },
 
     complete_workout: async (payload) => {
         const { logId, ...data } = payload;
-        const response = await fetch(`/api/workout/${logId}/complete`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        if (!response.ok) throw new Error('Failed to complete workout');
-        return response.json();
+        try {
+            return await apiFetch(`/api/workout/${logId}/complete`, { method: 'POST', body: data });
+        } catch (err) {
+            throw new Error(err instanceof ApiError ? err.message : 'Failed to complete workout');
+        }
     },
 
     swap_exercise: async (payload) => {
         const { logId, exerciseLogId, ...data } = payload;
-        const response = await fetch(`/api/workout/${logId}/exercise/${exerciseLogId}/swap`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        if (!response.ok) throw new Error('Failed to swap exercise');
-        return response.json();
+        try {
+            return await apiFetch(`/api/workout/${logId}/exercise/${exerciseLogId}/swap`, { method: 'PUT', body: data });
+        } catch (err) {
+            throw new Error(err instanceof ApiError ? err.message : 'Failed to swap exercise');
+        }
     },
 };
+
+/** Not signed in (no token, or the server said 401): keep the draft local and queued, no redirect. */
+async function signedIn(): Promise<boolean> {
+    return (await accessToken()) !== null;
+}
 
 // Sync manager class
 class SyncManager {
@@ -159,22 +156,26 @@ class SyncManager {
         return actionId;
     }
 
-    // Save workout draft
+    // Save workout draft (`userId` keys the local store; the server takes the caller from the token)
     async saveDraft(userId: string, sessionId: string, data: any): Promise<void> {
         await workoutDrafts.save(userId, sessionId, data);
 
-        // Also try to sync to server if online
+        // Also try to sync to server if online and signed in
         const store = useOfflineStore.getState();
-        if (store.status.isOnline) {
+        if (store.status.isOnline && await signedIn()) {
             try {
-                await fetch('/api/sync/workout', {
+                await apiFetch('/api/sync/workout', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, sessionId, data }),
+                    body: { sessionId, data },
                 });
             } catch (error) {
-                // Silently fail - local save is sufficient
-                console.log('Draft sync failed, will retry later');
+                // Silently fail - local save is sufficient. A 401 means we are not signed in:
+                // the draft stays queued locally and syncs after the next sign-in.
+                if (error instanceof ApiError && error.status === 401) {
+                    console.log('Draft sync skipped: not signed in, keeping the draft queued');
+                } else {
+                    console.log('Draft sync failed, will retry later');
+                }
             }
         }
     }
@@ -185,18 +186,15 @@ class SyncManager {
         const localDraft = await workoutDrafts.get(userId, sessionId);
         if (localDraft) return localDraft;
 
-        // If online, try to fetch from server
+        // If online and signed in, try to fetch from server
         const store = useOfflineStore.getState();
-        if (store.status.isOnline) {
+        if (store.status.isOnline && await signedIn()) {
             try {
-                const response = await fetch(`/api/sync/workout?userId=${userId}&sessionId=${sessionId}`);
-                if (response.ok) {
-                    const serverDraft = await response.json();
-                    if (serverDraft) {
-                        // Cache locally
-                        await workoutDrafts.save(userId, sessionId, serverDraft);
-                        return serverDraft;
-                    }
+                const serverDraft = await apiFetch<WorkoutDraftData | null>(`/api/sync/workout?sessionId=${encodeURIComponent(sessionId)}`);
+                if (serverDraft) {
+                    // Cache locally
+                    await workoutDrafts.save(userId, sessionId, serverDraft);
+                    return serverDraft;
                 }
             } catch (error) {
                 console.log('Failed to fetch draft from server');
@@ -210,11 +208,11 @@ class SyncManager {
     async deleteDraft(userId: string, sessionId: string): Promise<void> {
         await workoutDrafts.delete(userId, sessionId);
 
-        // Also delete from server if online
+        // Also delete from server if online and signed in
         const store = useOfflineStore.getState();
-        if (store.status.isOnline) {
+        if (store.status.isOnline && await signedIn()) {
             try {
-                await fetch(`/api/sync/workout?userId=${userId}&sessionId=${sessionId}`, {
+                await apiFetch(`/api/sync/workout?sessionId=${encodeURIComponent(sessionId)}`, {
                     method: 'DELETE',
                 });
             } catch (error) {

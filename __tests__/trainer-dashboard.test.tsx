@@ -1,6 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import TrainerDashboardPage from '@/app/(main)/trainer/page';
 
+// apiFetch with a constant token (Authorization: Bearer test-token); still goes through global.fetch
+jest.mock('@/lib/apiClient');
+
 // Mock next/navigation
 const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({

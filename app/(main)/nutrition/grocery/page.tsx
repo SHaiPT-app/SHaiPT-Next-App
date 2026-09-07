@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiFetch, ApiError, errorMessage } from '@/lib/apiClient';
 import {
     ShoppingCart,
     Check,
@@ -227,16 +228,14 @@ export default function GroceryListPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`/api/grocery-lists?userId=${user.id}`);
-            if (res.ok) {
-                const data = await res.json();
-                setAllLists(data.lists || []);
-                if (data.lists && data.lists.length > 0) {
-                    setGroceryList(data.lists[0]); // most recent
-                }
+            const data = await apiFetch<{ lists?: GroceryList[] }>('/api/grocery-lists');
+            setAllLists(data?.lists || []);
+            if (data?.lists && data.lists.length > 0) {
+                setGroceryList(data.lists[0]); // most recent
             }
         } catch (err) {
             console.error('Failed to fetch grocery lists:', err);
+            setError(err instanceof ApiError ? err.message : 'Failed to load grocery lists');
         } finally {
             setLoading(false);
         }
@@ -255,22 +254,14 @@ export default function GroceryListPage() {
         setError(null);
 
         try {
-            const res = await fetch('/api/grocery-lists/generate', {
+            const data = await apiFetch<{ list: GroceryList }>('/api/grocery-lists/generate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id }),
+                body: {},
             });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Failed to generate grocery list');
-            }
-
-            const data = await res.json();
             setGroceryList(data.list);
             setAllLists(prev => [data.list, ...prev]);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to generate grocery list');
+            setError(errorMessage(err, 'Failed to generate grocery list'));
         } finally {
             setGenerating(false);
         }
@@ -289,13 +280,13 @@ export default function GroceryListPage() {
         // Persist update
         setSaving(true);
         try {
-            await fetch('/api/grocery-lists', {
+            await apiFetch('/api/grocery-lists', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: groceryList.id, items: updatedItems }),
+                body: { id: groceryList.id, items: updatedItems },
             });
         } catch (err) {
             console.error('Failed to save item toggle:', err);
+            setError(err instanceof ApiError ? err.message : 'Failed to save the change');
         } finally {
             setSaving(false);
         }
@@ -304,16 +295,15 @@ export default function GroceryListPage() {
     // Delete grocery list
     const handleDelete = async (listId: string) => {
         try {
-            const res = await fetch(`/api/grocery-lists?id=${listId}`, { method: 'DELETE' });
-            if (res.ok) {
-                setAllLists(prev => prev.filter(l => l.id !== listId));
-                if (groceryList?.id === listId) {
-                    const remaining = allLists.filter(l => l.id !== listId);
-                    setGroceryList(remaining.length > 0 ? remaining[0] : null);
-                }
+            await apiFetch(`/api/grocery-lists?id=${listId}`, { method: 'DELETE' });
+            setAllLists(prev => prev.filter(l => l.id !== listId));
+            if (groceryList?.id === listId) {
+                const remaining = allLists.filter(l => l.id !== listId);
+                setGroceryList(remaining.length > 0 ? remaining[0] : null);
             }
         } catch (err) {
             console.error('Failed to delete grocery list:', err);
+            setError(err instanceof ApiError ? err.message : 'Failed to delete the grocery list');
         }
     };
 

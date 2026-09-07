@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { WorkoutPlan, WorkoutLog } from '@/lib/types';
-import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 
 interface PlanViewerProps {
     plan: WorkoutPlan;
@@ -120,9 +120,6 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
 
         setSaving(true);
         try {
-            // Wait for auth state to be ready and retry if session is not available
-            let session = null;
-
             // DEV BYPASS
             if (traineeId === 'dev-user-id') {
                 console.log('Dev user detected, skipping Supabase session check for log submission');
@@ -133,33 +130,6 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
                 return;
             }
 
-            let retryCount = 0;
-            const maxRetries = 5;
-
-            while (!session && retryCount < maxRetries) {
-                const { data: { session: currentSession } } = await supabase.auth.getSession();
-                if (currentSession) {
-                    session = currentSession;
-                    break;
-                }
-
-                // Wait briefly before retrying
-                await new Promise(resolve => setTimeout(resolve, 200));
-                retryCount++;
-            }
-
-            if (!session) {
-                console.error('No valid session found after retries');
-                setSaving(false);
-                return;
-            }
-
-            const headers: any = { 'Content-Type': 'application/json' };
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
-                console.log('Added auth header for workout log submission');
-            }
-
             console.log('Submitting workout log:', {
                 planId: plan.id,
                 traineeId,
@@ -167,29 +137,22 @@ export default function PlanViewer({ plan, traineeId, onBack }: PlanViewerProps)
                 exerciseCount: currentLogs.length
             });
 
-            const res = await fetch('/api/logs', {
+            // the log belongs to the token holder, so no trainee_id in the body
+            await apiFetch('/api/logs', {
                 method: 'POST',
-                headers,
-                body: JSON.stringify({
+                body: {
                     plan_id: plan.id,  // Use snake_case to match database schema
-                    trainee_id: traineeId,
                     exercises: currentLogs,
                     session_id: activeSession.id, // We might need to add this to the log schema later
                     notes: `Session: ${activeSession.name}`
-                }),
+                },
             });
 
-            if (res.ok) {
-                console.log('Workout logged successfully!');
-                onBack();
-            } else {
-                const errorText = await res.text();
-                console.error('Failed to log workout:', res.status, errorText);
-                alert('Failed to log workout');
-            }
+            console.log('Workout logged successfully!');
+            onBack();
         } catch (error) {
             console.error('Error logging workout:', error);
-            alert('Error logging workout');
+            alert(`Failed to log workout: ${errorMessage(error, 'Error logging workout')}`);
         } finally {
             setSaving(false);
         }

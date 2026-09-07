@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import type { SubscriptionTier } from '@/lib/types';
+import { apiFetch } from '@/lib/apiClient';
 
 interface PricingTier {
   name: string;
@@ -86,23 +87,13 @@ export default function Pricing() {
         window.location.href = '/home';
         return;
       }
-      const session = parsed?.session?.access_token;
-      if (!session) {
-        window.location.href = '/login';
-        return;
-      }
 
-      const res = await fetch('/api/subscriptions/checkout', {
+      // the token comes from the Supabase session (apiFetch), not from localStorage
+      const data = await apiFetch<{ url?: string }>('/api/subscriptions/checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session}`,
-        },
-        body: JSON.stringify({ tier }),
+        body: { tier },
       });
-
-      const data = await res.json();
-      if (data.url) {
+      if (data?.url) {
         window.location.href = data.url;
       }
     } catch {

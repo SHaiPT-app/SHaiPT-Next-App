@@ -8,6 +8,7 @@ import ConfirmationModal from '@/components/ConfirmationModal';
 import EmptyState from '@/components/EmptyState';
 import { db } from '@/lib/supabaseDb';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/apiClient';
 import type { Profile, TrainingPlan, NutritionPlan, Notification } from '@/lib/types';
 
 async function fetchPlans(userId: string): Promise<{ workoutPlans: TrainingPlan[]; dietPlans: NutritionPlan[] }> {
@@ -161,14 +162,11 @@ export default function HomePage() {
                 }
                 // Check for plan_assigned notifications
                 try {
-                    const res = await fetch(`/api/notifications?userId=${resolvedUserId}`);
-                    if (res.ok) {
-                        const { notifications } = await res.json();
-                        const planNotif = (notifications || []).find(
-                            (n: Notification) => n.type === 'plan_assigned' && !n.is_read
-                        );
-                        if (planNotif) setPlanBanner(planNotif);
-                    }
+                    const { notifications } = await apiFetch<{ notifications?: Notification[] }>('/api/notifications');
+                    const planNotif = (notifications || []).find(
+                        (n: Notification) => n.type === 'plan_assigned' && !n.is_read
+                    );
+                    if (planNotif) setPlanBanner(planNotif);
                 } catch {
                     // Silently fail
                 }
@@ -182,10 +180,9 @@ export default function HomePage() {
     const dismissBanner = async () => {
         if (planBanner) {
             try {
-                await fetch('/api/notifications', {
+                await apiFetch('/api/notifications', {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ notificationId: planBanner.id }),
+                    body: { notificationId: planBanner.id },
                 });
             } catch {
                 // Silently fail

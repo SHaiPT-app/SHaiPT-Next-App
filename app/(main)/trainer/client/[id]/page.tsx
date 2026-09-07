@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 import { db } from '@/lib/supabaseDb';
 import type { Profile, WorkoutLogWithExercises, BodyMeasurement, ProgressMedia, TrainingPlan } from '@/lib/types';
 import DirectMessageThread from '@/components/DirectMessageThread';
@@ -74,23 +75,10 @@ export default function ClientDetailPage() {
         setError(null);
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const headers: Record<string, string> = {};
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
-            }
-
-            const res = await fetch(
-                `/api/trainer/clients/progress?trainerId=${user.id}&clientId=${clientId}`,
-                { headers }
+            // the trainer is the token holder; clientId names the client being viewed
+            const progressData = await apiFetch<ClientProgressData>(
+                `/api/trainer/clients/progress?clientId=${clientId}`
             );
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Failed to fetch client progress');
-            }
-
-            const progressData = await res.json();
             setData(progressData);
 
             // Fetch full client profile for gender and other details
@@ -102,7 +90,7 @@ export default function ClientDetailPage() {
             }
         } catch (err: unknown) {
             console.error('Error fetching client progress:', err);
-            setError(err instanceof Error ? err.message : 'Failed to load client progress');
+            setError(errorMessage(err, 'Failed to load client progress'));
         } finally {
             setLoading(false);
         }

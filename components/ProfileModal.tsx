@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Profile } from '@/lib/types';
 import { db } from '@/lib/supabaseDb';
 import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 
 interface ProfileModalProps {
     user: Profile;
@@ -86,22 +87,13 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate }: Profil
 
     const fetchTraineeLists = async () => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const token = session?.access_token;
-
-            // Fetch My Trainees
-            const myRes = await fetch(`/api/users/trainees?trainerId=${user.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const myData = await myRes.json();
-            setMyTrainees(Array.isArray(myData) ? myData : []);
+            // Fetch My Trainees (`trainerId` only selects the branch; the server uses the token holder)
+            const myData = await apiFetch<{ trainees?: Profile[] }>(`/api/users/trainees?trainerId=${user.id}`);
+            setMyTrainees(Array.isArray(myData?.trainees) ? myData.trainees : []);
 
             // Fetch Available Trainees
-            const availRes = await fetch(`/api/users/trainees?status=available`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const availData = await availRes.json();
-            setAvailableTrainees(Array.isArray(availData) ? availData : []);
+            const availData = await apiFetch<{ trainees?: Profile[] }>(`/api/users/trainees?status=available`);
+            setAvailableTrainees(Array.isArray(availData?.trainees) ? availData.trainees : []);
 
         } catch (err) {
             console.error('Error fetching trainees:', err);
@@ -111,25 +103,15 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate }: Profil
     const handleLinkTrainee = async (traineeId: string, action: 'link' | 'unlink') => {
         try {
             setLoading(true);
-            const { data: { session } } = await supabase.auth.getSession();
-
-            const res = await fetch('/api/users/link', {
+            // both ids name the link (the route checks the caller is one of them)
+            await apiFetch('/api/users/link', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token}`
-                },
-                body: JSON.stringify({
+                body: {
                     trainerId: user.id,
                     traineeId: traineeId,
                     action
-                })
+                }
             });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Failed to update connection');
-            }
 
             // Refresh lists
             await fetchTraineeLists();
@@ -137,8 +119,8 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate }: Profil
             setSelectedTraineeId('');
 
             setTimeout(() => setSuccess(''), 3000);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(errorMessage(err, 'Failed to update connection'));
         } finally {
             setLoading(false);
         }

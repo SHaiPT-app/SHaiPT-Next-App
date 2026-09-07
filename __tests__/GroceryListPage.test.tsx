@@ -18,6 +18,10 @@ jest.mock('framer-motion', () => ({
 }))
 
 // Mock fetch
+// The page calls the API through lib/apiClient; the manual mock attaches `Bearer test-token`
+// and still goes through global.fetch, so the fetch mocks below keep working.
+jest.mock('@/lib/apiClient')
+
 const mockFetch = jest.fn()
 global.fetch = mockFetch
 
@@ -193,9 +197,11 @@ describe('GroceryListPage', () => {
         fireEvent.click(screen.getByText('Generate Grocery List'))
 
         await waitFor(() => {
+            // the caller comes from the bearer token, not the body
             expect(mockFetch).toHaveBeenCalledWith('/api/grocery-lists/generate', expect.objectContaining({
                 method: 'POST',
-                body: JSON.stringify({ userId: 'user-1' }),
+                headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+                body: JSON.stringify({}),
             }))
         })
     })

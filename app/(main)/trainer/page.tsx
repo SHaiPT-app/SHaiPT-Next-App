@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 import { db } from '@/lib/supabaseDb';
 import type { Profile, CoachingRelationship, ClientAlert, ClientAlertSummary } from '@/lib/types';
 import { Users, Clock, ClipboardList, Check, X, Hourglass, ChevronRight } from 'lucide-react';
@@ -66,23 +67,12 @@ export default function TrainerDashboardPage() {
         setError(null);
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const headers: Record<string, string> = {};
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
-            }
-
-            const res = await fetch(`/api/trainer/clients?trainerId=${user.id}`, { headers });
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Failed to fetch clients');
-            }
-
-            const data = await res.json();
+            // the trainer is the token holder
+            const data = await apiFetch<{ clients?: ClientStats[] }>('/api/trainer/clients');
             setClients(data.clients || []);
         } catch (err: unknown) {
             console.error('Error fetching clients:', err);
-            setError(err instanceof Error ? err.message : 'Failed to load client roster');
+            setError(errorMessage(err, 'Failed to load client roster'));
         } finally {
             setLoading(false);
         }
@@ -108,21 +98,12 @@ export default function TrainerDashboardPage() {
     const fetchAlerts = useCallback(async () => {
         if (!user) return;
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const headers: Record<string, string> = {};
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
+            const data = await apiFetch<{ alerts?: ClientAlertSummary[] }>('/api/trainer/clients/alerts');
+            const alertMap: Record<string, ClientAlert[]> = {};
+            for (const summary of data.alerts || []) {
+                alertMap[summary.clientId] = summary.alerts;
             }
-
-            const res = await fetch(`/api/trainer/clients/alerts?trainerId=${user.id}`, { headers });
-            if (res.ok) {
-                const data = await res.json();
-                const alertMap: Record<string, ClientAlert[]> = {};
-                for (const summary of (data.alerts || []) as ClientAlertSummary[]) {
-                    alertMap[summary.clientId] = summary.alerts;
-                }
-                setClientAlerts(alertMap);
-            }
+            setClientAlerts(alertMap);
         } catch (err) {
             console.error('Error fetching alerts:', err);
         }
@@ -139,30 +120,23 @@ export default function TrainerDashboardPage() {
     const handleRespond = async (relationshipId: string, action: 'accept' | 'decline' | 'waitlist') => {
         setRespondingTo(relationshipId);
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
-            }
-            const res = await fetch('/api/coaching/respond', {
+            await apiFetch('/api/coaching/respond', {
                 method: 'POST',
-                headers,
-                body: JSON.stringify({
+                body: {
                     relationshipId,
                     action,
                     declineReason: action === 'decline' ? declineReasonInput : undefined,
-                }),
+                },
             });
 
-            if (res.ok) {
-                // Refresh data
-                fetchPendingRequests();
-                fetchClients();
-                setShowDeclineInput(null);
-                setDeclineReasonInput('');
-            }
+            // Refresh data
+            fetchPendingRequests();
+            fetchClients();
+            setShowDeclineInput(null);
+            setDeclineReasonInput('');
         } catch (err) {
             console.error('Error responding to request:', err);
+            setError(errorMessage(err, 'Failed to respond to the request'));
         } finally {
             setRespondingTo(null);
         }

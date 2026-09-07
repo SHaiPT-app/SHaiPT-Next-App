@@ -108,6 +108,10 @@ jest.mock('@/lib/supabaseDb', () => ({
     },
 }));
 
+// The page calls the API through lib/apiClient; the manual mock attaches `Bearer test-token`
+// and still goes through global.fetch, so the fetch mocks below keep working.
+jest.mock('@/lib/apiClient');
+
 jest.mock('@/lib/animations', () => ({
     fadeInUp: {},
     staggerContainer: {},
@@ -255,7 +259,7 @@ describe('WorkoutSummary - AI Feedback', () => {
                 '/api/ai-coach/workout-summary',
                 expect.objectContaining({
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer test-token' },
                 })
             );
         });
@@ -269,7 +273,8 @@ describe('WorkoutSummary - AI Feedback', () => {
         expect(callBody.userGoals).toEqual(['muscle gain', 'strength']);
     });
 
-    it('shows error message when AI feedback fails', async () => {
+    it('shows the server message when AI feedback fails', async () => {
+        // a non-2xx reply with { error } surfaces the server's message (e.g. the daily AI limit)
         (global.fetch as jest.Mock).mockResolvedValue(
             mockResponse({ error: 'Internal error' }, { status: 500 })
         );
@@ -277,7 +282,7 @@ describe('WorkoutSummary - AI Feedback', () => {
         await completeWorkoutAndReachSummary();
 
         await waitFor(() => {
-            expect(screen.getByText('Could not load AI feedback. Your workout data has been saved.')).toBeInTheDocument();
+            expect(screen.getByText('Internal error')).toBeInTheDocument();
         });
     });
 

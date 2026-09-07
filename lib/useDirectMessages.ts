@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 import type { DirectMessage } from '@/lib/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseDirectMessagesOptions {
     userId: string;
     otherUserId: string;
-    authToken: string;
+    /** no longer used: apiFetch attaches the session token itself (kept for callers) */
+    authToken?: string;
 }
 
 interface UseDirectMessagesReturn {
@@ -22,7 +24,6 @@ interface UseDirectMessagesReturn {
 export function useDirectMessages({
     userId,
     otherUserId,
-    authToken,
 }: UseDirectMessagesOptions): UseDirectMessagesReturn {
     const [messages, setMessages] = useState<DirectMessage[]>([]);
     const [loading, setLoading] = useState(true);
@@ -31,31 +32,26 @@ export function useDirectMessages({
 
     // Fetch initial messages
     useEffect(() => {
-        if (!userId || !otherUserId || !authToken) return;
+        if (!userId || !otherUserId) return;
 
         const fetchMessages = async () => {
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(
-                    `/api/direct-messages?userId=${userId}&otherUserId=${otherUserId}`,
-                    { headers: { Authorization: `Bearer ${authToken}` } }
+                // the caller is the token holder; only the other party is named
+                const data = await apiFetch<{ messages?: DirectMessage[] }>(
+                    `/api/direct-messages?otherUserId=${otherUserId}`
                 );
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Failed to fetch messages');
-                }
-                const data = await res.json();
                 setMessages(data.messages || []);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to fetch messages');
+                setError(errorMessage(err, 'Failed to fetch messages'));
             } finally {
                 setLoading(false);
             }
         };
 
         fetchMessages();
-    }, [userId, otherUserId, authToken]);
+    }, [userId, otherUserId]);
 
     // Subscribe to realtime changes
     useEffect(() => {
@@ -112,32 +108,20 @@ export function useDirectMessages({
             if (!content.trim()) return;
 
             try {
-                const res = await fetch('/api/direct-messages', {
+                const data = await apiFetch<{ message: DirectMessage }>('/api/direct-messages', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${authToken}`,
-                    },
-                    body: JSON.stringify({
-                        senderId: userId,
+                    body: {
                         recipientId: otherUserId,
                         content,
-                    }),
+                    },
                 });
-
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Failed to send message');
-                }
-
-                const data = await res.json();
                 setMessages((prev) => [...prev, data.message]);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to send message');
+                setError(errorMessage(err, 'Failed to send message'));
                 throw err;
             }
         },
-        [userId, otherUserId, authToken]
+        [otherUserId]
     );
 
     const markAsRead = useCallback(

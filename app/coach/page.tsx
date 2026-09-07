@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/apiClient';
 import { ArrowLeft, Bot, Users } from 'lucide-react';
 import { coaches } from '@/data/coaches';
 import type { CoachPersona } from '@/data/coaches';
@@ -106,16 +107,9 @@ export default function CoachSelectionPage() {
         if (!currentUserId) return;
         setTrainersLoading(true);
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const headers: Record<string, string> = {};
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
-            }
-            const res = await fetch(`/api/coaching/trainers?userId=${currentUserId}`, { headers });
-            if (res.ok) {
-                const { trainers: data } = await res.json();
-                setTrainers(data || []);
-            }
+            // the athlete is the token holder; the route marks each trainer's relationship to them
+            const { trainers: data } = await apiFetch<{ trainers?: (Profile & { relationship_status?: string | null })[] }>('/api/coaching/trainers');
+            setTrainers(data || []);
         } catch {
             // Silently fail
         } finally {

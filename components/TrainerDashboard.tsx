@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User, WorkoutPlan, AIFeatures, TrainingPlan } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 import PlanCreator from './PlanCreator';
 import PlanViewer from './PlanViewer';
 
@@ -43,14 +44,8 @@ export default function TrainerDashboard({ user }: { user: User }) {
 
     const fetchTrainees = async () => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const headers: any = {};
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
-            }
-
-            const res = await fetch(`/api/users/trainees?trainerId=${user.id}`, { headers });
-            const data = await res.json();
+            // `trainerId` only selects the "my trainees" branch; the server uses the token holder
+            const data = await apiFetch<{ trainees?: User[] }>(`/api/users/trainees?trainerId=${user.id}`);
             setTrainees(data.trainees || []);
         } catch (error) {
             console.error('Error fetching trainees:', error);
@@ -65,16 +60,9 @@ export default function TrainerDashboard({ user }: { user: User }) {
         }
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const headers: any = {};
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
-            }
-
-            const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=trainee`, { headers });
-            const data = await res.json();
+            const data = await apiFetch<{ users?: User[] }>(`/api/users/search?q=${encodeURIComponent(query)}&role=trainee`);
             setSearchResults(data.users || []);
-            setShowDropdown(data.users?.length > 0);
+            setShowDropdown((data.users?.length ?? 0) > 0);
         } catch (err) {
             console.error('Search error:', err);
             setSearchResults([]);
@@ -85,36 +73,22 @@ export default function TrainerDashboard({ user }: { user: User }) {
     const handleAddClient = async (username: string) => {
         setAddClientError('');
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                setAddClientError('You must be logged in to add a client');
-                return;
-            }
-
-            const res = await fetch('/api/users/link', {
+            // trainerId names the trainer of the link (the route checks it is the caller)
+            await apiFetch('/api/users/link', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
+                body: {
                     trainerId: user.id,
                     traineeUsername: username,
                     action: 'link'
-                })
+                }
             });
-            const data = await res.json();
-            if (res.ok) {
-                setShowAddClient(false);
-                setAddClientUsername('');
-                setSearchResults([]);
-                setShowDropdown(false);
-                fetchTrainees();
-            } else {
-                setAddClientError(data.error || 'Failed to add client');
-            }
+            setShowAddClient(false);
+            setAddClientUsername('');
+            setSearchResults([]);
+            setShowDropdown(false);
+            fetchTrainees();
         } catch (err) {
-            setAddClientError('An error occurred');
+            setAddClientError(errorMessage(err, 'Failed to add client'));
         }
     };
 
@@ -122,65 +96,23 @@ export default function TrainerDashboard({ user }: { user: User }) {
         if (selectedTrainee) {
             const fetchPlans = async () => {
                 try {
-                    // Wait for auth state to be ready and retry if session is not available
-                    let session = null;
-
-                    // DEV BYPASS
-                    if (user.id === 'dev-user-id') {
-                        console.log('Dev user detected, skipping Supabase session check');
-                    } else {
-                        let retryCount = 0;
-                        const maxRetries = 5;
-
-                        while (!session && retryCount < maxRetries) {
-                            const { data: { session: currentSession } } = await supabase.auth.getSession();
-                            if (currentSession) {
-                                session = currentSession;
-                                break;
-                            }
-
-                            // Wait briefly before retrying
-                            await new Promise(resolve => setTimeout(resolve, 200));
-                            retryCount++;
-                        }
-
-                        if (!session) {
-                            console.error('No valid session found after retries');
-                            return;
-                        }
-                    }
-
-                    const headers: any = { 'Content-Type': 'application/json' };
-                    if (session?.access_token) {
-                        headers.Authorization = `Bearer ${session.access_token}`;
-                    }
-
                     console.log(`Fetching plans for trainee: `, {
                         id: selectedTrainee.id,
                         username: selectedTrainee.username,
                         email: selectedTrainee.email
                     });
 
-                    const res = await fetch(`/api/plans?traineeId=${selectedTrainee.id}`, {
-                        headers
-                    });
+                    const data = await apiFetch<{ plans?: WorkoutPlan[] }>(`/api/plans?traineeId=${selectedTrainee.id}`);
+                    setPlans(data.plans || []);
+                    console.log(`Loaded ${data.plans?.length || 0} plans for trainee: `, selectedTrainee.username);
 
-                    if (res.ok) {
-                        const data = await res.json();
-                        setPlans(data.plans || []);
-                        console.log(`Loaded ${data.plans?.length || 0} plans for trainee: `, selectedTrainee.username);
-
-                        if (data.plans?.length > 0) {
-                            console.log('Plans found by trainer:', data.plans.map((p: WorkoutPlan) => ({
-                                id: p.id,
-                                name: p.name,
-                                trainee_id: p.trainee_id,
-                                trainer_id: p.trainer_id
-                            })));
-                        }
-                    } else {
-                        console.error('Failed to fetch plans:', res.status);
-                        setPlans([]);
+                    if (data.plans && data.plans.length > 0) {
+                        console.log('Plans found by trainer:', data.plans.map((p: WorkoutPlan) => ({
+                            id: p.id,
+                            name: p.name,
+                            trainee_id: p.trainee_id,
+                            trainer_id: p.trainer_id
+                        })));
                     }
                 } catch (error) {
                     console.error('Error fetching plans:', error);
@@ -213,42 +145,27 @@ export default function TrainerDashboard({ user }: { user: User }) {
         if (!selectedTrainee) return;
         setUpdatingFeatures(true);
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                alert('You must be logged in to update features.');
-                return;
-            }
-
-            const res = await fetch('/api/users/features', {
+            await apiFetch('/api/users/features', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
+                body: {
                     traineeId: selectedTrainee.id,
                     features: selectedTraineeFeatures
-                })
+                }
             });
 
-            if (res.ok) {
-                // Update local state
-                const updatedTrainees = trainees.map(t =>
-                    t.id === selectedTrainee.id
-                        ? { ...t, ai_features: selectedTraineeFeatures }
-                        : t
-                );
-                setTrainees(updatedTrainees); // Update the trainees list
-                setSelectedTrainee(prev => prev ? { ...prev, ai_features: selectedTraineeFeatures } : null); // Update selected trainee
-                alert('AI Features updated successfully!');
-                setShowAIToolkit(false);
-            } else {
-                const errorData = await res.json();
-                alert(`Failed to update features: ${errorData.error || res.statusText} `);
-            }
+            // Update local state
+            const updatedTrainees = trainees.map(t =>
+                t.id === selectedTrainee.id
+                    ? { ...t, ai_features: selectedTraineeFeatures }
+                    : t
+            );
+            setTrainees(updatedTrainees); // Update the trainees list
+            setSelectedTrainee(prev => prev ? { ...prev, ai_features: selectedTraineeFeatures } : null); // Update selected trainee
+            alert('AI Features updated successfully!');
+            setShowAIToolkit(false);
         } catch (error) {
             console.error(error);
-            alert('Error updating features');
+            alert(`Failed to update features: ${errorMessage(error, 'Error updating features')}`);
         } finally {
             setUpdatingFeatures(false);
         }
@@ -287,35 +204,20 @@ export default function TrainerDashboard({ user }: { user: User }) {
         setAssignError('');
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const headers: any = { 'Content-Type': 'application/json' };
-            if (session?.access_token) {
-                headers.Authorization = `Bearer ${session.access_token}`;
-            } else if (user.id === 'dev-user-id') {
-                headers.Authorization = 'Bearer dev-token';
-            }
-
-            const res = await fetch('/api/plan-assignments', {
+            // user_id is the trainee; the assigning trainer is the token holder
+            await apiFetch('/api/plan-assignments', {
                 method: 'POST',
-                headers,
-                body: JSON.stringify({
+                body: {
                     plan_id: selectedPlanId,
                     user_id: selectedTrainee.id,
-                    assigned_by_id: user.id,
                     start_date: assignStartDate,
                     end_date: assignEndDate,
-                }),
+                },
             });
-
-            if (res.ok) {
-                setShowAssignPlan(false);
-            } else {
-                const data = await res.json();
-                setAssignError(data.error || 'Failed to assign plan');
-            }
+            setShowAssignPlan(false);
         } catch (err) {
             console.error('Error assigning plan:', err);
-            setAssignError('An error occurred while assigning the plan');
+            setAssignError(errorMessage(err, 'An error occurred while assigning the plan'));
         } finally {
             setAssigningPlan(false);
         }

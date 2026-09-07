@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/supabaseDb';
-import type { Profile } from '@/lib/types';
+import { apiFetchRaw, ApiError } from '@/lib/apiClient';
 
 const FITNESS_SUGGESTIONS = [
     {
@@ -33,19 +33,12 @@ interface Message {
 }
 
 export default function AIPage() {
-    const [user, setUser] = useState<Profile | null>(null);
     const [isPrivate, setIsPrivate] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [chatId, setChatId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,31 +54,49 @@ export default function AIPage() {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/chat', {
+            // the caller comes from the bearer token; the reply is streamed text/plain
+            const response = await apiFetchRaw('/api/ai-coach/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: [...messages, userMessage],
-                    userId: user?.id,
+                    chatId: chatId ?? undefined,
                     isPrivate
-                })
+                }
             });
 
-            const data = await response.json();
+            const newChatId = response.headers.get('X-Chat-Id');
+            if (newChatId) setChatId(newChatId);
 
-            if (data.error) {
-                throw new Error(data.error);
+            const replaceLast = (content: string) => setMessages(prev => {
+                const next = [...prev];
+                next[next.length - 1] = { role: 'assistant', content };
+                return next;
+            });
+            setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+            let text = '';
+            const reader = response.body?.getReader();
+            if (reader) {
+                const decoder = new TextDecoder();
+                for (;;) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    text += decoder.decode(value, { stream: true });
+                    replaceLast(text);
+                }
+                text += decoder.decode();
+            } else {
+                text = await response.text();
             }
-
-            const assistantMessage: Message = { role: 'assistant', content: data.message };
-            setMessages(prev => [...prev, assistantMessage]);
+            replaceLast(text || 'Sorry, I encountered an error. Please try again.');
         } catch (error) {
+            // a 429 carries the AI limit message from the server; show it as the reply
             console.error('Chat error:', error);
-            const errorMessage: Message = {
+            const errorReply: Message = {
                 role: 'assistant',
-                content: 'Sorry, I encountered an error. Please try again.'
+                content: error instanceof ApiError ? error.message : 'Sorry, I encountered an error. Please try again.'
             };
-            setMessages(prev => [...prev, errorMessage]);
+            setMessages(prev => [...prev, errorReply]);
         } finally {
             setIsLoading(false);
         }

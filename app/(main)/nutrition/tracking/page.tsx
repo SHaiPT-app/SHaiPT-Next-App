@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiFetch } from '@/lib/apiClient';
 import {
     ChevronLeft,
     ChevronRight,
@@ -118,13 +119,11 @@ function FoodSearchModal({ isOpen, onClose, onSelect, mealType }: {
         }
         setSearching(true);
         try {
-            const res = await fetch(`/api/food-database?q=${encodeURIComponent(q)}`);
-            if (res.ok) {
-                const data = await res.json();
-                setResults(data.foods || []);
-            }
-        } catch {
-            // search failed silently
+            const data = await apiFetch<{ foods?: FoodItem[] }>(`/api/food-database?q=${encodeURIComponent(q)}`);
+            setResults(data?.foods || []);
+        } catch (err) {
+            // search failed: keep the previous results
+            console.error('Food search failed:', err);
         } finally {
             setSearching(false);
         }
@@ -590,13 +589,10 @@ export default function MacroTrackingPage() {
     const fetchLogs = useCallback(async () => {
         if (!user) return;
         try {
-            const res = await fetch(`/api/food-logs?userId=${user.id}&date=${selectedDate}`);
-            if (res.ok) {
-                const data = await res.json();
-                setFoodLogs(data.logs || []);
-            }
-        } catch {
-            console.error('Failed to fetch food logs');
+            const data = await apiFetch<{ logs?: FoodLog[] }>(`/api/food-logs?date=${selectedDate}`);
+            setFoodLogs(data?.logs || []);
+        } catch (err) {
+            console.error('Failed to fetch food logs', err);
         }
     }, [user, selectedDate]);
 
@@ -609,17 +605,11 @@ export default function MacroTrackingPage() {
         if (!user) return;
         setLoadingTargets(true);
         try {
-            const res = await fetch('/api/nutrition/macro-targets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id }),
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setTargets(data.targets);
-            }
-        } catch {
-            console.error('Failed to fetch macro targets');
+            // targets are computed for the caller (from the token); no body needed
+            const data = await apiFetch<{ targets: MacroTargets }>('/api/nutrition/macro-targets', { method: 'POST' });
+            if (data?.targets) setTargets(data.targets);
+        } catch (err) {
+            console.error('Failed to fetch macro targets', err);
         } finally {
             setLoadingTargets(false);
         }
@@ -647,11 +637,9 @@ export default function MacroTrackingPage() {
         setModalOpen(false);
 
         try {
-            const res = await fetch('/api/food-logs', {
+            const data = await apiFetch<{ log: FoodLog }>('/api/food-logs', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: user.id,
+                body: {
                     food_id: food.id.startsWith('custom_') ? undefined : food.id,
                     food_name: food.name,
                     meal_type: activeMealType,
@@ -662,27 +650,21 @@ export default function MacroTrackingPage() {
                     carbs_g: Math.round(food.carbs_g * servings * 10) / 10,
                     fat_g: Math.round(food.fat_g * servings * 10) / 10,
                     logged_date: selectedDate,
-                }),
+                },
             });
-
-            if (res.ok) {
-                const data = await res.json();
-                setFoodLogs(prev => [...prev, data.log]);
-            }
-        } catch {
-            console.error('Failed to log food');
+            if (data?.log) setFoodLogs(prev => [...prev, data.log]);
+        } catch (err) {
+            console.error('Failed to log food', err);
         }
     };
 
     // Delete food log
     const handleDeleteLog = async (id: string) => {
         try {
-            const res = await fetch(`/api/food-logs?id=${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setFoodLogs(prev => prev.filter(l => l.id !== id));
-            }
-        } catch {
-            console.error('Failed to delete food log');
+            await apiFetch(`/api/food-logs?id=${id}`, { method: 'DELETE' });
+            setFoodLogs(prev => prev.filter(l => l.id !== id));
+        } catch (err) {
+            console.error('Failed to delete food log', err);
         }
     };
 

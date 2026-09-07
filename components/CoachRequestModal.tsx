@@ -2,18 +2,19 @@
 
 import { useState } from 'react';
 import { X, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 import type { Profile } from '@/lib/types';
 
 
 interface CoachRequestModalProps {
     trainer: Profile & { relationship_status?: string | null };
-    athleteId: string;
+    /** kept for callers; the server takes the athlete from the token */
+    athleteId?: string;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export default function CoachRequestModal({ trainer, athleteId, onClose, onSuccess }: CoachRequestModalProps) {
+export default function CoachRequestModal({ trainer, onClose, onSuccess }: CoachRequestModalProps) {
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [sent, setSent] = useState(false);
@@ -25,33 +26,16 @@ export default function CoachRequestModal({ trainer, athleteId, onClose, onSucce
         setError(null);
 
         try {
-            // Get auth token for server-side authentication
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.access_token) {
-                throw new Error('Not authenticated. Please log in again.');
-            }
-
-            const res = await fetch('/api/coaching/request', {
+            // the athlete is the token holder; only the coach needs naming
+            await apiFetch('/api/coaching/request', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`,
-                },
-                body: JSON.stringify({
-                    athleteId,
-                    coachId: trainer.id,
-                }),
+                body: { coachId: trainer.id },
             });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Failed to send request');
-            }
 
             setSent(true);
             onSuccess();
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(errorMessage(err, 'Failed to send request'));
         } finally {
             setSending(false);
         }

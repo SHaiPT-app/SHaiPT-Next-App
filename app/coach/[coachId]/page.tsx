@@ -18,6 +18,7 @@ import type { SplitOption } from '@/components/ai-coach/SplitSelection';
 import type { GeneratedPlanData } from '@/app/api/ai-coach/generate-plan/route';
 import type { GeneratedNutritionPlanData } from '@/app/api/ai-coach/generate-nutrition-plan/route';
 import { supabase } from '@/lib/supabase';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 
 const EMPTY_FORM: IntakeFormData = {
     name: '',
@@ -94,6 +95,8 @@ export default function CoachInterviewPage() {
     const [splitOptions, setSplitOptions] = useState<SplitOption[]>([]);
     const [selectedSplit, setSelectedSplit] = useState<string | null>(null);
     const [isLoadingSplits, setIsLoadingSplits] = useState(false);
+    // message from a failed generate call (a 429 carries the daily/monthly AI limit)
+    const [generationError, setGenerationError] = useState<string | null>(null);
     const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlanData | null>(null);
     const [planSaveStatus, setPlanSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [planSaveError, setPlanSaveError] = useState<string | null>(null);
@@ -326,28 +329,25 @@ export default function CoachInterviewPage() {
 
         setFlowStage('split_selection');
         setIsLoadingSplits(true);
+        setGenerationError(null);
 
         try {
-            const res = await fetch('/api/ai-coach/generate-plan', {
+            const data = await apiFetch<{ splits?: SplitOption[] }>('/api/ai-coach/generate-plan', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages,
                     intakeData: formDataRef.current,
                     action: 'recommend_splits',
-                }),
+                },
             });
-
-            if (res.ok) {
-                const data = await res.json();
-                setSplitOptions(data.splits || []);
-                const recommended = data.splits?.find((s: SplitOption) => s.recommended);
-                if (recommended) {
-                    setSelectedSplit(recommended.id);
-                }
+            setSplitOptions(data.splits || []);
+            const recommended = data.splits?.find((s: SplitOption) => s.recommended);
+            if (recommended) {
+                setSelectedSplit(recommended.id);
             }
         } catch (error) {
             console.error('Failed to fetch split recommendations:', error);
+            setGenerationError(errorMessage(error, 'Could not load split recommendations.'));
         } finally {
             setIsLoadingSplits(false);
         }
@@ -357,30 +357,27 @@ export default function CoachInterviewPage() {
         if (!selectedSplit) return;
 
         setFlowStage('generating');
+        setGenerationError(null);
 
         try {
-            const res = await fetch('/api/ai-coach/generate-plan', {
+            const data = await apiFetch<{ plan?: GeneratedPlanData }>('/api/ai-coach/generate-plan', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: interviewMessages,
                     intakeData: formData,
                     splitType: selectedSplit,
-                }),
+                },
             });
-
-            if (!res.ok) {
-                throw new Error('Plan generation failed');
-            }
-
-            const data = await res.json();
             if (data.plan) {
                 setGeneratedPlan(data.plan);
                 setFlowStage('plan_review');
                 await savePlanToSupabase(data.plan);
+            } else {
+                throw new Error('Plan generation failed');
             }
         } catch (error) {
             console.error('Plan generation error:', error);
+            setGenerationError(errorMessage(error, 'Plan generation failed'));
             setFlowStage('split_selection');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -483,11 +480,14 @@ export default function CoachInterviewPage() {
                         name: session.name,
                         description: '',
                         exercises: session.exercises.map((ex, exIndex) => ({
-                            exercise_id: `${ex.exercise_name
+                            // library id when the model picked one; else the name-derived id used before
+                            exercise_id: ex.exercise_id || `${ex.exercise_name
                                 .toLowerCase()
                                 .replace(/[^a-z0-9]+/g, '_')
                                 .substring(0, 50)}_d${session.day_number}_e${exIndex}`,
                             exercise_name: ex.exercise_name,
+                            // 4Dcoach exercise (or null) so the plan can link to the 4D form check
+                            fourd_id: ex.fourd_id ?? null,
                             sets: ex.sets.map(s => ({
                                 reps: s.reps,
                                 weight: s.weight || '',
@@ -608,30 +608,27 @@ export default function CoachInterviewPage() {
     const handleDietitianInterviewComplete = useCallback(async (messages: { role: string; content: string }[]) => {
         setDietitianMessages(messages);
         setFlowStage('generating_nutrition');
+        setGenerationError(null);
 
         try {
-            const res = await fetch('/api/ai-coach/generate-nutrition-plan', {
+            const data = await apiFetch<{ plan?: GeneratedNutritionPlanData }>('/api/ai-coach/generate-nutrition-plan', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages,
                     dietIntakeData: dietFormData,
                     intakeData: formData,
-                }),
+                },
             });
-
-            if (!res.ok) {
-                throw new Error('Nutrition plan generation failed');
-            }
-
-            const data = await res.json();
             if (data.plan) {
                 setGeneratedNutritionPlan(data.plan);
                 setFlowStage('nutrition_review');
                 await saveNutritionPlanToSupabase(data.plan);
+            } else {
+                throw new Error('Nutrition plan generation failed');
             }
         } catch (error) {
             console.error('Nutrition plan generation error:', error);
+            setGenerationError(errorMessage(error, 'Nutrition plan generation failed'));
             setFlowStage('dietitian_interview');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1032,6 +1029,13 @@ export default function CoachInterviewPage() {
                         <div className={flowStage === 'split_selection' || flowStage === 'generating' ? 'hidden' : 'block'}>
                             {/* Form is now embedded read-only in the flow */}
                         </div>
+                    )}
+
+                    {/* Generation error (e.g. the AI limit message from a 429) */}
+                    {generationError && (flowStage === 'split_selection' || flowStage === 'dietitian_interview') && (
+                        <p className="px-4 pt-3 text-center text-[0.8rem] text-[var(--error)]" data-testid="generation-error">
+                            {generationError}
+                        </p>
                     )}
 
                     {/* Split Selection */}

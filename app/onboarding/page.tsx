@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
 import { db } from '@/lib/supabaseDb';
+import { apiFetch, ApiError, errorMessage } from '@/lib/apiClient';
 import type { Profile } from '@/lib/types';
 import { Send } from 'lucide-react';
 
@@ -12,6 +13,41 @@ interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
+}
+
+interface OnboardingReply {
+    message: string;
+    isComplete?: boolean;
+    error?: string;
+}
+
+interface GeneratedExercise {
+    exercise_id?: string | null;
+    exercise_name: string;
+    fourd_id?: string | null;
+    sets?: { reps: string; weight?: string; rest_seconds?: number }[];
+    notes?: string;
+}
+
+interface GeneratePlansReply {
+    success?: boolean;
+    error?: string;
+    data: {
+        extracted_profile: { fitness_goals?: string[]; [key: string]: unknown };
+        training_plan: {
+            name: string;
+            description?: string;
+            duration_weeks?: number;
+            sessions: Array<{
+                name: string;
+                description?: string;
+                day_number: number;
+                week_number?: number;
+                exercises: GeneratedExercise[];
+            }>;
+        };
+        nutrition_plan: unknown;
+    };
 }
 
 export default function OnboardingPage() {
@@ -53,16 +89,13 @@ export default function OnboardingPage() {
         setIsLoading(true);
         try {
             const greeting = `Hi, my name is ${user?.full_name || user?.username || 'there'}. I just signed up and I'm ready to get started!`;
-            const response = await fetch('/api/onboarding', {
+            const data = await apiFetch<OnboardingReply>('/api/onboarding', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: [{ role: 'user', content: greeting }],
-                }),
+                },
             });
-
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
+            if (data?.error) throw new Error(data.error);
 
             setMessages([
                 {
@@ -107,14 +140,11 @@ export default function OnboardingPage() {
                 content: m.content,
             }));
 
-            const response = await fetch('/api/onboarding', {
+            const data = await apiFetch<OnboardingReply>('/api/onboarding', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: apiMessages }),
+                body: { messages: apiMessages },
             });
-
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
+            if (data?.error) throw new Error(data.error);
 
             const assistantMessage: Message = {
                 id: `assistant-${Date.now()}`,
@@ -129,13 +159,14 @@ export default function OnboardingPage() {
                 await saveOnboardingData(updatedMessages);
             }
         } catch (error) {
+            // a 429 carries the AI limit message from the server; show it as the reply
             console.error('Chat error:', error);
             setMessages((prev) => [
                 ...prev,
                 {
                     id: `error-${Date.now()}`,
                     role: 'assistant',
-                    content: 'Sorry, something went wrong. Please try again.',
+                    content: error instanceof ApiError ? error.message : 'Sorry, something went wrong. Please try again.',
                 },
             ]);
         } finally {
@@ -171,20 +202,18 @@ export default function OnboardingPage() {
         setGenerationError(null);
 
         try {
-            const response = await fetch('/api/onboarding/generate-plans', {
+            // the server extracts the profile, builds both plans, inserts the `onboarding` row and
+            // marks profiles.onboarding_completed for the caller (from the token)
+            const result = await apiFetch<GeneratePlansReply>('/api/onboarding/generate-plans', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: chatMessages.map((m) => ({
                         role: m.role,
                         content: m.content,
                     })),
-                    userId: user.id,
-                }),
+                },
             });
-
-            const result = await response.json();
-            if (result.error) throw new Error(result.error);
+            if (result?.error) throw new Error(result.error);
 
             const { data } = result;
 
@@ -212,21 +241,18 @@ export default function OnboardingPage() {
                     creator_id: user.id,
                     name: session.name,
                     description: session.description || '',
+                    // carry exercise_id (library id) and fourd_id (4Dcoach exercise) through so the
+                    // plan can link to the 4D form check; fall back to a slug when unmatched
                     exercises: session.exercises.map(
-                        (ex: {
-                            exercise_name: string;
-                            sets: {
-                                reps: string;
-                                weight?: string;
-                                rest_seconds?: number;
-                            }[];
-                            notes?: string;
-                        }) => ({
-                            exercise_id: ex.exercise_name
-                                .toLowerCase()
-                                .replace(/\s+/g, '_')
-                                .substring(0, 20),
-                            sets: ex.sets.map((s) => ({
+                        (ex: GeneratedExercise) => ({
+                            exercise_id: ex.exercise_id
+                                || ex.exercise_name
+                                    .toLowerCase()
+                                    .replace(/\s+/g, '_')
+                                    .substring(0, 20),
+                            exercise_name: ex.exercise_name,
+                            fourd_id: ex.fourd_id ?? null,
+                            sets: (ex.sets || []).map((s) => ({
                                 reps: s.reps,
                                 weight: s.weight || '',
                                 rest_seconds: s.rest_seconds || 90,
@@ -295,12 +321,9 @@ export default function OnboardingPage() {
                 localStorage.setItem('user', JSON.stringify(updatedUser));
             }
         } catch (error) {
+            // a 429 carries the AI limit message from the server
             console.error('Failed to generate plans:', error);
-            setGenerationError(
-                error instanceof Error
-                    ? error.message
-                    : 'Failed to generate plans'
-            );
+            setGenerationError(errorMessage(error, 'Failed to generate plans'));
         } finally {
             setIsGeneratingPlans(false);
         }

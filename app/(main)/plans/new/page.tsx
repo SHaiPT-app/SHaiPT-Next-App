@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/supabaseDb';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 import {
     ArrowLeft,
     Plus,
@@ -46,6 +47,8 @@ interface PlanSession {
 interface PlanExercise {
     id: string;
     exercise_id?: string;
+    /** 4Dcoach exercise for the form check, when the AI matched one */
+    fourd_id?: string | null;
     name: string;
     sets: PlanSet[];
     notes?: string;
@@ -58,6 +61,25 @@ interface PlanSet {
 }
 
 type CreationMode = 'manual' | 'ai';
+
+/** Shape of /api/plans/generate → data.plan */
+interface GeneratedPlan {
+    name?: string;
+    description?: string;
+    duration_weeks?: number;
+    periodization_blocks?: PeriodizedBlock[];
+    sessions?: Array<{
+        name: string;
+        day_number: number;
+        exercises?: Array<{
+            exercise_id?: string | null;
+            exercise_name: string;
+            fourd_id?: string | null;
+            sets?: Array<{ reps?: string; weight?: string; rest_seconds?: number }>;
+            notes?: string;
+        }>;
+    }>;
+}
 
 // ============================================
 // CONSTANTS
@@ -380,10 +402,9 @@ export default function NewPlanPage() {
         setAiGenerating(true);
 
         try {
-            const res = await fetch('/api/plans/generate', {
+            const data = await apiFetch<{ success?: boolean; data?: { plan?: GeneratedPlan } }>('/api/plans/generate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     goals: aiGoals.split(',').map(g => g.trim()),
                     experience_level: aiExperience,
                     available_equipment: aiEquipment,
@@ -392,16 +413,9 @@ export default function NewPlanPage() {
                     duration_weeks: durationWeeks,
                     phase_type: aiPhaseType || undefined,
                     preferences: aiPreferences || undefined,
-                }),
+                },
             });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Failed to generate plan');
-            }
-
-            const data = await res.json();
-            const plan = data.data?.plan;
+            const plan = data?.data?.plan;
             if (!plan) throw new Error('No plan data in response');
 
             setPlanName(plan.name || '');
@@ -413,21 +427,15 @@ export default function NewPlanPage() {
             }
 
             if (plan.sessions && plan.sessions.length > 0) {
-                const newSessions: PlanSession[] = plan.sessions.map((s: {
-                    name: string;
-                    day_number: number;
-                    exercises: Array<{
-                        exercise_name: string;
-                        sets: Array<{ reps: string; weight: string; rest_seconds: number }>;
-                        notes: string;
-                    }>;
-                }) => ({
+                const newSessions: PlanSession[] = plan.sessions.map((s) => ({
                     id: generateId(),
                     name: s.name,
                     day_number: s.day_number,
                     isNew: true,
                     exercises: (s.exercises || []).map((ex) => ({
                         id: generateId(),
+                        exercise_id: ex.exercise_id || undefined,
+                        fourd_id: ex.fourd_id ?? null,
                         name: ex.exercise_name,
                         sets: (ex.sets || []).map((set) => ({
                             reps: set.reps || '10',
@@ -443,9 +451,9 @@ export default function NewPlanPage() {
 
             setCreationMode('manual');
         } catch (error) {
+            // a 429 carries the AI limit message from the server
             console.error('AI generation error:', error);
-            const message = error instanceof Error ? error.message : 'Failed to generate plan';
-            alert(message);
+            alert(errorMessage(error, 'Failed to generate plan'));
         } finally {
             setAiGenerating(false);
         }
@@ -504,6 +512,8 @@ export default function NewPlanPage() {
                 if (!sessionId || session.isNew) {
                     const exercises: SessionExercise[] = session.exercises.map(ex => ({
                         exercise_id: ex.exercise_id || ex.name.toLowerCase().replace(/\s+/g, '-'),
+                        exercise_name: ex.name,
+                        ...(ex.fourd_id ? { fourd_id: ex.fourd_id } : {}),
                         sets: ex.sets.map(s => ({
                             reps: s.reps,
                             weight: s.weight || undefined,
