@@ -246,3 +246,12 @@ DROP POLICY IF EXISTS "user_stats_own" ON user_stats;
 CREATE POLICY "user_stats_own" ON user_stats FOR SELECT TO authenticated USING (user_id = auth.uid());
 DROP POLICY IF EXISTS "user_stats_history_own" ON user_stats_history;
 CREATE POLICY "user_stats_history_own" ON user_stats_history FOR SELECT TO authenticated USING (user_id = auth.uid());
+
+-- Coach access (0080 runs before this table exists, so its guarded block is a no-op on a fresh
+-- project): an active coach reads the trainee's measurements and weight log.
+DROP POLICY IF EXISTS "Coaches can view client body measurements" ON body_measurements;
+CREATE POLICY "Coaches can view client body measurements" ON body_measurements FOR SELECT TO authenticated
+    USING (user_id = auth.uid() OR is_coach_of(user_id));
+DROP POLICY IF EXISTS "Coaches can view client body weight logs" ON body_weight_logs;
+CREATE POLICY "Coaches can view client body weight logs" ON body_weight_logs FOR SELECT TO authenticated
+    USING (user_id = auth.uid() OR is_coach_of(user_id));
