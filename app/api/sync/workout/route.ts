@@ -1,29 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-// Get workout draft from server
+// Get workout draft from server. `userId` in the query is ignored: drafts are the caller's.
 export async function GET(request: NextRequest) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
         const sessionId = searchParams.get('sessionId');
 
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'Missing required parameter: userId' },
-                { status: 400 }
-            );
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-        let query = supabase
+        let query = auth.supabase
             .from('workout_drafts')
             .select('*')
-            .eq('user_id', userId);
+            .eq('user_id', auth.user.id);
 
         if (sessionId) {
             query = query.eq('session_id', sessionId);
@@ -55,23 +45,25 @@ export async function GET(request: NextRequest) {
 
 // Save workout draft to server
 export async function POST(request: NextRequest) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const body = await request.json();
-        const { userId, sessionId, data, deviceId } = body;
+        // userId in the body is ignored: the draft belongs to the caller.
+        const { sessionId, data, deviceId } = body;
 
-        if (!userId || !sessionId || !data) {
+        if (!sessionId || !data) {
             return NextResponse.json(
-                { error: 'Missing required fields: userId, sessionId, data' },
+                { error: 'Missing required fields: sessionId, data' },
                 { status: 400 }
             );
         }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-        const { data: draft, error } = await supabase
+        const { data: draft, error } = await auth.supabase
             .from('workout_drafts')
             .upsert({
-                user_id: userId,
+                user_id: auth.user.id,
                 session_id: sessionId,
                 draft_data: data,
                 device_id: deviceId,
@@ -101,24 +93,24 @@ export async function POST(request: NextRequest) {
 
 // Delete workout draft from server
 export async function DELETE(request: NextRequest) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
         const sessionId = searchParams.get('sessionId');
 
-        if (!userId || !sessionId) {
+        if (!sessionId) {
             return NextResponse.json(
-                { error: 'Missing required parameters: userId, sessionId' },
+                { error: 'Missing required parameter: sessionId' },
                 { status: 400 }
             );
         }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-        const { error } = await supabase
+        const { error } = await auth.supabase
             .from('workout_drafts')
             .delete()
-            .eq('user_id', userId)
+            .eq('user_id', auth.user.id)
             .eq('session_id', sessionId);
 
         if (error) {

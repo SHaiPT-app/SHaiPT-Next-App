@@ -2,21 +2,21 @@
  * @jest-environment node
  */
 import { POST } from '@/app/api/subscriptions/checkout/route';
-import { supabase } from '@/lib/supabase';
+import { NextResponse } from 'next/server';
 
-// Mock dependencies
-jest.mock('@supabase/supabase-js', () => ({
-    createClient: jest.fn(),
-}));
+const mockGetUser = jest.fn();
+const mockFrom = jest.fn();
 
-jest.mock('@/lib/supabase', () => ({
-    supabase: {
-        auth: {
-            getUser: jest.fn(),
-        },
-        from: jest.fn(),
-    },
-}));
+jest.mock('@/lib/auth', () => {
+    const { NextResponse: NR } = jest.requireActual('next/server');
+    return {
+        getUser: (...args: unknown[]) => mockGetUser(...args),
+        isErrorResponse: (r: unknown) => r instanceof NR,
+        getAdmin: jest.fn(),
+        userClient: jest.fn(),
+        bearerToken: jest.fn(),
+    };
+});
 
 const mockCheckoutCreate = jest.fn();
 const mockCustomerCreate = jest.fn();
@@ -34,53 +34,70 @@ jest.mock('@/lib/subscriptions', () => ({
     TRIAL_DAYS: 14,
 }));
 
+function chain(result: { data?: unknown; error?: unknown }) {
+    const c: Record<string, unknown> = {};
+    for (const m of ['select', 'eq', 'single']) {
+        c[m] = jest.fn(() => c);
+    }
+    c.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(result).then(res, rej);
+    return c;
+}
+
+function signedIn() {
+    mockGetUser.mockResolvedValue({
+        user: { id: 'user-1', email: 'test@test.com' },
+        token: 'tok',
+        supabase: { from: mockFrom },
+    });
+}
+
+/** profiles lookup (tester flag) followed by the subscriptions lookup */
+function mockProfileThenSubscription(tester: boolean, subscription: unknown) {
+    mockFrom
+        .mockReturnValueOnce(chain({ data: { tester }, error: null }))
+        .mockReturnValueOnce(chain({ data: subscription, error: null }));
+}
+
+function checkoutRequest(tier: string) {
+    return new Request('http://localhost/api/subscriptions/checkout', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer valid-token' },
+        body: JSON.stringify({ tier }),
+    });
+}
+
 describe('/api/subscriptions/checkout', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    it('returns 401 when no auth header provided', async () => {
-        const request = new Request('http://localhost/api/subscriptions/checkout', {
+    it('returns 401 when the token is missing or invalid', async () => {
+        mockGetUser.mockResolvedValue(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+
+        const response = await POST(new Request('http://localhost/api/subscriptions/checkout', {
             method: 'POST',
             body: JSON.stringify({ tier: 'starter' }),
-        });
-
-        const response = await POST(request);
+        }));
         const data = await response.json();
 
         expect(response.status).toBe(401);
         expect(data.error).toBe('Unauthorized');
     });
 
-    it('returns 401 when auth token is invalid', async () => {
-        (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-            data: { user: null },
-            error: { message: 'Invalid token' },
-        });
+    it('returns 403 for test accounts', async () => {
+        signedIn();
+        mockFrom.mockReturnValueOnce(chain({ data: { tester: true }, error: null }));
 
-        const request = new Request('http://localhost/api/subscriptions/checkout', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer invalid-token' },
-            body: JSON.stringify({ tier: 'starter' }),
-        });
-
-        const response = await POST(request);
-        expect(response.status).toBe(401);
+        const response = await POST(checkoutRequest('pro'));
+        expect(response.status).toBe(403);
+        expect(mockCheckoutCreate).not.toHaveBeenCalled();
     });
 
     it('returns 400 for invalid tier', async () => {
-        (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-            data: { user: { id: 'user-1', email: 'test@test.com' } },
-            error: null,
-        });
+        signedIn();
+        mockFrom.mockReturnValueOnce(chain({ data: { tester: false }, error: null }));
 
-        const request = new Request('http://localhost/api/subscriptions/checkout', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer valid-token' },
-            body: JSON.stringify({ tier: 'invalid_tier' }),
-        });
-
-        const response = await POST(request);
+        const response = await POST(checkoutRequest('invalid_tier'));
         const data = await response.json();
 
         expect(response.status).toBe(400);
@@ -88,38 +105,17 @@ describe('/api/subscriptions/checkout', () => {
     });
 
     it('creates checkout session for valid tier', async () => {
-        (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-            data: { user: { id: 'user-1', email: 'test@test.com' } },
-            error: null,
-        });
+        signedIn();
+        mockProfileThenSubscription(false, { stripe_customer_id: 'cus_123' });
+        mockCheckoutCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/session_123' });
 
-        const mockFrom = jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-                eq: jest.fn().mockReturnValue({
-                    single: jest.fn().mockResolvedValue({
-                        data: { stripe_customer_id: 'cus_123' },
-                        error: null,
-                    }),
-                }),
-            }),
-        });
-        (supabase.from as jest.Mock).mockImplementation(mockFrom);
-
-        mockCheckoutCreate.mockResolvedValue({
-            url: 'https://checkout.stripe.com/session_123',
-        });
-
-        const request = new Request('http://localhost/api/subscriptions/checkout', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer valid-token' },
-            body: JSON.stringify({ tier: 'pro' }),
-        });
-
-        const response = await POST(request);
+        const response = await POST(checkoutRequest('pro'));
         const data = await response.json();
 
         expect(response.status).toBe(200);
         expect(data.url).toBe('https://checkout.stripe.com/session_123');
+        expect(mockFrom).toHaveBeenNthCalledWith(1, 'profiles');
+        expect(mockFrom).toHaveBeenNthCalledWith(2, 'subscriptions');
         expect(mockCheckoutCreate).toHaveBeenCalledWith(
             expect.objectContaining({
                 customer: 'cus_123',
@@ -130,35 +126,12 @@ describe('/api/subscriptions/checkout', () => {
     });
 
     it('creates new Stripe customer if none exists', async () => {
-        (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-            data: { user: { id: 'user-1', email: 'test@test.com' } },
-            error: null,
-        });
-
-        const mockFrom = jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-                eq: jest.fn().mockReturnValue({
-                    single: jest.fn().mockResolvedValue({
-                        data: null,
-                        error: null,
-                    }),
-                }),
-            }),
-        });
-        (supabase.from as jest.Mock).mockImplementation(mockFrom);
-
+        signedIn();
+        mockProfileThenSubscription(false, null);
         mockCustomerCreate.mockResolvedValue({ id: 'cus_new_456' });
-        mockCheckoutCreate.mockResolvedValue({
-            url: 'https://checkout.stripe.com/session_456',
-        });
+        mockCheckoutCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/session_456' });
 
-        const request = new Request('http://localhost/api/subscriptions/checkout', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer valid-token' },
-            body: JSON.stringify({ tier: 'starter' }),
-        });
-
-        const response = await POST(request);
+        const response = await POST(checkoutRequest('starter'));
         const data = await response.json();
 
         expect(response.status).toBe(200);

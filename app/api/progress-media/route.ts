@@ -1,26 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
-import { supabase } from '@/lib/supabase';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
+const BUCKET = 'progress-media';
+
+// `userId` in the query is ignored: the caller only sees their own media.
 export async function GET(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
-        const { searchParams } = new URL(req.url);
-        const userId = searchParams.get('userId');
+        const { data: media, error } = await auth.supabase
+            .from('progress_media')
+            .select('*')
+            .eq('user_id', auth.user.id)
+            .order('taken_at', { ascending: false })
+            .limit(50);
+        if (error) throw error;
 
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'userId is required' },
-                { status: 400 }
-            );
-        }
-
-        const media = await db.progressMedia.getByUser(userId);
-
-        // Generate signed URLs for each media item
+        // Generate signed URLs for each media item (storage RLS: own folder only)
         const mediaWithUrls = await Promise.all(
-            media.map(async (item) => {
-                const { data } = await supabase.storage
-                    .from('progress-media')
+            (media || []).map(async (item) => {
+                const { data } = await auth.supabase.storage
+                    .from(BUCKET)
                     .createSignedUrl(item.storage_path, 3600);
                 return {
                     ...item,
@@ -40,17 +41,21 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const formData = await req.formData();
         const file = formData.get('file') as File | null;
-        const userId = formData.get('user_id') as string | null;
+        // user_id in the form is ignored: the upload belongs to the caller.
+        const userId = auth.user.id;
         const caption = formData.get('caption') as string | null;
         const takenAt = formData.get('taken_at') as string | null;
         const visibility = (formData.get('visibility') as string) || 'private';
 
-        if (!file || !userId) {
+        if (!file) {
             return NextResponse.json(
-                { error: 'file and user_id are required' },
+                { error: 'file is required' },
                 { status: 400 }
             );
         }
@@ -67,15 +72,15 @@ export async function POST(req: NextRequest) {
         const isVideo = file.type.startsWith('video/');
         const mediaType = isVideo ? 'video' : 'image';
 
-        // Generate storage path
+        // Generate storage path: objects live under <user id>/ so storage RLS applies
         const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
         const timestamp = Date.now();
         const storagePath = `${userId}/${timestamp}.${ext}`;
 
         // Upload to Supabase Storage
         const arrayBuffer = await file.arrayBuffer();
-        const { error: uploadError } = await supabase.storage
-            .from('progress-media')
+        const { error: uploadError } = await auth.supabase.storage
+            .from(BUCKET)
             .upload(storagePath, arrayBuffer, {
                 contentType: file.type,
                 upsert: false,
@@ -90,18 +95,23 @@ export async function POST(req: NextRequest) {
         }
 
         // Create database record
-        const media = await db.progressMedia.create({
-            user_id: userId,
-            media_type: mediaType as 'image' | 'video',
-            storage_path: storagePath,
-            caption: caption || undefined,
-            taken_at: takenAt || new Date().toISOString(),
-            visibility: visibility as 'public' | 'followers' | 'private',
-        });
+        const { data: media, error: insertError } = await auth.supabase
+            .from('progress_media')
+            .insert([{
+                user_id: userId,
+                media_type: mediaType,
+                storage_path: storagePath,
+                caption: caption || undefined,
+                taken_at: takenAt || new Date().toISOString(),
+                visibility,
+            }])
+            .select()
+            .single();
+        if (insertError) throw insertError;
 
         // Get signed URL
-        const { data: urlData } = await supabase.storage
-            .from('progress-media')
+        const { data: urlData } = await auth.supabase.storage
+            .from(BUCKET)
             .createSignedUrl(storagePath, 3600);
 
         return NextResponse.json(
@@ -118,6 +128,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
@@ -129,8 +142,14 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
-        // Get media record to find storage path
-        const media = await db.progressMedia.getById(id);
+        // Get media record to find storage path (own rows only)
+        const { data: media, error: fetchError } = await auth.supabase
+            .from('progress_media')
+            .select('*')
+            .eq('id', id)
+            .eq('user_id', auth.user.id)
+            .maybeSingle();
+        if (fetchError) throw fetchError;
         if (!media) {
             return NextResponse.json(
                 { error: 'Media not found' },
@@ -139,8 +158,8 @@ export async function DELETE(req: NextRequest) {
         }
 
         // Delete from storage
-        const { error: storageError } = await supabase.storage
-            .from('progress-media')
+        const { error: storageError } = await auth.supabase.storage
+            .from(BUCKET)
             .remove([media.storage_path]);
 
         if (storageError) {
@@ -148,7 +167,12 @@ export async function DELETE(req: NextRequest) {
         }
 
         // Delete database record
-        await db.progressMedia.delete(id);
+        const { error: deleteError } = await auth.supabase
+            .from('progress_media')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', auth.user.id);
+        if (deleteError) throw deleteError;
 
         return NextResponse.json({ success: true });
     } catch (error) {

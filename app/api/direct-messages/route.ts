@@ -1,34 +1,32 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getUser, isErrorResponse, type AuthContext } from '@/lib/auth';
+
+/** Is there an active coaching relationship between the caller and `otherUserId`? */
+async function hasActiveRelationship(auth: AuthContext, otherUserId: string): Promise<boolean> {
+    const userId = auth.user.id;
+    const { data: relationship, error } = await auth.supabase
+        .from('coaching_relationships')
+        .select('id')
+        .or(
+            `and(coach_id.eq.${userId},athlete_id.eq.${otherUserId}),and(coach_id.eq.${otherUserId},athlete_id.eq.${userId})`
+        )
+        .eq('status', 'active')
+        .limit(1);
+    if (error) throw error;
+    return !!relationship && relationship.length > 0;
+}
 
 export async function GET(request: Request) {
     try {
+        const auth = await getUser(request);
+        if (isErrorResponse(auth)) return auth;
+        const userId = auth.user.id;
+
         const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
         const otherUserId = searchParams.get('otherUserId');
 
-        if (!userId) {
-            return NextResponse.json({ error: 'userId is required' }, { status: 400 });
-        }
-
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        // Verify coaching relationship exists between the two users
         if (otherUserId) {
-            const { data: relationship, error: relError } = await supabase
-                .from('coaching_relationships')
-                .select('id')
-                .or(
-                    `and(coach_id.eq.${userId},athlete_id.eq.${otherUserId}),and(coach_id.eq.${otherUserId},athlete_id.eq.${userId})`
-                )
-                .eq('status', 'active')
-                .limit(1);
-
-            if (relError) throw relError;
-            if (!relationship || relationship.length === 0) {
+            if (!(await hasActiveRelationship(auth, otherUserId))) {
                 return NextResponse.json(
                     { error: 'No active coaching relationship found' },
                     { status: 403 }
@@ -36,7 +34,7 @@ export async function GET(request: Request) {
             }
 
             // Get conversation between two users
-            const { data: messages, error } = await supabase
+            const { data: messages, error } = await auth.supabase
                 .from('direct_messages')
                 .select('*')
                 .or(
@@ -48,8 +46,8 @@ export async function GET(request: Request) {
             return NextResponse.json({ messages: messages || [] });
         }
 
-        // Get all conversations for a user
-        const { data: messages, error } = await supabase
+        // Get all conversations for the caller
+        const { data: messages, error } = await auth.supabase
             .from('direct_messages')
             .select('*')
             .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
@@ -79,14 +77,18 @@ export async function GET(request: Request) {
     }
 }
 
+/** Send a message from the caller to `recipientId`. The new-message notification comes from a trigger. */
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { senderId, recipientId, content } = body;
+        const auth = await getUser(request);
+        if (isErrorResponse(auth)) return auth;
 
-        if (!senderId || !recipientId || !content) {
+        const body = await request.json();
+        const { recipientId, content } = body;
+
+        if (!recipientId || !content) {
             return NextResponse.json(
-                { error: 'senderId, recipientId, and content are required' },
+                { error: 'recipientId and content are required' },
                 { status: 400 }
             );
         }
@@ -98,34 +100,17 @@ export async function POST(request: Request) {
             );
         }
 
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        // Verify coaching relationship exists
-        const { data: relationship, error: relError } = await supabase
-            .from('coaching_relationships')
-            .select('id')
-            .or(
-                `and(coach_id.eq.${senderId},athlete_id.eq.${recipientId}),and(coach_id.eq.${recipientId},athlete_id.eq.${senderId})`
-            )
-            .eq('status', 'active')
-            .limit(1);
-
-        if (relError) throw relError;
-        if (!relationship || relationship.length === 0) {
+        if (!(await hasActiveRelationship(auth, recipientId))) {
             return NextResponse.json(
                 { error: 'No active coaching relationship found' },
                 { status: 403 }
             );
         }
 
-        // Insert the message
-        const { data: message, error } = await supabase
+        const { data: message, error } = await auth.supabase
             .from('direct_messages')
             .insert([{
-                sender_id: senderId,
+                sender_id: auth.user.id,
                 recipient_id: recipientId,
                 content: content.trim(),
             }])

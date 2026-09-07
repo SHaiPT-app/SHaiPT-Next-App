@@ -1,204 +1,82 @@
-/**
- * @jest-environment node
- */
-
-jest.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: jest.fn(),
-}));
-
-jest.mock('@/lib/supabaseDb', () => ({
-    db: {},
-}));
-
-jest.mock('@/lib/supabase', () => ({
-    supabase: {},
-}));
-
+/** @jest-environment node */
+import { generateTrainingPlan, recommendSplits } from '@/lib/ai/plans';
+import { AiLimitError } from '@/lib/ai/gateway';
 import { POST } from '@/app/api/ai-coach/generate-plan/route';
-import { NextRequest } from 'next/server';
+import { signIn, signOut, post } from '@/test-utils/api';
 
-function createRequest(body: object): NextRequest {
-    return new NextRequest('http://localhost:3000/api/ai-coach/generate-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
-}
+jest.mock('@/lib/auth', () => jest.requireActual('@/test-utils/api').authMockFactory());
+jest.mock('@/lib/ai/plans', () => ({ ...jest.requireActual('@/lib/ai/plans'), generateTrainingPlan: jest.fn(), recommendSplits: jest.fn() }));
+const mockGenerate = generateTrainingPlan as jest.Mock;
+const mockSplits = recommendSplits as jest.Mock;
+
+const intakeData = {
+    name: 'T', age: '30', height: '180 cm', weight: '80 kg', sport_history: 'football', training_duration: '3-5 years',
+    training_style: 'strength', fitness_goals: 'get stronger', training_days_per_week: '4', session_duration: '60 min',
+    preferred_time: 'morning', available_equipment: 'full gym', training_location: 'Commercial Gym', injuries: 'none',
+    medical_considerations: '', fitness_level: 'Intermediate',
+};
+const splits = [
+    { id: 'upper_lower', name: 'Upper/Lower', description: 'x', days_per_week: 4, recommended: true },
+    { id: 'ppl', name: 'PPL', description: 'y', days_per_week: 4, recommended: false },
+];
+const plan = {
+    name: 'Upper/Lower Program', description: 'd', duration_weeks: 8, split_type: 'upper_lower',
+    periodization_blocks: [{ phase_type: 'hypertrophy', phase_duration_weeks: 8, label: 'H' }],
+    sessions: [{ name: 'Upper A', description: '', day_number: 1, exercises: [
+        { exercise_id: 'Barbell_Bench_Press_-_Medium_Grip', exercise_name: 'Barbell Bench Press - Medium Grip', fourd_id: 'bench', primary_muscles: ['chest'], equipment: 'barbell', sets: [{ reps: '8', weight: 'moderate', rest_seconds: 90 }], notes: 'n' },
+    ] }],
+};
 
 describe('Generate Plan API Route', () => {
-    const originalEnv = process.env;
-
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env = { ...originalEnv };
-        delete process.env.GEMINI_API_KEY;
+        signIn();
+        mockSplits.mockResolvedValue({ splits, cached: false, mocked: false });
+        mockGenerate.mockResolvedValue({ plan, cached: false, mocked: false, usage: { inputTokens: 0, outputTokens: 0, cachedTokens: 0, costUsd: 0 } });
     });
 
-    afterAll(() => {
-        process.env = originalEnv;
+    it('returns 401 without a user', async () => {
+        signOut();
+        expect((await POST(post('/api/ai-coach/generate-plan', { action: 'recommend_splits', intakeData }))).status).toBe(401);
     });
 
     describe('recommend_splits action', () => {
-        it('returns mock split recommendations when no API key is set', async () => {
-            const req = createRequest({
-                action: 'recommend_splits',
-                intakeData: {
-                    training_days_per_week: '4',
-                    fitness_goals: 'Build muscle',
-                    fitness_level: 'intermediate',
-                },
-            });
-
-            const res = await POST(req);
+        it('returns the ranked splits for the caller, built from the intake', async () => {
+            const res = await POST(post('/api/ai-coach/generate-plan', { action: 'recommend_splits', intakeData, messages: [{ role: 'user', content: 'I can do 4 days' }] }));
             expect(res.status).toBe(200);
-
-            const data = await res.json();
-            expect(data.splits).toBeDefined();
-            expect(Array.isArray(data.splits)).toBe(true);
-            expect(data.splits.length).toBeGreaterThan(0);
-
-            // Check split structure
-            const split = data.splits[0];
-            expect(split).toHaveProperty('id');
-            expect(split).toHaveProperty('name');
-            expect(split).toHaveProperty('description');
-            expect(split).toHaveProperty('days_per_week');
-            expect(split).toHaveProperty('recommended');
-        });
-
-        it('returns upper_lower as recommended for 4-day training', async () => {
-            const req = createRequest({
-                action: 'recommend_splits',
-                intakeData: { training_days_per_week: '4' },
-            });
-
-            const res = await POST(req);
-            const data = await res.json();
-
-            const recommended = data.splits.find((s: { recommended: boolean }) => s.recommended);
-            expect(recommended).toBeDefined();
-            expect(recommended.id).toBe('upper_lower');
-        });
-
-        it('returns full_body as recommended for 3-day training', async () => {
-            const req = createRequest({
-                action: 'recommend_splits',
-                intakeData: { training_days_per_week: '3' },
-            });
-
-            const res = await POST(req);
-            const data = await res.json();
-
-            const recommended = data.splits.find((s: { recommended: boolean }) => s.recommended);
-            expect(recommended).toBeDefined();
-            expect(recommended.id).toBe('full_body');
-        });
-
-        it('returns ppl as recommended for 5+ day training', async () => {
-            const req = createRequest({
-                action: 'recommend_splits',
-                intakeData: { training_days_per_week: '5' },
-            });
-
-            const res = await POST(req);
-            const data = await res.json();
-
-            const recommended = data.splits.find((s: { recommended: boolean }) => s.recommended);
-            expect(recommended).toBeDefined();
-            expect(recommended.id).toBe('ppl');
+            expect((await res.json()).splits).toEqual(splits);
+            const opts = mockSplits.mock.calls[0][0];
+            expect(opts.userId).toBe('u1');
+            expect(opts.profile.trainingDays).toBe(4);
+            expect(opts.profile.location).toBe('Commercial Gym');
+            expect(opts.profile.extra).toContain('I can do 4 days');
+            expect(mockGenerate).not.toHaveBeenCalled();
         });
     });
 
     describe('plan generation', () => {
-        it('returns 400 when splitType is missing', async () => {
-            const req = createRequest({
-                messages: [{ role: 'user', content: 'test' }],
-                intakeData: {},
-            });
-
-            const res = await POST(req);
-            expect(res.status).toBe(400);
-
-            const data = await res.json();
-            expect(data.error).toContain('splitType is required');
+        it('returns 400 without a splitType', async () => {
+            expect((await POST(post('/api/ai-coach/generate-plan', { intakeData }))).status).toBe(400);
         });
 
-        it('returns mock plan when no API key is set', async () => {
-            const req = createRequest({
-                splitType: 'ppl',
-                intakeData: {
-                    training_days_per_week: '4',
-                    fitness_goals: 'Build muscle',
-                },
-            });
-
-            const res = await POST(req);
+        it('returns the plan with library ids and the 4D link per exercise', async () => {
+            const res = await POST(post('/api/ai-coach/generate-plan', { splitType: 'upper_lower', intakeData }));
             expect(res.status).toBe(200);
-
-            const data = await res.json();
-            expect(data.plan).toBeDefined();
-            expect(data.plan.name).toBeDefined();
-            expect(data.plan.description).toBeDefined();
-            expect(data.plan.duration_weeks).toBe(8);
-            expect(data.plan.split_type).toBe('ppl');
+            const json = await res.json();
+            expect(json.plan.sessions[0].exercises[0].fourd_id).toBe('bench');
+            expect(json.plan.sessions[0].exercises[0].exercise_id).toBe('Barbell_Bench_Press_-_Medium_Grip');
+            expect(mockGenerate.mock.calls[0][0].profile.splitType).toBe('upper_lower');
         });
 
-        it('returns plan with correct number of sessions', async () => {
-            const req = createRequest({
-                splitType: 'upper_lower',
-                intakeData: { training_days_per_week: '4' },
-            });
-
-            const res = await POST(req);
-            const data = await res.json();
-
-            expect(data.plan.sessions).toHaveLength(4);
-            expect(data.plan.sessions[0].day_number).toBe(1);
-            expect(data.plan.sessions[3].day_number).toBe(4);
+        it('passes the tester flag through to the gateway', async () => {
+            signIn({}, { tester: true });
+            await POST(post('/api/ai-coach/generate-plan', { splitType: 'ppl', intakeData }));
+            expect(mockGenerate.mock.calls[0][0].tester).toBe(true);
         });
 
-        it('returns plan with periodization blocks', async () => {
-            const req = createRequest({
-                splitType: 'full_body',
-                intakeData: { training_days_per_week: '3' },
-            });
-
-            const res = await POST(req);
-            const data = await res.json();
-
-            expect(data.plan.periodization_blocks).toBeDefined();
-            expect(data.plan.periodization_blocks.length).toBeGreaterThan(0);
-
-            const block = data.plan.periodization_blocks[0];
-            expect(block).toHaveProperty('phase_type');
-            expect(block).toHaveProperty('phase_duration_weeks');
-            expect(block).toHaveProperty('label');
-        });
-
-        it('returns plan with exercises in each session', async () => {
-            const req = createRequest({
-                splitType: 'ppl',
-                intakeData: { training_days_per_week: '3' },
-            });
-
-            const res = await POST(req);
-            const data = await res.json();
-
-            for (const session of data.plan.sessions) {
-                expect(session.exercises).toBeDefined();
-                expect(session.exercises.length).toBeGreaterThan(0);
-
-                const exercise = session.exercises[0];
-                expect(exercise).toHaveProperty('exercise_name');
-                expect(exercise).toHaveProperty('sets');
-                expect(exercise).toHaveProperty('notes');
-
-                expect(exercise.sets.length).toBeGreaterThan(0);
-                const set = exercise.sets[0];
-                expect(set).toHaveProperty('reps');
-                expect(set).toHaveProperty('weight');
-                expect(set).toHaveProperty('rest_seconds');
-            }
+        it('returns 429 when a limit is hit', async () => {
+            mockGenerate.mockRejectedValue(new AiLimitError('Daily limit', 'daily_calls'));
+            expect((await POST(post('/api/ai-coach/generate-plan', { splitType: 'ppl', intakeData }))).status).toBe(429);
         });
     });
 });

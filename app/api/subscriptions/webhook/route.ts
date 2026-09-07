@@ -1,17 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getAdmin } from '@/lib/auth';
 import { getStripe } from '@/lib/subscriptions';
 import type { SubscriptionTier, SubscriptionStatus } from '@/lib/types';
 import Stripe from 'stripe';
-
-// Use service role to bypass RLS for webhook updates
-function getAdminClient() {
-    return createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-    );
-}
 
 function mapStripeStatus(status: string): SubscriptionStatus {
     const statusMap: Record<string, SubscriptionStatus> = {
@@ -47,7 +38,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
         }
 
-        const supabaseAdmin = getAdminClient();
+        // Service role: Stripe calls this with no user token, and only the service role may
+        // write subscriptions (RLS "Service role can manage subscriptions").
+        const supabaseAdmin = getAdmin();
 
         switch (event.type) {
             case 'checkout.session.completed': {

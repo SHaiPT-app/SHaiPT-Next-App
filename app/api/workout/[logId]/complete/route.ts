@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getUser, isErrorResponse } from '@/lib/auth';
 
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ logId: string }> }
 ) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { logId } = await params;
         const body = await request.json();
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const supabase = auth.supabase;
+        const userId = auth.user.id;
 
         const finishedAt = body.finishedAt || new Date().toISOString();
 
-        // Update workout log
+        // Update workout log (only the caller's own log)
         const { data: workoutLog, error: updateError } = await supabase
             .from('workout_logs')
             .update({
@@ -25,6 +26,7 @@ export async function POST(
                 notes: body.notes,
             })
             .eq('id', logId)
+            .eq('user_id', userId)
             .select()
             .single();
 
@@ -73,7 +75,8 @@ export async function POST(
             .update({
                 total_rest_seconds: totalRest,
             })
-            .eq('id', logId);
+            .eq('id', logId)
+            .eq('user_id', userId);
 
         // Bug 26: Calculate actual completion percentage based on completed vs planned exercises
         let completionPercentage = 100;
@@ -97,27 +100,25 @@ export async function POST(
             }
         }
 
-        // Update consistency log if user has an active challenge
-        if (workoutLog.user_id) {
-            const { data: challenge } = await supabase
-                .from('consistency_challenges')
-                .select('*')
-                .eq('user_id', workoutLog.user_id)
-                .in('status', ['active', 'grace_period'])
-                .single();
+        // Update consistency log if the caller has an active challenge
+        const { data: challenge } = await supabase
+            .from('consistency_challenges')
+            .select('*')
+            .eq('user_id', userId)
+            .in('status', ['active', 'grace_period'])
+            .maybeSingle();
 
-            if (challenge) {
-                await supabase
-                    .from('consistency_logs')
-                    .upsert({
-                        user_id: workoutLog.user_id,
-                        challenge_id: challenge.id,
-                        date: workoutLog.date,
-                        completed: true,
-                        workout_log_id: logId,
-                        completion_percentage: completionPercentage,
-                    }, { onConflict: 'user_id,date' });
-            }
+        if (challenge) {
+            await supabase
+                .from('consistency_logs')
+                .upsert({
+                    user_id: userId,
+                    challenge_id: challenge.id,
+                    date: workoutLog.date,
+                    completed: true,
+                    workout_log_id: logId,
+                    completion_percentage: completionPercentage,
+                }, { onConflict: 'user_id,date' });
         }
 
         // Delete any draft for this session
@@ -125,7 +126,7 @@ export async function POST(
             await supabase
                 .from('workout_drafts')
                 .delete()
-                .eq('user_id', workoutLog.user_id)
+                .eq('user_id', userId)
                 .eq('session_id', workoutLog.session_id);
         }
 

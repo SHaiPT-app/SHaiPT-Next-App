@@ -2,81 +2,82 @@
  * @jest-environment node
  */
 import { GET } from '@/app/api/nutrition/route';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Mock supabaseDb
-const mockGetLatestByUser = jest.fn()
+const mockGetUser = jest.fn();
+const mockFrom = jest.fn();
 
-jest.mock('@/lib/supabaseDb', () => ({
-    db: {
-        nutritionPlans: {
-            getLatestByUser: (...args: unknown[]) => mockGetLatestByUser(...args),
-        },
-    },
-}))
+jest.mock('@/lib/auth', () => {
+    const { NextResponse: NR } = jest.requireActual('next/server');
+    return {
+        getUser: (...args: unknown[]) => mockGetUser(...args),
+        isErrorResponse: (r: unknown) => r instanceof NR,
+        getAdmin: jest.fn(),
+        userClient: jest.fn(),
+        bearerToken: jest.fn(),
+    };
+});
 
-function createRequest(url: string) {
-    return new Request(url)
+function chain(result: { data?: unknown; error?: unknown }) {
+    const c: Record<string, unknown> = {};
+    for (const m of ['select', 'eq', 'order', 'limit', 'maybeSingle']) {
+        c[m] = jest.fn(() => c);
+    }
+    c.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(result).then(res, rej);
+    return c;
+}
+
+const USER = 'user-1';
+function signedIn() {
+    mockGetUser.mockResolvedValue({ user: { id: USER }, token: 'tok', supabase: { from: mockFrom } });
 }
 
 describe('/api/nutrition GET', () => {
     beforeEach(() => {
-        jest.clearAllMocks()
-    })
+        jest.clearAllMocks();
+    });
 
-    it('returns 400 when userId is missing', async () => {
-        const req = createRequest('http://localhost/api/nutrition')
-        const res = await GET(req as any)
-        const data = await res.json()
-
-        expect(res.status).toBe(400)
-        expect(data.error).toBe('userId is required')
-    })
+    it('returns 401 without a token', async () => {
+        mockGetUser.mockResolvedValue(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+        const res = await GET(new NextRequest('http://localhost/api/nutrition?userId=user-1'));
+        expect(res.status).toBe(401);
+    });
 
     it('returns null plan when no plan exists', async () => {
-        mockGetLatestByUser.mockResolvedValue(null)
+        signedIn();
+        const q = chain({ data: null, error: null });
+        mockFrom.mockReturnValue(q);
 
-        const req = createRequest('http://localhost/api/nutrition?userId=user-1')
-        const res = await GET(req as any)
-        const data = await res.json()
+        const res = await GET(new NextRequest('http://localhost/api/nutrition?userId=someone-else'));
+        const data = await res.json();
 
-        expect(res.status).toBe(200)
-        expect(data.plan).toBeNull()
-        expect(mockGetLatestByUser).toHaveBeenCalledWith('user-1')
-    })
+        expect(res.status).toBe(200);
+        expect(data.plan).toBeNull();
+        expect(mockFrom).toHaveBeenCalledWith('nutrition_plans');
+        expect(q.eq).toHaveBeenCalledWith('user_id', USER);
+    });
 
-    it('returns plan when one exists', async () => {
-        const mockPlan = {
-            id: 'plan-1',
-            user_id: 'user-1',
-            name: '7-Day Meal Plan',
-            dietary_preferences: ['vegan'],
-            plan_overview: {
-                duration_days: 7,
-                daily_calories: 2200,
-                macros: { calories: 2200, protein_g: 165, carbs_g: 220, fat_g: 73 },
-            },
-            daily_schedule: {},
-        }
+    it("returns the caller's latest plan", async () => {
+        signedIn();
+        const mockPlan = { id: 'plan-1', user_id: USER, name: '7-Day Meal Plan', dietary_preferences: ['vegan'] };
+        mockFrom.mockReturnValue(chain({ data: mockPlan, error: null }));
 
-        mockGetLatestByUser.mockResolvedValue(mockPlan)
+        const res = await GET(new NextRequest('http://localhost/api/nutrition'));
+        const data = await res.json();
 
-        const req = createRequest('http://localhost/api/nutrition?userId=user-1')
-        const res = await GET(req as any)
-        const data = await res.json()
-
-        expect(res.status).toBe(200)
-        expect(data.plan.id).toBe('plan-1')
-        expect(data.plan.name).toBe('7-Day Meal Plan')
-    })
+        expect(res.status).toBe(200);
+        expect(data.plan.id).toBe('plan-1');
+        expect(data.plan.name).toBe('7-Day Meal Plan');
+    });
 
     it('returns 500 on database error', async () => {
-        mockGetLatestByUser.mockRejectedValue(new Error('DB error'))
+        signedIn();
+        mockFrom.mockReturnValue(chain({ data: null, error: { message: 'DB error' } }));
 
-        const req = createRequest('http://localhost/api/nutrition?userId=user-1')
-        const res = await GET(req as any)
-        const data = await res.json()
+        const res = await GET(new NextRequest('http://localhost/api/nutrition'));
+        const data = await res.json();
 
-        expect(res.status).toBe(500)
-        expect(data.error).toBe('Failed to fetch nutrition plan')
-    })
-})
+        expect(res.status).toBe(500);
+        expect(data.error).toBe('Failed to fetch nutrition plan');
+    });
+});

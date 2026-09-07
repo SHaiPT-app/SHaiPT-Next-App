@@ -1,28 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
+// `user_id` in the body is ignored: the request is for the caller's own challenge.
 export async function POST(request: NextRequest) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const body = await request.json();
-        const { user_id, reason, duration_days } = body;
+        const { reason, duration_days } = body;
 
-        if (!user_id || !reason) {
+        if (!reason) {
             return NextResponse.json(
-                { error: 'Missing required fields: user_id, reason' },
+                { error: 'Missing required field: reason' },
                 { status: 400 }
             );
         }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const supabase = auth.supabase;
 
         // Get active challenge
         const { data: challenge, error: fetchError } = await supabase
             .from('consistency_challenges')
             .select('*')
-            .eq('user_id', user_id)
+            .eq('user_id', auth.user.id)
             .eq('status', 'active')
             .single();
 
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
                 updated_at: new Date().toISOString(),
             })
             .eq('id', challenge.id)
+            .eq('user_id', auth.user.id)
             .select()
             .single();
 

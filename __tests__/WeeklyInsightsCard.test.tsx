@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import WeeklyInsightsCard from '@/components/WeeklyInsightsCard';
 
 // Mock framer-motion to avoid animation issues in tests
+jest.mock('@/lib/apiClient');
 jest.mock('framer-motion', () => {
     const React = require('react');
     return {
@@ -217,7 +218,7 @@ describe('WeeklyInsightsCard', () => {
                 '/api/ai-coach/weekly-insights',
                 expect.objectContaining({
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: expect.objectContaining({ 'Content-Type': 'application/json', Authorization: 'Bearer test-token' }),
                 })
             );
         });
@@ -225,7 +226,6 @@ describe('WeeklyInsightsCard', () => {
         const callBody = JSON.parse(
             (global.fetch as jest.Mock).mock.calls[0][1].body
         );
-        expect(callBody.userId).toBe('user-1');
         expect(callBody.workoutLogs).toHaveLength(2);
         expect(callBody.workoutLogs[0].exercises[0].name).toBe('Bench Press');
     });

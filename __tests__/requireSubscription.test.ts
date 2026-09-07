@@ -157,6 +157,7 @@ describe('requireFeatureAccess', () => {
         expect(result).toEqual({
             userId: 'user-1',
             subscription: mockSub,
+            tester: false,
         });
     });
 });

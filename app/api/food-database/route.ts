@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { searchParams } = new URL(req.url);
         const query = searchParams.get('q');
         const category = searchParams.get('category');
 
         if (category) {
-            const foods = await db.foodDatabase.getByCategory(category);
-            return NextResponse.json({ foods });
+            const { data, error } = await auth.supabase
+                .from('food_database')
+                .select('*')
+                .eq('category', category)
+                .order('name');
+            if (error) throw error;
+            return NextResponse.json({ foods: data || [] });
         }
 
         if (!query || query.length < 2) {
@@ -19,8 +27,15 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        const foods = await db.foodDatabase.search(query);
-        return NextResponse.json({ foods });
+        const { data, error } = await auth.supabase
+            .from('food_database')
+            .select('*')
+            .ilike('name', `%${query}%`)
+            .order('is_verified', { ascending: false })
+            .order('name')
+            .limit(20);
+        if (error) throw error;
+        return NextResponse.json({ foods: data || [] });
     } catch (error) {
         console.error('Error searching food database:', error);
         return NextResponse.json(
@@ -31,9 +46,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const body = await req.json();
-        const { name, brand, category, serving_size, serving_unit, calories, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg, created_by } = body;
+        // created_by in the body is ignored: the row is attributed to the caller.
+        const { name, brand, category, serving_size, serving_unit, calories, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg } = body;
 
         if (!name) {
             return NextResponse.json(
@@ -42,22 +61,27 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const food = await db.foodDatabase.create({
-            name,
-            brand,
-            category,
-            serving_size: serving_size || 100,
-            serving_unit: serving_unit || 'g',
-            calories: calories || 0,
-            protein_g: protein_g || 0,
-            carbs_g: carbs_g || 0,
-            fat_g: fat_g || 0,
-            fiber_g,
-            sugar_g,
-            sodium_mg,
-            created_by,
-            is_verified: false,
-        });
+        const { data: food, error } = await auth.supabase
+            .from('food_database')
+            .insert([{
+                name,
+                brand,
+                category,
+                serving_size: serving_size || 100,
+                serving_unit: serving_unit || 'g',
+                calories: calories || 0,
+                protein_g: protein_g || 0,
+                carbs_g: carbs_g || 0,
+                fat_g: fat_g || 0,
+                fiber_g,
+                sugar_g,
+                sodium_mg,
+                created_by: auth.user.id,
+                is_verified: false,
+            }])
+            .select()
+            .single();
+        if (error) throw error;
 
         return NextResponse.json({ food }, { status: 201 });
     } catch (error) {

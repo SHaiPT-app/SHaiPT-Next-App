@@ -82,6 +82,10 @@ export default function Pricing() {
     setLoadingTier(tier);
     try {
       const parsed = JSON.parse(user);
+      if (parsed?.tester) {
+        window.location.href = '/home';
+        return;
+      }
       const session = parsed?.session?.access_token;
       if (!session) {
         window.location.href = '/login';

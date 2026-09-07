@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WeeklyInsight } from '@/lib/types';
 import { fadeInUp, staggerContainer } from '@/lib/animations';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 
 interface WeeklyInsightsCardProps {
-    userId: string;
+    /** kept for callers; the API derives the user from the session token */
+    userId?: string;
     logs: Array<{
         id: string;
         date: string;
@@ -95,7 +97,7 @@ function TrendTag({ label, direction }: { label: string; direction: 'up' | 'down
     );
 }
 
-export default function WeeklyInsightsCard({ userId, logs }: WeeklyInsightsCardProps) {
+export default function WeeklyInsightsCard({ logs }: WeeklyInsightsCardProps) {
     const [insight, setInsight] = useState<WeeklyInsight | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -119,29 +121,21 @@ export default function WeeklyInsightsCard({ userId, logs }: WeeklyInsightsCardP
                 })),
             }));
 
-            const res = await fetch('/api/ai-coach/weekly-insights', {
+            // the caller comes from the token; a 429 carries the AI gateway's message
+            const data = await apiFetch<WeeklyInsight>('/api/ai-coach/weekly-insights', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId,
+                body: {
                     workoutLogs,
                     plannedWorkouts: 4,
-                }),
+                },
             });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Failed to fetch insights');
-            }
-
-            const data: WeeklyInsight = await res.json();
             setInsight(data);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Something went wrong');
+            setError(errorMessage(err, 'Something went wrong'));
         } finally {
             setLoading(false);
         }
-    }, [userId, logs]);
+    }, [logs]);
 
     useEffect(() => {
         fetchInsights();

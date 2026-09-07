@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, WorkoutPlan, WorkoutLog, TrainingPlan, TrainingPlanAssignment } from '@/lib/types';
-import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/apiClient';
 
 /** Denormalized workout log with inline exercises, as returned by the API */
 interface DenormalizedWorkoutLog extends WorkoutLog {
@@ -22,8 +22,6 @@ interface DenormalizedWorkoutLog extends WorkoutLog {
     }>;
 }
 import PlanViewer from './PlanViewer';
-import AIWorkoutPlanner from './ai-coach/AIWorkoutPlanner';
-import AIDietitian from './ai-coach/AIDietitian';
 import AIFormChecker from './ai-coach/AIFormChecker';
 import WeeklyInsightsCard from './WeeklyInsightsCard';
 
@@ -33,74 +31,20 @@ export default function TraineeDashboard({ user }: { user: User }) {
     const [selectedPlan, setSelectedPlan] = useState<WorkoutPlan | null>(null);
     const [viewingPlan, setViewingPlan] = useState<WorkoutPlan | null>(null);
     const [activeTab, setActiveTab] = useState<'plans' | 'coach'>('plans');
-    const [coachModule, setCoachModule] = useState<'workout' | 'diet' | 'form'>('workout');
     const [assignedPlans, setAssignedPlans] = useState<(TrainingPlanAssignment & { plan: TrainingPlan | null })[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Wait for auth state to be ready and retry if session is not available
-                let session = null;
-
-                // DEV BYPASS
-                if (user.id === 'dev-user-id') {
-                    console.log('Dev user detected, skipping Supabase session check');
-                    // Mock session for API calls if needed, or just proceed
-                } else {
-                    let retryCount = 0;
-                    const maxRetries = 5;
-
-                    while (!session && retryCount < maxRetries) {
-                        const { data: { session: currentSession } } = await supabase.auth.getSession();
-                        if (currentSession) {
-                            session = currentSession;
-                            break;
-                        }
-
-                        // Wait briefly before retrying
-                        await new Promise(resolve => setTimeout(resolve, 200));
-                        retryCount++;
-                    }
-
-                    if (!session) {
-                        console.error('No valid session found after retries');
-                        return;
-                    }
-                }
-
-                const headers: any = { 'Content-Type': 'application/json' };
-                if (session?.access_token) {
-                    headers.Authorization = `Bearer ${session.access_token}`;
-                }
-
-                // Fetch plans
-                console.log(`Fetching plans for trainee ID: ${user.id} (${user.username})`);
-                const plansRes = await fetch(`/api/plans?traineeId=${user.id}`, { headers });
-
-                if (plansRes.ok) {
-                    const plansData = await plansRes.json();
-                    setPlans(plansData.plans || []);
-                } else {
-                    setPlans([]);
-                }
-
-                // Fetch logs
-                const logsRes = await fetch(`/api/logs?traineeId=${user.id}`, { headers });
-                if (logsRes.ok) {
-                    const logsData = await logsRes.json();
-                    setLogs(logsData.logs || []);
-                } else {
-                    setLogs([]);
-                }
-
-                // Fetch assigned training plans
-                const assignmentsRes = await fetch(`/api/plan-assignments?userId=${user.id}`, { headers });
-                if (assignmentsRes.ok) {
-                    const assignmentsData = await assignmentsRes.json();
-                    setAssignedPlans(assignmentsData.assignments || []);
-                } else {
-                    setAssignedPlans([]);
-                }
+                // apiFetch attaches the session token; the routes derive the trainee from it
+                const [plansData, logsData, assignmentsData] = await Promise.all([
+                    apiFetch<{ plans?: WorkoutPlan[] }>(`/api/plans?traineeId=${user.id}`).catch(() => ({ plans: [] })),
+                    apiFetch<{ logs?: DenormalizedWorkoutLog[] }>(`/api/logs?traineeId=${user.id}`).catch(() => ({ logs: [] })),
+                    apiFetch<{ assignments?: (TrainingPlanAssignment & { plan: TrainingPlan | null })[] }>(`/api/plan-assignments?userId=${user.id}`).catch(() => ({ assignments: [] })),
+                ]);
+                setPlans(plansData.plans || []);
+                setLogs(logsData.logs || []);
+                setAssignedPlans(assignmentsData.assignments || []);
             } catch (error) {
                 console.error('Error fetching trainee data:', error);
                 setPlans([]);
@@ -276,42 +220,8 @@ export default function TraineeDashboard({ user }: { user: User }) {
                 </div>
             ) : (
                 <div>
-                    <div className="mb-8 flex w-fit gap-2 rounded-xl border border-line-soft bg-[var(--surface-1)] p-1">
-                        <button
-                            onClick={() => setCoachModule('workout')}
-                            className={`cursor-pointer rounded-lg px-4 py-2 text-sm transition-all ${
-                                coachModule === 'workout'
-                                    ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
-                                    : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
-                            }`}
-                        >
-                            Workout Planner
-                        </button>
-                        <button
-                            onClick={() => setCoachModule('diet')}
-                            className={`cursor-pointer rounded-lg px-4 py-2 text-sm transition-all ${
-                                coachModule === 'diet'
-                                    ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
-                                    : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
-                            }`}
-                        >
-                            Dietitian
-                        </button>
-                        <button
-                            onClick={() => setCoachModule('form')}
-                            className={`cursor-pointer rounded-lg px-4 py-2 text-sm transition-all ${
-                                coachModule === 'form'
-                                    ? 'bg-brand font-semibold text-ink-hi shadow-[0_0_16px_var(--brand-glow-soft)]'
-                                    : 'bg-transparent font-normal text-ink-mid hover:text-ink-hi'
-                            }`}
-                        >
-                            Form Checker
-                        </button>
-                    </div>
-
-                    {coachModule === 'workout' && <AIWorkoutPlanner user={user} />}
-                    {coachModule === 'diet' && <AIDietitian user={user} />}
-                    {coachModule === 'form' && <AIFormChecker />}
+                    {/* Plans and nutrition are built with the coach at /coach; here the AI checks your form */}
+                    <AIFormChecker />
                 </div>
             )}
         </div>

@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getUser, isErrorResponse } from '@/lib/auth';
 
 // Get workout draft
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ logId: string }> }
 ) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { logId } = await params;
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-        const { data: draft, error } = await supabase
+        const { data: draft, error } = await auth.supabase
             .from('workout_drafts')
             .select('*')
             .eq('workout_log_id', logId)
+            .eq('user_id', auth.user.id)
             .single();
 
         if (error && error.code !== 'PGRST116') {
@@ -42,24 +42,26 @@ export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ logId: string }> }
 ) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { logId } = await params;
         const body = await request.json();
-        const { user_id, session_id, draft_data, device_id } = body;
+        // user_id in the body is ignored: the draft belongs to the caller.
+        const { session_id, draft_data, device_id } = body;
 
-        if (!user_id || !draft_data) {
+        if (!draft_data) {
             return NextResponse.json(
-                { error: 'Missing required fields: user_id, draft_data' },
+                { error: 'Missing required field: draft_data' },
                 { status: 400 }
             );
         }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-        const { data: draft, error } = await supabase
+        const { data: draft, error } = await auth.supabase
             .from('workout_drafts')
             .upsert({
-                user_id,
+                user_id: auth.user.id,
                 workout_log_id: logId,
                 session_id,
                 draft_data,

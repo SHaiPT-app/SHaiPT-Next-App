@@ -1,33 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { isErrorResponse, requireTrainer } from '@/lib/auth';
 
-function getSupabase(req: NextRequest) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-    if (serviceKey) {
-        return createClient(supabaseUrl, serviceKey, {
-            auth: { autoRefreshToken: false, persistSession: false }
-        });
-    }
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
-    return createClient(supabaseUrl, anonKey, {
-        global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
-        auth: { autoRefreshToken: false, persistSession: false }
-    });
-}
-
+/**
+ * One client's progress for the caller (their coach). The relationship row is read as the
+ * caller, which doubles as the permission check: RLS only returns it when the caller is the
+ * coach. Every other read (profile, logs, measurements, media, signed URLs) also runs under RLS,
+ * which lets an active coach see them.
+ */
 export async function GET(req: NextRequest) {
     try {
-        const sb = getSupabase(req);
+        const auth = await requireTrainer(req);
+        if (isErrorResponse(auth)) return auth;
+        const sb = auth.supabase;
+        const trainerId = auth.user.id;
+
         const { searchParams } = new URL(req.url);
-        const trainerId = searchParams.get('trainerId');
         const clientId = searchParams.get('clientId');
 
-        if (!trainerId || !clientId) {
+        if (!clientId) {
             return NextResponse.json(
-                { error: 'trainerId and clientId are required' },
+                { error: 'clientId is required' },
                 { status: 400 }
             );
         }

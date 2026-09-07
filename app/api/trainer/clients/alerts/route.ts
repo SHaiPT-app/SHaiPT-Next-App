@@ -1,33 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { isErrorResponse, requireTrainer } from '@/lib/auth';
 import type { ClientAlert, ClientAlertSummary } from '@/lib/types';
 
-function getSupabase(req: NextRequest) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-    if (serviceKey) {
-        return createClient(supabaseUrl, serviceKey, {
-            auth: { autoRefreshToken: false, persistSession: false }
-        });
-    }
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
-    return createClient(supabaseUrl, anonKey, {
-        global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
-        auth: { autoRefreshToken: false, persistSession: false }
-    });
-}
-
+/** Inactivity alerts for the caller's active clients (reads run as the coach under RLS). */
 export async function GET(req: NextRequest) {
     try {
-        const sb = getSupabase(req);
-        const { searchParams } = new URL(req.url);
-        const trainerId = searchParams.get('trainerId');
-
-        if (!trainerId) {
-            return NextResponse.json({ error: 'trainerId is required' }, { status: 400 });
-        }
+        const auth = await requireTrainer(req);
+        if (isErrorResponse(auth)) return auth;
+        const sb = auth.supabase;
+        const trainerId = auth.user.id;
 
         // Get active coaching relationships
         const { data: relationships, error: relError } = await sb

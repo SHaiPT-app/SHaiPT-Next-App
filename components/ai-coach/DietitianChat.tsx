@@ -5,6 +5,7 @@ import { Send } from 'lucide-react';
 import type { CoachPersona } from '@/data/coaches';
 import { dietitianPersona } from '@/data/coaches';
 import type { DietIntakeFormData } from '@/lib/types';
+import { apiFetch, apiFetchRaw, ApiError, errorMessage } from '@/lib/apiClient';
 
 interface DietitianChatProps {
     coach: CoachPersona;
@@ -57,20 +58,15 @@ export default function DietitianChat({
         if (allMessages.length < 2) return;
 
         try {
-            const res = await fetch('/api/ai-coach/dietitian-interview', {
+            const formData = await apiFetch<Partial<DietIntakeFormData> & { error?: string }>('/api/ai-coach/dietitian-interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: allMessages.map(m => ({ role: m.role, content: m.content })),
                     action: 'extract_form_data',
-                }),
+                },
             });
-
-            if (res.ok) {
-                const formData = await res.json();
-                if (!formData.error) {
-                    onFormDataUpdate(formData);
-                }
+            if (formData && !formData.error) {
+                onFormDataUpdate(formData);
             }
         } catch {
             // Non-critical
@@ -100,19 +96,14 @@ export default function DietitianChat({
         setMessages(prev => [...prev, { id: introId, role: 'assistant', content: '', persona: 'dietitian' }]);
 
         try {
-            const response = await fetch('/api/ai-coach/dietitian-interview', {
+            const response = await apiFetchRaw('/api/ai-coach/dietitian-interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: [{ role: 'user', content: 'Hi Dr. Nadia, my coach just introduced us. I just finished my training intake and I\'m ready to talk about nutrition.' }],
                     coachId: coach.id,
                     previousContext: previousMessages?.slice(-6),
-                }),
+                },
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to start dietitian interview');
-            }
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response body');
@@ -175,30 +166,13 @@ export default function DietitianChat({
                     content: m.content,
                 }));
 
-            const response = await fetch('/api/ai-coach/dietitian-interview', {
+            const response = await apiFetchRaw('/api/ai-coach/dietitian-interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: apiMessages,
                     coachId: coach.id,
-                }),
+                },
             });
-
-            if (response.status === 429) {
-                setMessages(prev =>
-                    prev.map(m =>
-                        m.id === assistantId
-                            ? { ...m, content: 'Rate limited. Please wait a moment and try again.' }
-                            : m
-                    )
-                );
-                setIsLoading(false);
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Failed to get response');
-            }
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response body');
@@ -235,11 +209,13 @@ export default function DietitianChat({
             }
         } catch (error) {
             console.error('Dietitian chat error:', error);
+            // 429 / 503 carry a friendly message from the AI gateway; show it as the reply
+            const notice = error instanceof ApiError
+                ? errorMessage(error)
+                : 'Sorry, I encountered an error. Please try again.';
             setMessages(prev =>
                 prev.map(m =>
-                    m.id === assistantId
-                        ? { ...m, content: 'Sorry, I encountered an error. Please try again.' }
-                        : m
+                    m.id === assistantId ? { ...m, content: notice } : m
                 )
             );
         } finally {

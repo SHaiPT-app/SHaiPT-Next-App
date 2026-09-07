@@ -1,5 +1,13 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { NextRequest } from 'next/server';
+/**
+ * POST /api/ai-coach/dietitian-interview
+ *   { messages, previousContext? } → text/plain reply, header X-Interview-Complete
+ *   { action: 'extract_form_data', messages } → DietIntakeFormData JSON
+ * Gated: flash-lite, 600 tokens, 12 turns.
+ */
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getUser, isErrorResponse, getProfileBits } from '@/lib/auth';
+import { callModel, limitResponse, type ChatMessage } from '@/lib/ai/gateway';
 import type { DietIntakeFormData } from '@/lib/types';
 
 const DIET_STYLES = [
@@ -97,183 +105,62 @@ function getMockFollowupResponse(messageCount: number): string {
     return MOCK_RESPONSES.followup[idx];
 }
 
-export async function POST(req: NextRequest) {
+const DietSchema = z.object({
+    allergies: z.string().default(''), intolerances: z.string().default(''), diet_style: z.string().default(''),
+    foods_love: z.string().default(''), foods_hate: z.string().default(''), medical_dietary_considerations: z.string().default(''),
+    meals_per_day: z.string().default(''), cooking_preferences: z.string().default(''),
+});
+
+const EMPTY_FORM: DietIntakeFormData = {
+    allergies: '', intolerances: '', diet_style: '', foods_love: '', foods_hate: '',
+    medical_dietary_considerations: '', meals_per_day: '', cooking_preferences: '',
+};
+
+export async function POST(req: Request) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
-        const { messages, action, previousContext } = await req.json();
-
-        // Handle form data extraction
-        if (action === 'extract_form_data') {
-            return await handleExtractDietFormData(messages);
-        }
-
-        // Handle regular dietitian interview chat
-        if (!messages || !Array.isArray(messages)) {
-            return new Response(
-                JSON.stringify({ error: 'Messages array is required' }),
-                { status: 400, headers: { 'Content-Type': 'application/json' } }
-            );
-        }
-
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            // Mock response fallback
-            const isFirst = messages.length <= 1;
-            const mockResponse = isFirst
-                ? MOCK_RESPONSES.intro
-                : getMockFollowupResponse(messages.length);
-
-            const isLastMock = !isFirst && messages.length >= 12;
-
-            const encoder = new TextEncoder();
-            const stream = new ReadableStream({
-                async start(controller) {
-                    const words = mockResponse.split(' ');
-                    for (const word of words) {
-                        controller.enqueue(encoder.encode(word + ' '));
-                        await new Promise(r => setTimeout(r, 30));
-                    }
-                    controller.close();
-                },
-            });
-
-            return new Response(stream, {
-                headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                    'Transfer-Encoding': 'chunked',
-                    ...(isLastMock ? { 'X-Interview-Complete': 'true' } : {}),
-                },
-            });
-        }
-
-        const systemPrompt = buildDietitianSystemPrompt(previousContext);
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-        const history = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content }],
-        }));
-
-        const lastMessage = messages[messages.length - 1];
-
-        const chat = model.startChat({
-            history: [
-                { role: 'user', parts: [{ text: systemPrompt }] },
-                {
-                    role: 'model',
-                    parts: [{ text: 'Understood. I will conduct the nutrition intake interview as Dr. Nadia, asking questions one or two at a time about dietary needs.' }],
-                },
-                ...history,
-            ],
-        });
-
-        // Retry up to 3 times on rate limit
-        const MAX_RETRIES = 3;
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-            try {
-                const result = await chat.sendMessageStream(lastMessage.content);
-
-                // Collect full response first so we can check for [INTERVIEW_COMPLETE]
-                let fullResponse = '';
-                const chunks: string[] = [];
-                for await (const chunk of result.stream) {
-                    const text = chunk.text();
-                    if (text) {
-                        fullResponse += text;
-                        const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
-                        if (cleanText) {
-                            chunks.push(cleanText);
-                        }
-                    }
-                }
-
-                const isComplete = fullResponse.includes('[INTERVIEW_COMPLETE]');
-
-                // Now stream the collected chunks to the client
-                const encoder = new TextEncoder();
-                const stream = new ReadableStream({
-                    async start(controller) {
-                        for (const chunk of chunks) {
-                            controller.enqueue(encoder.encode(chunk));
-                        }
-                        controller.close();
-                    },
-                });
-
-                return new Response(stream, {
-                    headers: {
-                        'Content-Type': 'text/plain; charset=utf-8',
-                        'Transfer-Encoding': 'chunked',
-                        ...(isComplete ? { 'X-Interview-Complete': 'true' } : {}),
-                    },
-                });
-            } catch (error: unknown) {
-                const err = error as { status?: number; message?: string };
-                if ((err?.status === 429 || err?.message?.includes('429')) && attempt < MAX_RETRIES - 1) {
-                    await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
-                    continue;
-                }
-                if (err?.status === 429 || err?.message?.includes('429')) {
-                    return new Response(
-                        JSON.stringify({ error: 'Rate limited. Please wait a moment and try again.' }),
-                        { status: 429, headers: { 'Content-Type': 'application/json' } }
-                    );
-                }
-                throw error;
-            }
-        }
-    } catch (error: unknown) {
-        console.error('Dietitian interview error:', error);
-        const message = error instanceof Error ? error.message : 'Failed to process dietitian chat';
-        return new Response(
-            JSON.stringify({ error: message }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
-    }
-}
-
-async function handleExtractDietFormData(messages: { role: string; content: string }[]): Promise<Response> {
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-        // Return empty form data in mock mode
-        const emptyForm: DietIntakeFormData = {
-            allergies: '', intolerances: '',
-            diet_style: '',
-            foods_love: '', foods_hate: '',
-            medical_dietary_considerations: '',
-            meals_per_day: '', cooking_preferences: '',
+        const { messages, action, previousContext } = await req.json() as {
+            messages?: ChatMessage[]; action?: string; previousContext?: Array<{ role: string; content: string }>;
         };
-        return new Response(JSON.stringify(emptyForm), {
-            headers: { 'Content-Type': 'application/json' },
+        if (!messages || !Array.isArray(messages)) {
+            return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
+        }
+        const { tester } = await getProfileBits(auth);
+        const history = messages.filter((m) => m && typeof m.content === 'string').map((m) => ({ role: m.role, content: m.content.slice(0, 3000) }));
+
+        if (action === 'extract_form_data') {
+            const conversationText = history.map((m) => `${m.role === 'user' ? 'CLIENT' : 'DIETITIAN'}: ${m.content}`).join('\n\n');
+            const res = await callModel<DietIntakeFormData>({
+                userId: auth.user.id, tester, feature: 'dietitian_interview', schema: DietSchema, maxOutputTokens: 400, temperature: 0.1,
+                prompt: `${EXTRACT_DIET_FORM_PROMPT}\n\nConversation:\n${conversationText}`,
+                mock: () => EMPTY_FORM,
+            });
+            return NextResponse.json(res.json ?? EMPTY_FORM);
+        }
+
+        const isFirst = history.length <= 1;
+        const res = await callModel({
+            userId: auth.user.id, tester, feature: 'dietitian_interview',
+            system: buildDietitianSystemPrompt(previousContext),
+            messages: history.length ? history : [{ role: 'user', content: 'Hello' }],
+            mock: () => (isFirst ? MOCK_RESPONSES.intro : getMockFollowupResponse(history.length)) + (history.length >= 12 ? ' [INTERVIEW_COMPLETE]' : ''),
         });
-    }
-
-    try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-        const conversationText = messages
-            .map(m => `${m.role === 'user' ? 'CLIENT' : 'DIETITIAN'}: ${m.content}`)
-            .join('\n\n');
-
-        const result = await model.generateContent(
-            `${EXTRACT_DIET_FORM_PROMPT}\n\nConversation:\n${conversationText}`
-        );
-
-        const responseText = result.response.text().trim();
-        // Clean any markdown fences
-        const cleaned = responseText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-
-        const formData = JSON.parse(cleaned) as DietIntakeFormData;
-        return new Response(JSON.stringify(formData), {
-            headers: { 'Content-Type': 'application/json' },
+        const isComplete = res.text.includes('[INTERVIEW_COMPLETE]');
+        const clean = res.text.replace(/\[INTERVIEW_COMPLETE\]/g, '').trim();
+        return new Response(clean, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Cache-Control': 'no-store',
+                ...(isComplete ? { 'X-Interview-Complete': 'true' } : {}),
+            },
         });
-    } catch (error) {
-        console.error('Diet form extraction error:', error);
-        return new Response(
-            JSON.stringify({ error: 'Failed to extract diet form data' }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
+    } catch (error: unknown) {
+        const limited = limitResponse(error);
+        if (limited) return limited;
+        console.error('[ai-coach/dietitian-interview]', auth.user.id, error);
+        const message = error instanceof Error ? error.message : 'Failed to process dietitian chat';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

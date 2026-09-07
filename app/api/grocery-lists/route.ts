@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
+// `userId` in the query is ignored: lists are always the caller's.
 export async function GET(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
-        const { searchParams } = new URL(req.url);
-        const userId = searchParams.get('userId');
+        const { data, error } = await auth.supabase
+            .from('grocery_lists')
+            .select('*')
+            .eq('user_id', auth.user.id)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
 
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'userId is required' },
-                { status: 400 }
-            );
-        }
-
-        const lists = await db.groceryLists.getByUser(userId);
-        return NextResponse.json({ lists });
+        return NextResponse.json({ lists: data || [] });
     } catch (error) {
         console.error('Error fetching grocery lists:', error);
         return NextResponse.json(
@@ -25,9 +25,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const body = await req.json();
-        const { id, ...updates } = body;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, user_id: _ignored, ...updates } = body;
 
         if (!id) {
             return NextResponse.json(
@@ -36,7 +40,15 @@ export async function PATCH(req: NextRequest) {
             );
         }
 
-        const list = await db.groceryLists.update(id, updates);
+        const { data: list, error } = await auth.supabase
+            .from('grocery_lists')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .eq('user_id', auth.user.id)
+            .select()
+            .single();
+        if (error) throw error;
+
         return NextResponse.json({ list });
     } catch (error) {
         console.error('Error updating grocery list:', error);
@@ -48,6 +60,9 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
@@ -59,7 +74,13 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
-        await db.groceryLists.delete(id);
+        const { error } = await auth.supabase
+            .from('grocery_lists')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', auth.user.id);
+        if (error) throw error;
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error deleting grocery list:', error);

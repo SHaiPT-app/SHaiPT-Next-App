@@ -99,10 +99,11 @@ export const db = {
             return data;
         },
 
+        // the on_auth_user_created trigger creates the row at sign-up; this fills in the rest
         create: async (profile: Partial<Profile>): Promise<Profile> => {
             const { data, error } = await supabase
                 .from('profiles')
-                .insert([profile])
+                .upsert([profile], { onConflict: 'id' })
                 .select()
                 .single();
             if (error) throw error;

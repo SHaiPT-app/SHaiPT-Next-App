@@ -1,48 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
+// `user_id` in the body is ignored: the caller enrols themself.
 export async function POST(request: NextRequest) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
-        const body = await request.json();
-        const { user_id } = body;
-
-        if (!user_id) {
-            return NextResponse.json(
-                { error: 'Missing required field: user_id' },
-                { status: 400 }
-            );
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const supabase = auth.supabase;
+        const userId = auth.user.id;
 
         // Check if user already has an active challenge
         const { data: existingChallenge } = await supabase
             .from('consistency_challenges')
             .select('*')
-            .eq('user_id', user_id)
+            .eq('user_id', userId)
             .in('status', ['active', 'grace_period'])
-            .single();
+            .maybeSingle();
 
         if (existingChallenge) {
             return NextResponse.json(
                 { error: 'User already has an active challenge' },
-                { status: 400 }
-            );
-        }
-
-        // Check if user has phone verified (required for challenge)
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('phone_verified')
-            .eq('id', user_id)
-            .single();
-
-        if (!profile?.phone_verified) {
-            return NextResponse.json(
-                { error: 'Phone verification required to enroll' },
                 { status: 400 }
             );
         }
@@ -58,7 +36,7 @@ export async function POST(request: NextRequest) {
         const { data: challenge, error } = await supabase
             .from('consistency_challenges')
             .insert({
-                user_id,
+                user_id: userId,
                 status: 'active',
                 current_week_start: weekStart.toISOString().split('T')[0],
                 weeks_completed: 0,

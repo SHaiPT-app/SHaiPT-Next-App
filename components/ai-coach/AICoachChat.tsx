@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
 import { Send, X, MessageSquare, Trash2, User, Bot } from 'lucide-react';
 import type { Profile, AIChat } from '@/lib/types';
+import { apiFetch, apiFetchRaw, ApiError, errorMessage } from '@/lib/apiClient';
 
 interface AICoachChatProps {
     user: Profile;
@@ -37,11 +38,8 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
 
     const loadChatHistory = useCallback(async () => {
         try {
-            const res = await fetch(`/api/ai-coach/chat/history?userId=${user.id}`);
-            if (res.ok) {
-                const data = await res.json();
-                setChatHistory(data.chats || []);
-            }
+            const data = await apiFetch<{ chats?: AIChat[] }>(`/api/ai-coach/chat/history?userId=${user.id}`);
+            setChatHistory(data.chats || []);
         } catch {
             // Silently fail - history is non-critical
         }
@@ -109,32 +107,11 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
                 content: m.content,
             }));
 
-            const response = await fetch('/api/ai-coach/chat', {
+            // apiFetchRaw attaches the session token and throws ApiError on non-2xx (429: the gateway's message)
+            const response = await apiFetchRaw('/api/ai-coach/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    messages: apiMessages,
-                    userId: user.id,
-                    chatId,
-                }),
+                body: { messages: apiMessages, chatId },
             });
-
-            if (response.status === 429) {
-                setMessages(prev =>
-                    prev.map(m =>
-                        m.id === assistantId
-                            ? { ...m, content: 'Rate limited. Please wait a moment and try again.' }
-                            : m
-                    )
-                );
-                setIsLoading(false);
-                return;
-            }
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                throw new Error(errorData.error || 'Failed to get response');
-            }
 
             // Capture chatId from response header for new chats
             const returnedChatId = response.headers.get('X-Chat-Id');
@@ -167,17 +144,19 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
             loadChatHistory();
         } catch (error) {
             console.error('Chat error:', error);
+            // 429 / 503 carry a friendly message from the AI gateway; show it as the coach's reply
+            const notice = error instanceof ApiError
+                ? errorMessage(error)
+                : 'Sorry, I encountered an error. Please try again.';
             setMessages(prev =>
                 prev.map(m =>
-                    m.id === assistantId
-                        ? { ...m, content: 'Sorry, I encountered an error. Please try again.' }
-                        : m
+                    m.id === assistantId ? { ...m, content: notice } : m
                 )
             );
         } finally {
             setIsLoading(false);
         }
-    }, [input, isLoading, messages, user.id, chatId, loadChatHistory]);
+    }, [input, isLoading, messages, chatId, loadChatHistory]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

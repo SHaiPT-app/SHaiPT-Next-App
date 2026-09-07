@@ -6,13 +6,21 @@ import { POST } from '@/app/api/subscriptions/webhook/route';
 const mockUpsert = jest.fn().mockResolvedValue({ data: null, error: null });
 const mockSubscriptionsRetrieve = jest.fn();
 
-jest.mock('@supabase/supabase-js', () => ({
-    createClient: jest.fn(() => ({
-        from: jest.fn(() => ({
-            upsert: mockUpsert,
-        })),
-    })),
-}));
+// The webhook carries no user token: it writes through the service-role client from lib/auth.
+jest.mock('@/lib/auth', () => {
+    const { NextResponse: NR } = jest.requireActual('next/server');
+    return {
+        getAdmin: () => ({
+            from: jest.fn(() => ({
+                upsert: mockUpsert,
+            })),
+        }),
+        getUser: jest.fn(),
+        isErrorResponse: (r: unknown) => r instanceof NR,
+        userClient: jest.fn(),
+        bearerToken: jest.fn(),
+    };
+});
 
 const mockConstructEvent = jest.fn();
 

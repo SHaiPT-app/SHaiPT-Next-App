@@ -1,5 +1,13 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { NextRequest } from 'next/server';
+/**
+ * POST /api/ai-coach/interview
+ *   { messages, coachId, prefilledFields? } → text/plain reply, header X-Interview-Complete
+ *   { action: 'extract_form_data', messages } → IntakeFormData JSON
+ * Gated: flash-lite, 600 tokens, 12 turns; the extraction is one schema-validated call.
+ */
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getUser, isErrorResponse, getProfileBits } from '@/lib/auth';
+import { callModel, limitResponse, type ChatMessage } from '@/lib/ai/gateway';
 import type { IntakeFormData } from '@/lib/types';
 
 const COACH_PERSONAS: Record<string, { name: string; personality: string }> = {
@@ -148,195 +156,73 @@ function getMockFollowupResponse(messageCount: number): string {
     return MOCK_RESPONSES.followup[idx];
 }
 
-export async function POST(req: NextRequest) {
+const IntakeSchema = z.object({
+    name: z.string().default(''), age: z.string().default(''), height: z.string().default(''), weight: z.string().default(''),
+    sport_history: z.string().default(''), training_duration: z.string().default(''), training_style: z.string().default(''),
+    fitness_goals: z.string().default(''), training_days_per_week: z.string().default(''), session_duration: z.string().default(''),
+    preferred_time: z.string().default(''), available_equipment: z.string().default(''), training_location: z.string().default(''),
+    injuries: z.string().default(''), medical_considerations: z.string().default(''), fitness_level: z.string().default(''),
+});
+
+const EMPTY_FORM: IntakeFormData = {
+    name: '', age: '', height: '', weight: '',
+    sport_history: '', training_duration: '', training_style: '',
+    fitness_goals: '',
+    training_days_per_week: '', session_duration: '', preferred_time: '',
+    available_equipment: '', training_location: '',
+    injuries: '', medical_considerations: '',
+    fitness_level: '',
+};
+
+export async function POST(req: Request) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
-        const { messages, coachId, action, prefilledFields } = await req.json();
-
-        // Handle form data extraction
-        if (action === 'extract_form_data') {
-            return await handleExtractFormData(messages);
-        }
-
-        // Handle regular interview chat
-        if (!messages || !Array.isArray(messages)) {
-            return new Response(
-                JSON.stringify({ error: 'Messages array is required' }),
-                { status: 400, headers: { 'Content-Type': 'application/json' } }
-            );
-        }
-
-        if (!coachId) {
-            return new Response(
-                JSON.stringify({ error: 'Coach ID is required' }),
-                { status: 400, headers: { 'Content-Type': 'application/json' } }
-            );
-        }
-
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            // Mock response fallback
-            const isFirst = messages.length <= 1;
-            const mockResponse = isFirst
-                ? getMockIntroResponse(coachId)
-                : getMockFollowupResponse(messages.length);
-
-            // Mock interview completes after all followup topics are covered (12+ messages)
-            const isLastMock = !isFirst && messages.length >= 12;
-
-            const encoder = new TextEncoder();
-            const stream = new ReadableStream({
-                async start(controller) {
-                    const words = mockResponse.split(' ');
-                    for (const word of words) {
-                        controller.enqueue(encoder.encode(word + ' '));
-                        await new Promise(r => setTimeout(r, 30));
-                    }
-                    controller.close();
-                },
-            });
-
-            return new Response(stream, {
-                headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                    'Transfer-Encoding': 'chunked',
-                    ...(isLastMock ? { 'X-Interview-Complete': 'true' } : {}),
-                },
-            });
-        }
-
-        const systemPrompt = buildInterviewSystemPrompt(coachId, prefilledFields);
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-        const history = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content }],
-        }));
-
-        const lastMessage = messages[messages.length - 1];
-
-        const chat = model.startChat({
-            history: [
-                { role: 'user', parts: [{ text: systemPrompt }] },
-                {
-                    role: 'model',
-                    parts: [{ text: 'Understood. I will conduct the intake interview in character, asking questions one or two at a time.' }],
-                },
-                ...history,
-            ],
-        });
-
-        // Retry up to 3 times on rate limit
-        const MAX_RETRIES = 3;
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-            try {
-                const result = await chat.sendMessageStream(lastMessage.content);
-
-                // Collect full response first so we can check for [INTERVIEW_COMPLETE]
-                let fullResponse = '';
-                const chunks: string[] = [];
-                for await (const chunk of result.stream) {
-                    const text = chunk.text();
-                    if (text) {
-                        fullResponse += text;
-                        // Keep [STEP:*] markers in the stream (client will strip them)
-                        const cleanText = text.replace(/\[INTERVIEW_COMPLETE\]/g, '');
-                        if (cleanText) {
-                            chunks.push(cleanText);
-                        }
-                    }
-                }
-
-                const isComplete = fullResponse.includes('[INTERVIEW_COMPLETE]');
-
-                // Now stream the collected chunks to the client
-                const encoder = new TextEncoder();
-                const stream = new ReadableStream({
-                    async start(controller) {
-                        for (const chunk of chunks) {
-                            controller.enqueue(encoder.encode(chunk));
-                        }
-                        controller.close();
-                    },
-                });
-
-                return new Response(stream, {
-                    headers: {
-                        'Content-Type': 'text/plain; charset=utf-8',
-                        'Transfer-Encoding': 'chunked',
-                        ...(isComplete ? { 'X-Interview-Complete': 'true' } : {}),
-                    },
-                });
-            } catch (error: unknown) {
-                const err = error as { status?: number; message?: string };
-                if ((err?.status === 429 || err?.message?.includes('429')) && attempt < MAX_RETRIES - 1) {
-                    // Wait before retrying: 2s, 4s
-                    await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
-                    continue;
-                }
-                if (err?.status === 429 || err?.message?.includes('429')) {
-                    return new Response(
-                        JSON.stringify({ error: 'Rate limited. Please wait a moment and try again.' }),
-                        { status: 429, headers: { 'Content-Type': 'application/json' } }
-                    );
-                }
-                throw error;
-            }
-        }
-    } catch (error: unknown) {
-        console.error('Coach interview error:', error);
-        const message = error instanceof Error ? error.message : 'Failed to process interview chat';
-        return new Response(
-            JSON.stringify({ error: message }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
-    }
-}
-
-async function handleExtractFormData(messages: { role: string; content: string }[]): Promise<Response> {
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-        // Return empty form data in mock mode
-        const emptyForm: IntakeFormData = {
-            name: '', age: '', height: '', weight: '',
-            sport_history: '', training_duration: '', training_style: '',
-            fitness_goals: '',
-            training_days_per_week: '', session_duration: '', preferred_time: '',
-            available_equipment: '', training_location: '',
-            injuries: '', medical_considerations: '',
-            fitness_level: '',
+        const { messages, coachId, action, prefilledFields } = await req.json() as {
+            messages?: ChatMessage[]; coachId?: string; action?: string; prefilledFields?: string[];
         };
-        return new Response(JSON.stringify(emptyForm), {
-            headers: { 'Content-Type': 'application/json' },
+        if (!messages || !Array.isArray(messages)) {
+            return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
+        }
+        const { tester } = await getProfileBits(auth);
+        const history = messages.filter((m) => m && typeof m.content === 'string').map((m) => ({ role: m.role, content: m.content.slice(0, 3000) }));
+
+        if (action === 'extract_form_data') {
+            const conversationText = history.map((m) => `${m.role === 'user' ? 'CLIENT' : 'COACH'}: ${m.content}`).join('\n\n');
+            const res = await callModel<IntakeFormData>({
+                userId: auth.user.id, tester, feature: 'interview', schema: IntakeSchema, maxOutputTokens: 500, temperature: 0.1,
+                prompt: `${EXTRACT_FORM_PROMPT}\n\nConversation:\n${conversationText}`,
+                mock: () => EMPTY_FORM,
+            });
+            return NextResponse.json(res.json ?? EMPTY_FORM);
+        }
+
+        if (!coachId) return NextResponse.json({ error: 'Coach ID is required' }, { status: 400 });
+        const isFirst = history.filter((m) => m.role === 'user').length <= 1 && history.length <= 1;
+        const res = await callModel({
+            userId: auth.user.id, tester, feature: 'interview',
+            system: buildInterviewSystemPrompt(coachId, prefilledFields),
+            messages: history.length ? history : [{ role: 'user', content: 'Hello' }],
+            mock: () => {
+                const done = history.length >= 12;
+                return (isFirst ? getMockIntroResponse(coachId) : getMockFollowupResponse(history.length)) + (done ? ' [INTERVIEW_COMPLETE]' : '');
+            },
         });
-    }
-
-    try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-        const conversationText = messages
-            .map(m => `${m.role === 'user' ? 'CLIENT' : 'COACH'}: ${m.content}`)
-            .join('\n\n');
-
-        const result = await model.generateContent(
-            `${EXTRACT_FORM_PROMPT}\n\nConversation:\n${conversationText}`
-        );
-
-        const responseText = result.response.text().trim();
-        // Clean any markdown fences
-        const cleaned = responseText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-
-        const formData = JSON.parse(cleaned) as IntakeFormData;
-        return new Response(JSON.stringify(formData), {
-            headers: { 'Content-Type': 'application/json' },
+        const isComplete = res.text.includes('[INTERVIEW_COMPLETE]');
+        const clean = res.text.replace(/\[INTERVIEW_COMPLETE\]/g, '').trim();
+        return new Response(clean, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Cache-Control': 'no-store',
+                ...(isComplete ? { 'X-Interview-Complete': 'true' } : {}),
+            },
         });
-    } catch (error) {
-        console.error('Form extraction error:', error);
-        return new Response(
-            JSON.stringify({ error: 'Failed to extract form data' }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
+    } catch (error: unknown) {
+        const limited = limitResponse(error);
+        if (limited) return limited;
+        console.error('[ai-coach/interview]', auth.user.id, error);
+        const message = error instanceof Error ? error.message : 'Failed to process interview chat';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

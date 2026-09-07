@@ -1,67 +1,77 @@
 import { NextResponse } from 'next/server';
-import { dbAdmin } from '@/lib/supabaseDb';
-import { supabase } from '@/lib/supabase';
+import { forbidden, getAdmin, getUser, isErrorResponse } from '@/lib/auth';
 
+/**
+ * Link or unlink a trainee and a trainer (profiles.trainer_id). The caller must be the trainee
+ * or the trainer of the link. A trainee updates their own profile under RLS; a trainer writes
+ * the trainee's row with the service role, after the check above.
+ */
 export async function POST(request: Request) {
     try {
-        // 1. Verify Auth
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const auth = await getUser(request);
+        if (isErrorResponse(auth)) return auth;
 
-        const token = authHeader.replace('Bearer ', '');
-        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        // 2. Parse Body
-        let { trainerId, traineeId, traineeUsername, action } = await request.json();
+        const body = await request.json();
+        const { trainerId, traineeUsername, action } = body;
+        let { traineeId } = body;
 
         if (!trainerId || (!traineeId && !traineeUsername) || !action) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Lookup traineeId if only username is provided
+        if (action !== 'link' && action !== 'unlink') {
+            return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+        }
+
+        // Lookup traineeId if only username is provided (every signed-in user may read profiles)
         if (!traineeId && traineeUsername) {
-            const trainee = await dbAdmin.profiles.getByUsername(traineeUsername);
+            const { data: trainee, error } = await auth.supabase
+                .from('profiles')
+                .select('id')
+                .eq('username', traineeUsername)
+                .maybeSingle();
+            if (error) throw error;
             if (!trainee) {
                 return NextResponse.json({ error: `User with username "${traineeUsername}" not found` }, { status: 404 });
             }
             traineeId = trainee.id;
         }
 
-        // 3. Verify Permissions
-        // Only the trainer themselves or the trainee themselves can initiate a link
-        // But for this specific route (Trainer adding Trainee), we expect the requester to be the Trainer.
-        // Or if Trainee is selecting Trainer, they are the requester.
-
-        // Let's check who is making the request
-        if (user.id !== trainerId && user.id !== traineeId) {
-            return NextResponse.json({ error: 'Forbidden: You can only modify your own connections' }, { status: 403 });
+        // Only the trainer or the trainee of the link may change it
+        const callerIsTrainee = auth.user.id === traineeId;
+        const callerIsTrainer = auth.user.id === trainerId;
+        if (!callerIsTrainee && !callerIsTrainer) {
+            return forbidden('You can only modify your own connections');
         }
 
-        // 4. Perform Action using Admin Client (bypasses RLS)
-        if (action === 'link') {
-            // Set trainee's trainer_id to trainerId
-            await dbAdmin.profiles.update(traineeId, { trainer_id: trainerId });
-        } else if (action === 'unlink') {
-            // Set trainee's trainer_id to null
-            // We must pass null explicitly, but our update type might expect Partial<Profile>
-            // Let's check if we can pass null. The interface says string | undefined.
-            // We might need to cast or update the interface if strict null checks are on.
-            // For now, let's try passing null as any to bypass TS if needed, or just null.
-            await dbAdmin.profiles.update(traineeId, { trainer_id: null });
-        } else {
-            return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+        // A trainer may only unlink a trainee who is actually linked to them
+        if (action === 'unlink' && !callerIsTrainee) {
+            const { data: trainee, error } = await auth.supabase
+                .from('profiles')
+                .select('trainer_id')
+                .eq('id', traineeId)
+                .maybeSingle();
+            if (error) throw error;
+            if (!trainee || trainee.trainer_id !== auth.user.id) {
+                return forbidden('This trainee is not linked to you');
+            }
         }
+
+        const client = callerIsTrainee ? auth.supabase : getAdmin();
+        const { error: updateError } = await client
+            .from('profiles')
+            .update({
+                trainer_id: action === 'link' ? trainerId : null,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', traineeId);
+        if (updateError) throw updateError;
 
         return NextResponse.json({ success: true });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Link error:', error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const message = error instanceof Error && error.message ? error.message : 'Internal Server Error';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

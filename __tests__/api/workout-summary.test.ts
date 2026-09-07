@@ -1,247 +1,58 @@
-/**
- * @jest-environment node
- */
+/** @jest-environment node */
+import { callModel } from '@/lib/ai/gateway';
+import { AiLimitError } from '@/lib/ai/gateway';
 import { POST } from '@/app/api/ai-coach/workout-summary/route';
+import { signIn, signOut, post, modelJson } from '@/test-utils/api';
 
-// Mock Google Generative AI
-jest.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: jest.fn(),
-}));
+jest.mock('@/lib/auth', () => jest.requireActual('@/test-utils/api').authMockFactory());
+jest.mock('@/lib/ai/gateway', () => jest.requireActual('@/test-utils/api').gatewayMockFactory());
+const mockCallModel = callModel as jest.Mock;
 
-const validBody = {
-    sessionName: 'Push Day',
-    durationMinutes: 45,
-    totalVolume: 12500,
-    totalSets: 12,
-    totalReps: 96,
-    weightUnit: 'lbs',
-    exercises: [
-        {
-            name: 'Bench Press',
-            sets: [
-                { set_number: 1, weight: 135, reps: 10, weight_unit: 'lbs', rpe: 7 },
-                { set_number: 2, weight: 135, reps: 10, weight_unit: 'lbs', rpe: 8 },
-                { set_number: 3, weight: 155, reps: 8, weight_unit: 'lbs', rpe: 9 },
-            ],
-        },
-        {
-            name: 'Lateral Raise',
-            sets: [
-                { set_number: 1, weight: 30, reps: 12, weight_unit: 'lbs' },
-                { set_number: 2, weight: 30, reps: 12, weight_unit: 'lbs' },
-            ],
-        },
-    ],
-    prsAchieved: [
-        { exerciseName: 'Bench Press', weight: 155, reps: 8, unit: 'lbs' },
-    ],
-    userGoals: ['muscle gain', 'strength'],
+const body = {
+    sessionName: 'Push Day', durationMinutes: 45, totalVolume: 5000, totalSets: 12, totalReps: 96, weightUnit: 'lbs',
+    exercises: [{ name: 'Bench Press', sets: [{ set_number: 1, weight: 135, reps: 8, weight_unit: 'lbs', rpe: 7 }] }],
+    prsAchieved: [{ exerciseName: 'Bench Press', weight: 135, reps: 8, unit: 'lbs' }],
+    userGoals: ['strength'],
 };
+const summary = { feedback: 'Solid session.', recommendations: ['a', 'b', 'c'] };
 
 describe('/api/ai-coach/workout-summary', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-        delete process.env.GEMINI_API_KEY;
+    beforeEach(() => { jest.clearAllMocks(); signIn(); mockCallModel.mockResolvedValue(modelJson(summary)); });
+
+    it('returns 401 without a user', async () => {
+        signOut();
+        const res = await POST(post('/api/ai-coach/workout-summary', body));
+        expect(res.status).toBe(401);
+        expect(mockCallModel).not.toHaveBeenCalled();
     });
 
     it('returns 400 when sessionName is missing', async () => {
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ exercises: [{ name: 'Bench', sets: [] }] }),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(400);
-        const data = await response.json();
-        expect(data.error).toBe('Session name and exercises are required');
+        const res = await POST(post('/api/ai-coach/workout-summary', { ...body, sessionName: '' }));
+        expect(res.status).toBe(400);
     });
 
     it('returns 400 when exercises is empty', async () => {
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionName: 'Push Day', exercises: [] }),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(400);
+        const res = await POST(post('/api/ai-coach/workout-summary', { ...body, exercises: [] }));
+        expect(res.status).toBe(400);
     });
 
-    it('returns mock feedback when no API key is set', async () => {
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(validBody),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(200);
-
-        const data = await response.json();
-        expect(data).toHaveProperty('feedback');
-        expect(data).toHaveProperty('recommendations');
-        expect(typeof data.feedback).toBe('string');
-        expect(Array.isArray(data.recommendations)).toBe(true);
-        expect(data.recommendations.length).toBeGreaterThan(0);
-        expect(data.feedback.length).toBeGreaterThan(0);
+    it('returns the feedback from one gated workout_summary call with the caller id', async () => {
+        const res = await POST(post('/api/ai-coach/workout-summary', body));
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual(summary);
+        expect(mockCallModel).toHaveBeenCalledTimes(1);
+        const opts = mockCallModel.mock.calls[0][0];
+        expect(opts.userId).toBe('u1');
+        expect(opts.feature).toBe('workout_summary');
+        expect(opts.prompt).toContain('Push Day');
+        expect(opts.prompt).toContain('Personal Records');
+        expect(opts.schema).toBeDefined();
     });
 
-    it('returns valid JSON response structure', async () => {
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(validBody),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(200);
-        expect(response.headers.get('Content-Type')).toBe('application/json');
-    });
-
-    it('works without optional fields (prsAchieved, userGoals)', async () => {
-        const minimalBody = {
-            sessionName: 'Leg Day',
-            durationMinutes: 30,
-            totalVolume: 5000,
-            totalSets: 6,
-            totalReps: 48,
-            weightUnit: 'kg',
-            exercises: [
-                {
-                    name: 'Squat',
-                    sets: [
-                        { set_number: 1, weight: 80, reps: 8, weight_unit: 'kg' },
-                    ],
-                },
-            ],
-            prsAchieved: [],
-        };
-
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(minimalBody),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(200);
-
-        const data = await response.json();
-        expect(data.feedback).toBeTruthy();
-        expect(data.recommendations).toBeTruthy();
-    });
-
-    it('uses Gemini API when API key is available', async () => {
-        process.env.GEMINI_API_KEY = 'test-api-key';
-
-        const mockGenerateContent = jest.fn().mockResolvedValue({
-            response: {
-                text: () => JSON.stringify({
-                    feedback: 'Great workout session.',
-                    recommendations: ['Increase weight', 'Add more sets', 'Rest more'],
-                }),
-            },
-        });
-
-        const { GoogleGenerativeAI } = require('@google/generative-ai');
-        GoogleGenerativeAI.mockImplementation(() => ({
-            getGenerativeModel: () => ({
-                generateContent: mockGenerateContent,
-            }),
-        }));
-
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(validBody),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(200);
-
-        const data = await response.json();
-        expect(data.feedback).toBe('Great workout session.');
-        expect(data.recommendations).toHaveLength(3);
-        expect(mockGenerateContent).toHaveBeenCalled();
-    });
-
-    it('handles Gemini API returning non-JSON gracefully', async () => {
-        process.env.GEMINI_API_KEY = 'test-api-key';
-
-        const { GoogleGenerativeAI } = require('@google/generative-ai');
-        GoogleGenerativeAI.mockImplementation(() => ({
-            getGenerativeModel: () => ({
-                generateContent: jest.fn().mockResolvedValue({
-                    response: {
-                        text: () => 'This is plain text feedback without JSON structure.',
-                    },
-                }),
-            }),
-        }));
-
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(validBody),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(200);
-
-        const data = await response.json();
-        expect(data.feedback).toBeTruthy();
-        expect(data.recommendations).toHaveLength(3);
-    });
-
-    it('handles rate limiting (429)', async () => {
-        process.env.GEMINI_API_KEY = 'test-api-key';
-
-        const { GoogleGenerativeAI } = require('@google/generative-ai');
-        GoogleGenerativeAI.mockImplementation(() => ({
-            getGenerativeModel: () => ({
-                generateContent: jest.fn().mockRejectedValue({
-                    status: 429,
-                    message: '429 Resource has been exhausted',
-                }),
-            }),
-        }));
-
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(validBody),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(429);
-    });
-
-    it('handles Gemini API returning JSON in markdown code fences', async () => {
-        process.env.GEMINI_API_KEY = 'test-api-key';
-
-        const { GoogleGenerativeAI } = require('@google/generative-ai');
-        GoogleGenerativeAI.mockImplementation(() => ({
-            getGenerativeModel: () => ({
-                generateContent: jest.fn().mockResolvedValue({
-                    response: {
-                        text: () => '```json\n{"feedback": "Well done.", "recommendations": ["Rest more", "Eat well", "Sleep early"]}\n```',
-                    },
-                }),
-            }),
-        }));
-
-        const req = new Request('http://localhost:3000/api/ai-coach/workout-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(validBody),
-        });
-
-        const response = await POST(req as any);
-        expect(response.status).toBe(200);
-
-        const data = await response.json();
-        expect(data.feedback).toBe('Well done.');
-        expect(data.recommendations).toEqual(['Rest more', 'Eat well', 'Sleep early']);
+    it('returns 429 with the gateway message when the limit is hit', async () => {
+        mockCallModel.mockRejectedValue(new AiLimitError("You've used today's 40 AI messages.", 'daily_calls'));
+        const res = await POST(post('/api/ai-coach/workout-summary', body));
+        expect(res.status).toBe(429);
+        expect((await res.json()).reason).toBe('daily_calls');
     });
 });

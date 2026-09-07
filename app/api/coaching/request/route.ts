@@ -1,43 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
+/**
+ * The caller (an athlete) asks `coachId` to coach them. The insert runs as the caller, so RLS
+ * checks athlete_id/requested_by, and the SECURITY DEFINER trigger notifies the coach.
+ */
 export async function POST(req: NextRequest) {
     try {
-        const { athleteId, coachId } = await req.json();
+        const auth = await getUser(req);
+        if (isErrorResponse(auth)) return auth;
+        const athleteId = auth.user.id;
 
-        if (!athleteId || !coachId) {
-            return NextResponse.json({ error: 'athleteId and coachId are required' }, { status: 400 });
-        }
+        const { coachId } = await req.json();
 
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || (!serviceKey && !anonKey)) {
-            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-        }
-
-        // Prefer service-role key (bypasses RLS), fall back to user's auth token + anon key
-        // When using anon key, the SECURITY DEFINER trigger functions handle cross-user notification inserts
-        let supabaseAdmin;
-        if (serviceKey) {
-            supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-                auth: { autoRefreshToken: false, persistSession: false }
-            });
-        } else {
-            const authHeader = req.headers.get('Authorization');
-            if (!authHeader) {
-                return NextResponse.json({ error: 'Authorization required' }, { status: 401 });
-            }
-            const token = authHeader.replace('Bearer ', '');
-            supabaseAdmin = createClient(supabaseUrl, anonKey!, {
-                global: { headers: { Authorization: `Bearer ${token}` } },
-                auth: { autoRefreshToken: false, persistSession: false }
-            });
+        if (!coachId) {
+            return NextResponse.json({ error: 'coachId is required' }, { status: 400 });
         }
 
         // Validate coach exists and is a trainer
-        const { data: coach, error: coachErr } = await supabaseAdmin
+        const { data: coach, error: coachErr } = await auth.supabase
             .from('profiles')
             .select('*')
             .eq('id', coachId)
@@ -52,7 +33,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Check for existing active/pending relationship
-        const { data: existing } = await supabaseAdmin
+        const { data: existing } = await auth.supabase
             .from('coaching_relationships')
             .select('*')
             .eq('coach_id', coachId)
@@ -67,10 +48,7 @@ export async function POST(req: NextRequest) {
             }, { status: 409 });
         }
 
-        // Create the coaching relationship
-        // When using anon key + user token, the SECURITY DEFINER trigger functions
-        // handle inserting notifications for the coach (cross-user insert)
-        const { data: relationship, error: insertErr } = await supabaseAdmin
+        const { data: relationship, error: insertErr } = await auth.supabase
             .from('coaching_relationships')
             .insert([{
                 coach_id: coachId,
@@ -87,8 +65,9 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ relationship }, { status: 201 });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Coaching request error:', error);
-        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+        const message = error instanceof Error && error.message ? error.message : 'Internal server error';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

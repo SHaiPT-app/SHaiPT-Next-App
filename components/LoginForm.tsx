@@ -208,6 +208,25 @@ export default function LoginForm() {
                     return;
                 }
 
+                // invite-only while SHaiPT is in its test phase
+                try {
+                    const inviteRes = await fetch('/api/invites/check', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email }),
+                    });
+                    const invite = await inviteRes.json();
+                    if (!invite.allowed) {
+                        setError('SHaiPT is invite-only for now. Ask Ali for an invite for this email address.');
+                        setLoading(false);
+                        return;
+                    }
+                } catch {
+                    setError('Could not check your invite. Please try again.');
+                    setLoading(false);
+                    return;
+                }
+
                 try {
                     const { data: existingEmailProfile } = await supabase
                         .from('profiles')

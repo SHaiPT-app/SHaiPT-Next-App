@@ -10,7 +10,7 @@ interface FeatureGateProps {
 }
 
 export default function FeatureGate({ user, feature, children }: FeatureGateProps) {
-    const hasAccess = user.ai_features?.[feature] === true;
+    const hasAccess = user.tester === true || user.ai_features?.[feature] === true;
 
     if (hasAccess) {
         return <>{children}</>;

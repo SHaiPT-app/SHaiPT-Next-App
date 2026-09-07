@@ -7,7 +7,7 @@ import { Send, User, Bot } from 'lucide-react';
 import type { CoachPersona } from '@/data/coaches';
 import type { IntakeFormData } from '@/lib/types';
 import IntakePhotoUpload from './IntakePhotoUpload';
-import { supabase } from '@/lib/supabase';
+import { apiFetch, apiFetchRaw, ApiError, errorMessage } from '@/lib/apiClient';
 
 interface InterviewChatProps {
     coach: CoachPersona;
@@ -69,20 +69,15 @@ export default function InterviewChat({
         if (allMessages.length < 2) return;
 
         try {
-            const res = await fetch('/api/ai-coach/interview', {
+            const formData = await apiFetch<Partial<IntakeFormData> & { error?: string }>('/api/ai-coach/interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: allMessages.map(m => ({ role: m.role, content: m.content })),
                     action: 'extract_form_data',
-                }),
+                },
             });
-
-            if (res.ok) {
-                const formData = await res.json();
-                if (!formData.error) {
-                    onFormDataUpdate(formData);
-                }
+            if (formData && !formData.error) {
+                onFormDataUpdate(formData);
             }
         } catch {
             // Non-critical -- form extraction failing shouldn't break chat
@@ -109,31 +104,22 @@ export default function InterviewChat({
         }
     }, [userMessageCount, photoUploadComplete, showPhotoUpload, isLoading]);
 
-    // Upload photos to Supabase storage and save records
+    // Upload photos to the progress gallery (the route files them under the caller)
     const uploadPhotosToStorage = useCallback(async (files: File[]): Promise<number> => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            throw new Error('Not authenticated');
-        }
-
         let uploadedCount = 0;
 
         for (const file of files) {
             try {
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('user_id', user.id);
                 formData.append('caption', 'intake_photo');
                 formData.append('visibility', 'private');
 
-                const res = await fetch('/api/progress-media', {
+                await apiFetchRaw('/api/progress-media', {
                     method: 'POST',
                     body: formData,
                 });
-
-                if (res.ok) {
-                    uploadedCount++;
-                }
+                uploadedCount++;
             } catch (err) {
                 console.error('Failed to upload photo:', err);
             }
@@ -160,38 +146,15 @@ export default function InterviewChat({
             setMessages(prev => [...prev, userPhotoMsg]);
             setShowPhotoUpload(false);
             setPhotoUploadComplete(true);
-            setIsLoading(true);
 
-            // Get AI assessment
-            const assistantId = nextId('assistant-assessment');
-            setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
-
-            try {
-                const assessmentRes = await fetch('/api/ai-coach/photo-assessment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        coachId: coach.id,
-                        photoCount: uploadedCount,
-                    }),
-                });
-
-                const { assessment } = await assessmentRes.json();
-
-                setMessages(prev =>
-                    prev.map(m =>
-                        m.id === assistantId ? { ...m, content: assessment } : m
-                    )
-                );
-            } catch {
-                setMessages(prev =>
-                    prev.map(m =>
-                        m.id === assistantId
-                            ? { ...m, content: 'Thanks for sharing those photos. I\'ve saved them to your profile. Let\'s continue with the interview -- we have a few more things to cover.' }
-                            : m
-                    )
-                );
-            }
+            // No AI assessment of the photos: they are only saved to the progress gallery
+            setMessages(prev => [...prev, {
+                id: nextId('assistant-photo-saved'),
+                role: 'assistant',
+                content: uploadedCount > 0
+                    ? 'Photos saved to your progress gallery. Let\'s continue with the interview -- we have a few more things to cover.'
+                    : 'I couldn\'t save those photos, but no worries -- you can add them later from your progress gallery. Let\'s keep going.',
+            }]);
         } catch (error) {
             console.error('Photo upload error:', error);
             // Still dismiss the upload widget and continue
@@ -206,9 +169,8 @@ export default function InterviewChat({
             setMessages(prev => [...prev, errorMsg]);
         } finally {
             setIsUploadingPhotos(false);
-            setIsLoading(false);
         }
-    }, [coach.id, uploadPhotosToStorage]);
+    }, [uploadPhotosToStorage, nextId]);
 
     // Handle photo skip
     const handlePhotoSkip = useCallback(() => {
@@ -246,18 +208,13 @@ export default function InterviewChat({
         setMessages([introMessage, { id: assistantId, role: 'assistant', content: '' }]);
 
         try {
-            const response = await fetch('/api/ai-coach/interview', {
+            const response = await apiFetchRaw('/api/ai-coach/interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: [{ role: 'user', content: introMessage.content }],
                     coachId: coach.id,
-                }),
+                },
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to start interview');
-            }
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response body');
@@ -277,7 +234,9 @@ export default function InterviewChat({
             setMessages([introMessage, {
                 id: assistantId,
                 role: 'assistant',
-                content: 'Sorry, I had trouble starting up. Please refresh and try again.',
+                content: error instanceof ApiError
+                    ? errorMessage(error)
+                    : 'Sorry, I had trouble starting up. Please refresh and try again.',
             }]);
         } finally {
             setIsLoading(false);
@@ -315,30 +274,13 @@ export default function InterviewChat({
                 content: m.content,
             }));
 
-            const response = await fetch('/api/ai-coach/interview', {
+            const response = await apiFetchRaw('/api/ai-coach/interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: apiMessages,
                     coachId: coach.id,
-                }),
+                },
             });
-
-            if (response.status === 429) {
-                setMessages(prev =>
-                    prev.map(m =>
-                        m.id === assistantId
-                            ? { ...m, content: 'Rate limited. Please wait a moment and try again.' }
-                            : m
-                    )
-                );
-                setIsLoading(false);
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Failed to get response');
-            }
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response body');
@@ -381,11 +323,13 @@ export default function InterviewChat({
             }
         } catch (error) {
             console.error('Chat error:', error);
+            // 429 / 503 carry a friendly message from the AI gateway; show it as the coach's reply
+            const notice = error instanceof ApiError
+                ? errorMessage(error)
+                : 'Sorry, I encountered an error. Please try again.';
             setMessages(prev =>
                 prev.map(m =>
-                    m.id === assistantId
-                        ? { ...m, content: 'Sorry, I encountered an error. Please try again.' }
-                        : m
+                    m.id === assistantId ? { ...m, content: notice } : m
                 )
             );
         } finally {

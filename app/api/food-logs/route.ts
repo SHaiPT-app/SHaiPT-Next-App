@@ -1,30 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
+// `userId` in the query is ignored: logs are always the caller's.
 export async function GET(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { searchParams } = new URL(req.url);
-        const userId = searchParams.get('userId');
         const date = searchParams.get('date');
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
 
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'userId is required' },
-                { status: 400 }
-            );
-        }
-
         if (startDate && endDate) {
-            const logs = await db.foodLogs.getByUserDateRange(userId, startDate, endDate);
-            return NextResponse.json({ logs });
+            const { data, error } = await auth.supabase
+                .from('food_logs')
+                .select('*')
+                .eq('user_id', auth.user.id)
+                .gte('logged_date', startDate)
+                .lte('logged_date', endDate)
+                .order('logged_date', { ascending: true })
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            return NextResponse.json({ logs: data || [] });
         }
 
         const logDate = date || new Date().toISOString().split('T')[0];
-        const logs = await db.foodLogs.getByUserAndDate(userId, logDate);
+        const { data, error } = await auth.supabase
+            .from('food_logs')
+            .select('*')
+            .eq('user_id', auth.user.id)
+            .eq('logged_date', logDate)
+            .order('created_at', { ascending: true });
+        if (error) throw error;
 
-        return NextResponse.json({ logs });
+        return NextResponse.json({ logs: data || [] });
     } catch (error) {
         console.error('Error fetching food logs:', error);
         return NextResponse.json(
@@ -35,13 +45,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const body = await req.json();
-        const { user_id, food_id, food_name, meal_type, serving_size, serving_unit, calories, protein_g, carbs_g, fat_g, logged_date, notes } = body;
+        // user_id in the body is ignored: the row belongs to the caller.
+        const { food_id, food_name, meal_type, serving_size, serving_unit, calories, protein_g, carbs_g, fat_g, logged_date, notes } = body;
 
-        if (!user_id || !food_name || !meal_type) {
+        if (!food_name || !meal_type) {
             return NextResponse.json(
-                { error: 'user_id, food_name, and meal_type are required' },
+                { error: 'food_name and meal_type are required' },
                 { status: 400 }
             );
         }
@@ -54,20 +68,25 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const log = await db.foodLogs.create({
-            user_id,
-            food_id: food_id || undefined,
-            food_name,
-            meal_type,
-            serving_size: serving_size || 1,
-            serving_unit: serving_unit || 'serving',
-            calories: calories || 0,
-            protein_g: protein_g || 0,
-            carbs_g: carbs_g || 0,
-            fat_g: fat_g || 0,
-            logged_date: logged_date || new Date().toISOString().split('T')[0],
-            notes,
-        });
+        const { data: log, error } = await auth.supabase
+            .from('food_logs')
+            .insert([{
+                user_id: auth.user.id,
+                food_id: food_id || undefined,
+                food_name,
+                meal_type,
+                serving_size: serving_size || 1,
+                serving_unit: serving_unit || 'serving',
+                calories: calories || 0,
+                protein_g: protein_g || 0,
+                carbs_g: carbs_g || 0,
+                fat_g: fat_g || 0,
+                logged_date: logged_date || new Date().toISOString().split('T')[0],
+                notes,
+            }])
+            .select()
+            .single();
+        if (error) throw error;
 
         return NextResponse.json({ log }, { status: 201 });
     } catch (error) {
@@ -80,6 +99,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
@@ -91,7 +113,13 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
-        await db.foodLogs.delete(id);
+        const { error } = await auth.supabase
+            .from('food_logs')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', auth.user.id);
+        if (error) throw error;
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error deleting food log:', error);

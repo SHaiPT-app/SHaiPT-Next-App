@@ -1,173 +1,63 @@
-/**
- * @jest-environment node
- */
+/** @jest-environment node */
+import { callModel } from '@/lib/ai/gateway';
 import { POST } from '@/app/api/ai-coach/weekly-insights/route';
-import { NextRequest } from 'next/server';
+import { signIn, signOut, post, modelJson } from '@/test-utils/api';
 
-// Mock GoogleGenerativeAI
-jest.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: jest.fn(),
-}));
+jest.mock('@/lib/auth', () => jest.requireActual('@/test-utils/api').authMockFactory());
+jest.mock('@/lib/ai/gateway', () => jest.requireActual('@/test-utils/api').gatewayMockFactory());
+const mockCallModel = callModel as jest.Mock;
 
-function createRequest(body: Record<string, unknown>): NextRequest {
-    return new NextRequest('http://localhost:3000/api/ai-coach/weekly-insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
-}
+const insight = {
+    adherence: { planned_workouts: 4, completed_workouts: 2, adherence_percentage: 50, summary: 'Half.' },
+    strength_trends: { trending_up: ['Bench Press'], trending_down: [], summary: 'Up.' },
+    plateaus: { exercises: [], summary: 'None.' },
+    recommendations: ['a', 'b', 'c'],
+    overall_summary: 'Fine.',
+};
+const body = {
+    workoutLogs: [
+        { date: '2026-09-01', exercises: [{ name: 'Bench Press', sets: [{ weight: 135, reps: 8, weight_unit: 'lbs' }] }] },
+        { date: '2026-09-03', exercises: [{ name: 'Bench Press', sets: [{ weight: 140, reps: 8, weight_unit: 'lbs' }] }] },
+    ],
+    plannedWorkouts: 4,
+    previousWeekData: { exercises: [{ name: 'Bench Press', maxWeight: 130, totalVolume: 2000 }] },
+    userGoals: ['strength'],
+};
 
 describe('POST /api/ai-coach/weekly-insights', () => {
-    const originalEnv = process.env;
+    beforeEach(() => { jest.clearAllMocks(); signIn(); mockCallModel.mockResolvedValue(modelJson(insight)); });
 
-    beforeEach(() => {
-        process.env = { ...originalEnv };
-        delete process.env.GEMINI_API_KEY;
+    it('returns 401 without a user (the caller comes from the token, not the body)', async () => {
+        signOut();
+        const res = await POST(post('/api/ai-coach/weekly-insights', { ...body, userId: 'someone-else' }));
+        expect(res.status).toBe(401);
     });
 
-    afterAll(() => {
-        process.env = originalEnv;
-    });
-
-    it('returns 400 if userId is missing', async () => {
-        const req = createRequest({ workoutLogs: [] });
-        const res = await POST(req);
-
-        expect(res.status).toBe(400);
-        const data = await res.json();
-        expect(data.error).toBe('User ID is required');
-    });
-
-    it('returns mock insight when no API key is configured', async () => {
-        const req = createRequest({
-            userId: 'user-1',
-            workoutLogs: [
-                {
-                    date: '2025-01-22',
-                    exercises: [
-                        {
-                            name: 'Bench Press',
-                            sets: [{ weight: 185, reps: 5, weight_unit: 'lbs' }],
-                        },
-                    ],
-                },
-            ],
-            plannedWorkouts: 4,
-        });
-
-        const res = await POST(req);
+    it('returns the insight for the week with the caller id and the week bounds', async () => {
+        const res = await POST(post('/api/ai-coach/weekly-insights', body));
         expect(res.status).toBe(200);
-
-        const data = await res.json();
-        expect(data.user_id).toBe('user-1');
-        expect(data.week_start).toBeDefined();
-        expect(data.week_end).toBeDefined();
-        expect(data.adherence).toBeDefined();
-        expect(data.adherence.planned_workouts).toBe(4);
-        expect(data.adherence.completed_workouts).toBe(3);
-        expect(data.strength_trends).toBeDefined();
-        expect(Array.isArray(data.strength_trends.trending_up)).toBe(true);
-        expect(data.plateaus).toBeDefined();
-        expect(Array.isArray(data.recommendations)).toBe(true);
-        expect(data.recommendations.length).toBe(3);
-        expect(data.overall_summary).toBeDefined();
-        expect(data.generated_at).toBeDefined();
+        const json = await res.json();
+        expect(json.user_id).toBe('u1');
+        expect(json.week_start).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(json.adherence.completed_workouts).toBe(2);
+        expect(json.strength_trends.trending_up).toEqual(['Bench Press']);
+        expect(json.recommendations).toHaveLength(3);
+        const opts = mockCallModel.mock.calls[0][0];
+        expect(opts.feature).toBe('weekly_insights');
+        expect(opts.prompt).toContain('Bench Press: Max 140');
+        expect(opts.prompt).toContain('weight +10');
     });
 
-    it('returns mock insight with empty workout logs', async () => {
-        const req = createRequest({
-            userId: 'user-2',
-            workoutLogs: [],
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(200);
-
-        const data = await res.json();
-        expect(data.user_id).toBe('user-2');
-        expect(data.adherence).toBeDefined();
+    it('marks cached responses', async () => {
+        mockCallModel.mockResolvedValue(modelJson(insight, { cached: true }));
+        const json = await (await POST(post('/api/ai-coach/weekly-insights', body))).json();
+        expect(json.cached).toBe(true);
     });
 
-    it('returns mock insight with default planned workouts', async () => {
-        const req = createRequest({
-            userId: 'user-3',
-            workoutLogs: [
-                {
-                    date: '2025-01-20',
-                    exercises: [
-                        {
-                            name: 'Squat',
-                            sets: [
-                                { weight: 225, reps: 5, weight_unit: 'lbs' },
-                                { weight: 225, reps: 5, weight_unit: 'lbs' },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(200);
-
-        const data = await res.json();
-        expect(data.user_id).toBe('user-3');
-        expect(data.id).toMatch(/^insight-/);
-    });
-
-    it('aggregates duplicate exercises across workouts', async () => {
-        const req = createRequest({
-            userId: 'user-4',
-            workoutLogs: [
-                {
-                    date: '2025-01-20',
-                    exercises: [
-                        {
-                            name: 'Bench Press',
-                            sets: [{ weight: 185, reps: 5, weight_unit: 'lbs' }],
-                        },
-                    ],
-                },
-                {
-                    date: '2025-01-22',
-                    exercises: [
-                        {
-                            name: 'Bench Press',
-                            sets: [{ weight: 190, reps: 5, weight_unit: 'lbs' }],
-                        },
-                    ],
-                },
-            ],
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(200);
-        const data = await res.json();
-        expect(data).toBeDefined();
-    });
-
-    it('handles previous week comparison data', async () => {
-        const req = createRequest({
-            userId: 'user-5',
-            workoutLogs: [
-                {
-                    date: '2025-01-22',
-                    exercises: [
-                        {
-                            name: 'Bench Press',
-                            sets: [{ weight: 190, reps: 5, weight_unit: 'lbs' }],
-                        },
-                    ],
-                },
-            ],
-            previousWeekData: {
-                exercises: [
-                    { name: 'Bench Press', maxWeight: 185, totalVolume: 4625 },
-                ],
-            },
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(200);
+    it('returns 500 with a message on an unexpected failure', async () => {
+        mockCallModel.mockRejectedValue(new Error('boom'));
+        const res = await POST(post('/api/ai-coach/weekly-insights', body));
+        expect(res.status).toBe(500);
+        expect((await res.json()).error).toBe('boom');
     });
 });

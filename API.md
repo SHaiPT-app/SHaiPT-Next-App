@@ -1,565 +1,117 @@
-# SHaiPT API Documentation
-
-## Overview
-This document describes the API endpoints, database helpers, and authentication/permissions for the SHaiPT fitness application.
-
-## Technology Stack
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth with Google OAuth
-- **API**: Next.js API Routes
-- **Security**: Row Level Security (RLS) policies
-
-## Database Schema
-
-### Tables
-
-#### `profiles`
-User profiles for both trainers and trainees.
-```sql
-CREATE TABLE profiles (
-  id UUID REFERENCES auth.users(id) PRIMARY KEY,
-  username TEXT UNIQUE NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  role TEXT CHECK (role IN ('trainer', 'trainee')) NOT NULL,
-  trainer_id UUID REFERENCES profiles(id),
-  display_name TEXT,
-  avatar_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-#### `workout_plans`
-Workout plans created by trainers for trainees.
-```sql
-CREATE TABLE workout_plans (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  trainee_id UUID REFERENCES profiles(id) NOT NULL,
-  trainer_id UUID REFERENCES profiles(id) NOT NULL,
-  name TEXT NOT NULL,
-  description TEXT,
-  exercises JSONB NOT NULL DEFAULT '[]',
-  notes TEXT,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-#### `workout_logs`
-Logged workouts completed by trainees.
-```sql
-CREATE TABLE workout_logs (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  plan_id UUID REFERENCES workout_plans(id) NOT NULL,
-  trainee_id UUID REFERENCES profiles(id) NOT NULL,
-  date TEXT NOT NULL,
-  exercises JSONB NOT NULL DEFAULT '[]',
-  notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-#### `exercises` (Reference Table)
-Master exercise database for search functionality.
-```sql
-CREATE TABLE exercises (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  category TEXT,
-  muscle_group TEXT,
-  equipment TEXT,
-  instructions TEXT,
-  image_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-### Exercise Data Structure (JSONB)
-
-#### Workout Plan Exercise Format:
-```json
-{
-  "id": "uuid",
-  "name": "Exercise Name",
-  "sets": 3,
-  "reps": "10-12",
-  "weight": "bodyweight",
-  "rest": "60s",
-  "notes": "Optional exercise notes"
-}
-```
-
-#### Workout Log Exercise Format:
-```json
-{
-  "name": "Exercise Name",
-  "sets": [
-    {
-      "reps": 10,
-      "weight": "50kg",
-      "completed": true
-    },
-    {
-      "reps": 8, 
-      "weight": "55kg",
-      "completed": true
-    }
-  ]
-}
-```
-
-### RLS Policies
-
-#### Profiles RLS:
-```sql
--- Users can read their own profile
-CREATE POLICY "Users can view own profile" ON profiles
-  FOR SELECT USING (auth.uid() = id);
-
--- Users can update their own profile  
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Trainers can view trainee profiles
-CREATE POLICY "Trainers can view trainees" ON profiles
-  FOR SELECT USING (
-    role = 'trainee' AND 
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid() AND role = 'trainer'
-    )
-  );
-```
-
-#### Workout Plans RLS:
-```sql
--- Trainees can view their assigned plans
-CREATE POLICY "Trainees can view assigned plans" ON workout_plans
-  FOR SELECT USING (trainee_id = auth.uid());
-
--- Trainers can manage plans for their trainees
-CREATE POLICY "Trainers can manage trainee plans" ON workout_plans
-  FOR ALL USING (trainer_id = auth.uid());
-```
-
-#### Workout Logs RLS:
-```sql
--- Trainees can manage their own logs
-CREATE POLICY "Trainees can manage own logs" ON workout_logs
-  FOR ALL USING (trainee_id = auth.uid());
-
--- Trainers can view logs from their trainees
-CREATE POLICY "Trainers can view trainee logs" ON workout_logs
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = trainee_id AND trainer_id = auth.uid()
-    )
-  );
-```
-
-## API Endpoints
-
-### Authentication Required
-All API endpoints require authentication via Bearer token in the Authorization header:
-```
-Authorization: Bearer <supabase_access_token>
-```
-
-### `/api/plans`
-
-#### GET `/api/plans`
-Get workout plans.
-
-**Query Parameters:**
-- `traineeId` (string, optional) - Get plans for specific trainee
-- `trainerId` (string, optional) - Get plans created by specific trainer
-
-**Response:**
-```json
-{
-  "plans": [
-    {
-      "id": "uuid",
-      "trainee_id": "uuid", 
-      "trainer_id": "uuid",
-      "name": "Push Day Workout",
-      "description": "Upper body push exercises",
-      "exercises": [
-        {
-          "id": "uuid",
-          "name": "Push-ups",
-          "sets": 3,
-          "reps": "10-12",
-          "weight": "bodyweight",
-          "rest": "60s"
-        }
-      ],
-      "notes": "Focus on form",
-      "is_active": true,
-      "created_at": "2023-12-01T00:00:00Z"
-    }
-  ]
-}
-```
-
-#### POST `/api/plans`
-Create a new workout plan (trainer only).
-
-**Request Body:**
-```json
-{
-  "traineeId": "uuid",
-  "name": "Push Day Workout", 
-  "description": "Upper body push exercises",
-  "exercises": [
-    {
-      "id": "uuid",
-      "name": "Push-ups",
-      "sets": 3,
-      "reps": "10-12",
-      "weight": "bodyweight",
-      "rest": "60s",
-      "notes": "Keep core tight"
-    }
-  ],
-  "notes": "Focus on form over speed"
-}
-```
-
-### `/api/logs`
-
-#### GET `/api/logs`
-Get workout logs.
-
-**Query Parameters:**
-- `traineeId` (string, required) - Get logs for specific trainee
-- `planId` (string, optional) - Filter logs by plan
-
-**Response:**
-```json
-{
-  "logs": [
-    {
-      "id": "uuid",
-      "plan_id": "uuid",
-      "trainee_id": "uuid", 
-      "date": "2023-12-01",
-      "exercises": [
-        {
-          "name": "Push-ups",
-          "sets": [
-            {"reps": 10, "weight": "bodyweight", "completed": true},
-            {"reps": 12, "weight": "bodyweight", "completed": true},
-            {"reps": 8, "weight": "bodyweight", "completed": true}
-          ]
-        }
-      ],
-      "notes": "Felt strong today",
-      "created_at": "2023-12-01T00:00:00Z"
-    }
-  ]
-}
-```
-
-#### POST `/api/logs`
-Create a new workout log (trainee only).
-
-**Request Body:**
-```json
-{
-  "planId": "uuid",
-  "date": "2023-12-01",
-  "exercises": [
-    {
-      "name": "Push-ups",
-      "sets": [
-        {"reps": 10, "weight": "bodyweight", "completed": true},
-        {"reps": 12, "weight": "bodyweight", "completed": true}
-      ]
-    }
-  ],
-  "notes": "Great workout!"
-}
-```
-
-### `/api/users/search`
-
-#### GET `/api/users/search`
-Search for users by username (trainer only).
-
-**Query Parameters:**
-- `q` (string, required) - Search query for username (minimum 1 character)
-- `role` (string, optional) - Filter by role ('trainer' | 'trainee')
-
-**Response:**
-```json
-{
-  "users": [
-    {
-      "id": "uuid",
-      "username": "john_doe",
-      "email": "john@example.com", 
-      "role": "trainee",
-      "display_name": "John Doe"
-    }
-  ]
-}
-```
-
-### `/api/users/link`
-
-#### POST `/api/users/link`
-Link a trainee to a trainer.
-
-**Request Body:**
-```json
-{
-  "traineeId": "uuid",
-  "trainerId": "uuid"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Trainee linked successfully"
-}
-```
-
-### `/api/users/trainees`
-
-#### GET `/api/users/trainees`
-Get all trainees linked to the authenticated trainer.
-
-**Query Parameters:**
-- `trainerId` (string, required) - Trainer's user ID
-
-**Response:**
-```json
-{
-  "trainees": [
-    {
-      "id": "uuid",
-      "username": "john_doe",
-      "email": "john@example.com",
-      "display_name": "John Doe",
-      "trainer_id": "uuid",
-      "created_at": "2023-12-01T00:00:00Z"
-    }
-  ]
-}
-```
-
-## Database Helper Functions
-
-Located in `/lib/supabaseDb.ts`:
-
-### `db.profiles`
-```typescript
-// Create new user profile
-create(profile: Omit<Profile, 'created_at' | 'updated_at'>): Promise<Profile>
-
-// Get profile by ID
-getById(id: string): Promise<Profile | null>
-
-// Get profile by email
-getByEmail(email: string): Promise<Profile | null>
-
-// Get profile by username
-getByUsername(username: string): Promise<Profile | null>
-
-// Update profile
-update(id: string, updates: Partial<Profile>): Promise<Profile>
-
-// Search profiles by username
-search(query: string, role?: 'trainer' | 'trainee'): Promise<Profile[]>
-```
-
-### `db.workoutPlans`
-```typescript
-// Create new workout plan
-create(plan: Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>): Promise<WorkoutPlan>
-
-// Get plan by ID
-getById(id: string): Promise<WorkoutPlan | null>
-
-// Get plans for trainee
-getByTrainee(traineeId: string): Promise<WorkoutPlan[]>
-
-// Get plans by trainer
-getByTrainer(trainerId: string): Promise<WorkoutPlan[]>
-
-// Update plan
-update(id: string, updates: Partial<WorkoutPlan>): Promise<WorkoutPlan>
-
-// Delete plan
-delete(id: string): Promise<boolean>
-```
-
-### `db.workoutLogs`
-```typescript
-// Create new workout log
-create(log: Omit<WorkoutLog, 'id' | 'created_at' | 'updated_at'>): Promise<WorkoutLog>
-
-// Get log by ID
-getById(id: string): Promise<WorkoutLog | null>
-
-// Get logs for trainee
-getByTrainee(traineeId: string): Promise<WorkoutLog[]>
-
-// Get logs for specific plan
-getByPlan(planId: string): Promise<WorkoutLog[]>
-
-// Update log
-update(id: string, updates: Partial<WorkoutLog>): Promise<WorkoutLog>
-
-// Delete log
-delete(id: string): Promise<boolean>
-```
-
-### `db.exercises` (for search functionality)
-```typescript
-// Search exercises by name
-search(query: string): Promise<Exercise[]>
-
-// Get exercise by ID
-getById(id: string): Promise<Exercise | null>
-```
-
-## TypeScript Interfaces
-
-```typescript
-export interface Profile {
-  id: string;
-  username: string;
-  email: string;
-  role: 'trainer' | 'trainee';
-  trainer_id?: string;
-  display_name?: string;
-  avatar_url?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface WorkoutPlan {
-  id: string;
-  trainee_id: string;
-  trainer_id: string;
-  name: string;
-  description?: string;
-  exercises: PlanExercise[];
-  notes?: string;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface WorkoutLog {
-  id: string;
-  plan_id: string;
-  trainee_id: string;
-  date: string;
-  exercises: LoggedExercise[];
-  notes?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface PlanExercise {
-  id: string;
-  name: string;
-  sets: number;
-  reps: string;
-  weight: string;
-  rest?: string;
-  notes?: string;
-}
-
-export interface LoggedExercise {
-  name: string;
-  sets: {
-    reps: number;
-    weight: string;
-    completed: boolean;
-  }[];
-}
-
-export interface Exercise {
-  id: string;
-  name: string;
-  category?: string;
-  muscle_group?: string;
-  equipment?: string;
-  instructions?: string;
-  image_url?: string;
-}
-```
-
-## Authentication Flow
-
-1. **Google OAuth**: User signs in via Google OAuth
-2. **Profile Creation**: New users complete profile setup with username/role selection
-3. **Session Management**: Supabase handles JWT tokens automatically
-4. **API Authorization**: All API calls include Bearer token for RLS enforcement
-
-## Error Handling
-
-Common error responses:
-```typescript
-interface ApiError {
-  error: string;
-  message?: string;
-  details?: any;
-}
-```
-
-- `401 Unauthorized` - Missing or invalid authentication
-- `403 Forbidden` - Insufficient permissions (RLS violation)
-- `404 Not Found` - Resource doesn't exist
-- `422 Unprocessable Entity` - Invalid request data
-- `500 Internal Server Error` - Server-side error
-
-## Environment Variables
-
-Required environment variables:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key (optional, for admin operations)
-```
-
-## Security Notes
-
-- All database operations use RLS policies for data isolation
-- Authentication tokens are managed by Supabase Auth  
-- API routes validate user permissions before database operations
-- Service role key should only be used for administrative operations
-- All API endpoints require valid authentication headers
-
-## Development Notes
-
-### Adding New API Endpoints
-1. Create new route file in `/app/api/[endpoint]/route.ts`
-2. Add authentication header validation
-3. Use authenticated Supabase client for database operations
-4. Follow existing error handling patterns
-5. Update this documentation
-
-### Database Migrations
-Use Supabase dashboard or CLI for schema changes:
-```bash
-supabase migration new migration_name
-supabase db push
-```
-
-### Testing APIs
-Use tools like Postman or curl with proper authentication headers:
-```bash
-curl -H "Authorization: Bearer YOUR_TOKEN" \
-     -H "Content-Type: application/json" \
-     https://shaipt.com/api/plans
-```
+# SHaiPT API
+
+Next.js route handlers under `app/api`. Everything below is what exists after the September 2026
+rebuild; DATABASE.md describes the tables, TESTERS.md the operations.
+
+## Authentication
+
+Every route takes the Supabase session as `Authorization: Bearer <access token>` and derives the
+caller from it with `getUser(request)` in `lib/auth.ts`. No route reads a user id from the query
+string or the body to decide *who* is calling; ids in the request name *other* people (a
+recipient, a client a trainer looks at) and are checked against the caller's relationships.
+
+- Missing or invalid token → `401 { error: 'Unauthorized' }`.
+- Wrong role or not linked → `403 { error }`.
+- `auth.supabase` is a client acting as the caller: RLS applies. `getAdmin()` (service role) is
+  used only where a route must write for someone else or read the AI bookkeeping tables.
+- Browser code uses `apiFetch` / `apiFetchRaw` from `lib/apiClient.ts`, which attaches the token
+  and turns errors into `ApiError` with the server's message. A 401 in the browser redirects to
+  `/login?next=…`.
+- Pages under `/home /ai /plans /workouts /nutrition /body /activity /dms /profile /trainer
+  /coach /dashboard /settings /onboarding /workout /feed` are protected by `proxy.ts`, which
+  reads the session cookie written by `lib/supabase.ts` (`@supabase/ssr`).
+
+Feature gating: `requireFeatureAccess(request, feature)` in `lib/requireSubscription.ts` returns
+`{ userId, subscription, tester }`; `profiles.tester = true` passes every gate (test accounts
+never touch Stripe).
+
+## AI routes
+
+All model calls go through `lib/ai/gateway.ts` (`callModel`, `streamModel`). The gateway picks the
+model per feature (flash-lite for chat, interviews and summaries; flash for plan and nutrition
+generation), caps `maxOutputTokens`, trims chat history to 12 turns, refuses with
+`429 { error, reason }` when the caller has used the day's calls or tokens
+(`AI_DAILY_CALLS_PER_USER`, `AI_DAILY_TOKENS_PER_USER`) or the month's budget
+(`AI_MONTHLY_CAP_USD`) is spent, logs every call to `ai_usage`, and serves identical plan or
+nutrition prompts from `ai_cache` for 24 h. Without `GEMINI_API_KEY` outside production (or with
+`AI_MOCK=1`) it returns canned responses so tests and the e2e smoke run cost nothing.
+
+| Route | Body | Returns |
+|---|---|---|
+| `POST /api/ai-coach/chat` | `{ messages: [{role, content}], chatId? }` | streamed `text/plain`; header `X-Chat-Id`; history saved in `ai_chats` |
+| `POST /api/ai-coach/interview` | `{ messages, coachId, prefilledFields? }` | `text/plain` reply; header `X-Interview-Complete: true` when done |
+| `POST /api/ai-coach/interview` | `{ action: 'extract_form_data', messages }` | `IntakeFormData` JSON |
+| `POST /api/ai-coach/dietitian-interview` | `{ messages, previousContext? }` / `{ action: 'extract_form_data', messages }` | as above, `DietIntakeFormData` |
+| `POST /api/ai-coach/generate-plan` | `{ action: 'recommend_splits', intakeData?, messages? }` | `{ splits: [{ id, name, description, days_per_week, recommended }] }` |
+| `POST /api/ai-coach/generate-plan` | `{ splitType, intakeData?, messages? }` | `{ plan }` (see plan shape) |
+| `POST /api/plans/generate` | `{ goals, experience_level, available_equipment, training_days_per_week, injuries_limitations?, duration_weeks?, phase_type?, preferences?, split_type? }` | `{ success, data: { plan } }` |
+| `POST /api/onboarding` | `{ messages }` | `{ message, isComplete }` |
+| `POST /api/onboarding/generate-plans` | `{ messages }` | `{ success, data: { extracted_profile, training_plan, nutrition_plan: { daily_calories, macros, rationale } } }`; writes `onboarding`, sets `profiles.onboarding_completed` |
+| `POST /api/ai-coach/workout-summary` | `{ sessionName, durationMinutes, totalVolume, totalSets, totalReps, weightUnit, exercises, prsAchieved, userGoals? }` | `{ feedback, recommendations[3] }` |
+| `POST /api/ai-coach/weekly-insights` | `{ workoutLogs, plannedWorkouts?, previousWeekData?, userGoals? }` | `WeeklyInsight` (cached for the week) |
+| `POST /api/ai-coach/plan-adaptation` | `{ workoutLogId, sessionName, exercises, recentWorkouts?, … }` | `{ summary, recommendations, overall_assessment }` |
+| `POST /api/nutrition/macro-targets` | `{}` | `{ targets: { daily_calories, protein_g, carbs_g, fat_g, training_phase, rationale } }` (arithmetic, no model) |
+| `POST /api/nutrition/generate` | `{ days?, notes? }` | `{ plan }` saved `nutrition_plans` row |
+| `POST /api/ai-coach/generate-nutrition-plan` | `{ dietIntakeData, intakeData, messages? }` | `{ plan }` (not saved) |
+| `POST /api/grocery-lists/generate` | `{ planId? }` | `{ list }` (no model) |
+| `GET /api/admin/usage?month=YYYY-MM` | admin email only (`ADMIN_EMAILS`) | `{ month, spentUsd, capUsd, calls, byFeature, byUser, today }` |
+
+Plan shape (`lib/ai/plans.ts`): `{ name, description, duration_weeks, split_type,
+periodization_blocks: [{ phase_type, phase_duration_weeks, label }], sessions: [{ name,
+description, day_number, exercises: [{ exercise_id | null, exercise_name, fourd_id | null,
+primary_muscles, equipment, sets: [{ reps, weight, rest_seconds }], notes }] }] }`. The model
+chooses from ~120 candidates out of the `exercises` table (filtered by the user's equipment and
+level); `exercise_id` links to the library and `fourd_id` to the 4Dcoach live coach
+(`https://sh-ai-pt-simple.vercel.app/#live=<fourd_id>`).
+
+Meal plan shape (`lib/ai/nutrition.ts`): the stored `NutritionPlan` (`plan_overview`,
+`daily_schedule.day_n.{breakfast,lunch,dinner,snacks}` with `ingredients` like `"150 g Chicken,
+breast, …"` and computed `nutrition`, `shopping_list` by category, `nutrition_tips` ending with the
+disclaimer). The model returns candidate indices and grams; every calorie is computed from
+`food_database`.
+
+Removed in the rebuild: `/api/chat`, `/api/ai-coach/diet`, `/api/ai-coach/workout` (duplicate
+generators with unbounded output), `/api/ai-coach/photo-assessment` (it wrote assessments of
+photos it never received), `/api/verify/*` (phone verification had no provider), `/api/migrate`,
+`/api/seed`.
+
+## Data routes
+
+| Route | Methods | Notes |
+|---|---|---|
+| `/api/invites/check` | POST `{ email }` → `{ allowed }` | public; invite row or `ALLOW_SIGNUP_EMAILS` |
+| `/api/plans` | GET, POST, PUT | legacy `workout_plans`; caller must be trainee or trainer of the plan |
+| `/api/plan-assignments` | GET, POST | self-assignment or coach → client (`is_coach_of`) |
+| `/api/logs` | GET, POST | canonical `workout_logs` + `exercise_logs`, denormalised for the dashboard |
+| `/api/workout/start`, `/api/workout/[logId]/set`, `/draft`, `/complete` | POST/PATCH/GET/PUT | the workout logger; drafts by `(user_id, session_id)` |
+| `/api/sync/workout` | GET, POST, DELETE | offline sync of drafts |
+| `/api/body-measurements` | GET, POST, PUT, DELETE | own rows |
+| `/api/progress-media` | GET, POST (multipart `file`), DELETE | bucket `progress-media`, keys `<user id>/…`, signed URLs |
+| `/api/food-database` | GET `?q=`, POST | search the seeded foods; user rows carry `created_by` |
+| `/api/food-logs` | GET `?date=`, POST, DELETE | daily tracking |
+| `/api/grocery-lists` | GET, PATCH, DELETE | |
+| `/api/nutrition` | GET | latest nutrition plan |
+| `/api/notifications` | GET `?countOnly=`, PATCH `{ notificationId | markAll }` | own only |
+| `/api/direct-messages` | GET `?otherUserId=`, POST `{ recipientId, content }` | trigger creates the notification |
+| `/api/coaching/request` | POST `{ coachId }` | athlete → coach request (trigger notifies the coach) |
+| `/api/coaching/respond` | POST `{ relationshipId, action }` | the other party accepts / declines |
+| `/api/coaching/trainers` | GET | trainers listing + the caller's relationships |
+| `/api/users/search` | GET `?q=` | profiles, SQL `ilike` |
+| `/api/users/link` | POST `{ traineeId, trainerId, action }` | caller must be one side |
+| `/api/users/trainees` | GET | the caller's linked trainees |
+| `/api/users/features` | POST | trainer toggles `ai_features` for a linked trainee |
+| `/api/trainer/clients`, `/alerts`, `/progress?clientId=` | GET | trainer role; `is_coach_of` |
+| `/api/consistency/enroll`, `/status`, `/grace-request` | POST/GET/POST | consistency challenge (no phone verification) |
+| `/api/subscriptions/status`, `/checkout`, `/webhook` | GET/POST/POST | Stripe, test mode; testers get 403 on checkout |
+
+## Errors
+
+Routes answer JSON `{ error: string }` with a fitting status. Unexpected failures log one line
+`[api:<route>] user=<id> req=<id> …` (`lib/log.ts`) and the response carries the same id so a
+tester can quote it.
+
+## Environment
+
+See `env.example`: Supabase URL/keys (+ `SUPABASE_DB_URL` for the migration runner),
+`GEMINI_API_KEY`, the AI caps, `ALLOW_SIGNUP_EMAILS`, `ADMIN_EMAILS`, `NEXT_PUBLIC_4DCOACH_URL`,
+Stripe.

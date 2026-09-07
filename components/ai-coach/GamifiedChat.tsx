@@ -6,7 +6,7 @@ import type { CoachPersona } from '@/data/coaches';
 import type { IntakeFormData, IntakeFormDataV2 } from '@/lib/types';
 import ProgressBar from './ProgressBar';
 import IntakePhotoUpload from './IntakePhotoUpload';
-import { supabase } from '@/lib/supabase';
+import { apiFetch, apiFetchRaw, ApiError, errorMessage } from '@/lib/apiClient';
 
 interface GamifiedChatProps {
     coach: CoachPersona;
@@ -106,19 +106,15 @@ export default function GamifiedChat({
     const extractFormData = useCallback(async (allMessages: ChatMessage[]) => {
         if (allMessages.length < 2) return;
         try {
-            const res = await fetch('/api/ai-coach/interview', {
+            const formData = await apiFetch<Partial<IntakeFormData> & { error?: string }>('/api/ai-coach/interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: allMessages.map(m => ({ role: m.role, content: m.content })),
                     action: 'extract_form_data',
-                }),
+                },
             });
-            if (res.ok) {
-                const formData = await res.json();
-                if (!formData.error) {
-                    onFormDataUpdate(formData);
-                }
+            if (formData && !formData.error) {
+                onFormDataUpdate(formData);
             }
         } catch {
             // Non-critical
@@ -146,19 +142,17 @@ export default function GamifiedChat({
     }, [userMessageCount, photoUploadComplete, showPhotoUpload, isLoading, nextId]);
 
     // Upload photos
+    // The route files the upload under the caller: no user id in the form
     const uploadPhotosToStorage = useCallback(async (files: File[]): Promise<number> => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
         let uploadedCount = 0;
         for (const file of files) {
             try {
                 const fd = new FormData();
                 fd.append('file', file);
-                fd.append('user_id', user.id);
                 fd.append('caption', 'intake_photo');
                 fd.append('visibility', 'private');
-                const res = await fetch('/api/progress-media', { method: 'POST', body: fd });
-                if (res.ok) uploadedCount++;
+                await apiFetchRaw('/api/progress-media', { method: 'POST', body: fd });
+                uploadedCount++;
             } catch (err) {
                 console.error('Failed to upload photo:', err);
             }
@@ -180,9 +174,15 @@ export default function GamifiedChat({
             setPhotoUploadComplete(true);
             setCompletedSteps(prev => prev.includes('photo_upload') ? prev : [...prev, 'photo_upload']);
 
-            // Add coach acknowledgement
+            // No AI assessment of the photos: they are only saved to the progress gallery
             const ackId = nextId('assistant-photo-ack');
-            setMessages(prev => [...prev, { id: ackId, role: 'assistant', content: 'Thanks for the photos -- saved them to your profile. Let\'s keep going.' }]);
+            setMessages(prev => [...prev, {
+                id: ackId,
+                role: 'assistant',
+                content: uploadedCount > 0
+                    ? 'Photos saved to your progress gallery. Let\'s keep going.'
+                    : 'I couldn\'t save those photos, but no worries -- you can add them later. Let\'s keep going.',
+            }]);
         } catch (error) {
             console.error('Photo upload error:', error);
             setShowPhotoUpload(false);
@@ -238,17 +238,14 @@ export default function GamifiedChat({
 
         try {
             const pf = prefilledFields();
-            const response = await fetch('/api/ai-coach/interview', {
+            const response = await apiFetchRaw('/api/ai-coach/interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: [{ role: 'user', content: introMessage.content }],
                     coachId: coach.id,
                     prefilledFields: pf.length > 0 ? pf : undefined,
-                }),
+                },
             });
-
-            if (!response.ok) throw new Error('Failed to start interview');
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response body');
@@ -270,7 +267,9 @@ export default function GamifiedChat({
             setMessages([introMessage, {
                 id: assistantId,
                 role: 'assistant',
-                content: 'Sorry, I had trouble starting up. Please refresh and try again.',
+                content: error instanceof ApiError
+                    ? errorMessage(error)
+                    : 'Sorry, I had trouble starting up. Please refresh and try again.',
             }]);
         } finally {
             setIsLoading(false);
@@ -303,27 +302,14 @@ export default function GamifiedChat({
 
         try {
             const apiMessages = updatedMessages.map(m => ({ role: m.role, content: m.content }));
-            const response = await fetch('/api/ai-coach/interview', {
+            const response = await apiFetchRaw('/api/ai-coach/interview', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     messages: apiMessages,
                     coachId: coach.id,
                     prefilledFields: prefilledFields(),
-                }),
+                },
             });
-
-            if (response.status === 429) {
-                setMessages(prev =>
-                    prev.map(m =>
-                        m.id === assistantId ? { ...m, content: 'Rate limited. Please wait a moment and try again.' } : m
-                    )
-                );
-                setIsLoading(false);
-                return;
-            }
-
-            if (!response.ok) throw new Error('Failed to get response');
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response body');
@@ -363,9 +349,13 @@ export default function GamifiedChat({
             }
         } catch (error) {
             console.error('Chat error:', error);
+            // 429 / 503 carry a friendly message from the AI gateway; show it as the coach's reply
+            const notice = error instanceof ApiError
+                ? errorMessage(error)
+                : 'Sorry, I encountered an error. Please try again.';
             setMessages(prev =>
                 prev.map(m =>
-                    m.id === assistantId ? { ...m, content: 'Sorry, I encountered an error. Please try again.' } : m
+                    m.id === assistantId ? { ...m, content: notice } : m
                 )
             );
         } finally {

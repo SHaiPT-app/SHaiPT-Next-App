@@ -1,21 +1,20 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/supabaseDb';
-import { supabase } from '@/lib/supabase';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
+/**
+ * Trainee profiles: `?status=available` lists trainees with no trainer, `?trainerId=` lists the
+ * caller's own trainees (the value is ignored: it is always the caller), otherwise every trainee.
+ */
 export async function GET(request: Request) {
     try {
+        const auth = await getUser(request);
+        if (isErrorResponse(auth)) return auth;
+
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status'); // 'available' or undefined
         const trainerId = searchParams.get('trainerId');
 
-        // 1. Verify Auth (Optional but recommended for user lists)
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        // 2. Fetch Data
-        let query = supabase
+        let query = auth.supabase
             .from('profiles')
             .select('*')
             .eq('role', 'trainee');
@@ -24,8 +23,8 @@ export async function GET(request: Request) {
             // Fetch trainees with NO trainer
             query = query.is('trainer_id', null);
         } else if (trainerId) {
-            // Fetch trainees for specific trainer
-            query = query.eq('trainer_id', trainerId);
+            // Fetch the caller's trainees
+            query = query.eq('trainer_id', auth.user.id);
         }
 
         const { data, error } = await query;
@@ -34,8 +33,9 @@ export async function GET(request: Request) {
 
         return NextResponse.json({ trainees: data });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Fetch trainees error:', error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const message = error instanceof Error && error.message ? error.message : 'Internal Server Error';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

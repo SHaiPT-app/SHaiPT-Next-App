@@ -1,36 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
+/** Every trainer profile, each with the caller's relationship status to that trainer. */
 export async function GET(req: NextRequest) {
     try {
-        // Create service-role client lazily inside handler
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        const auth = await getUser(req);
+        if (isErrorResponse(auth)) return auth;
+        const userId = auth.user.id;
 
-        if (!supabaseUrl || (!serviceKey && !anonKey)) {
-            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-        }
-
-        let supabaseAdmin;
-        if (serviceKey) {
-            supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-                auth: { autoRefreshToken: false, persistSession: false }
-            });
-        } else {
-            const authHeader = req.headers.get('Authorization');
-            const token = authHeader?.replace('Bearer ', '');
-            supabaseAdmin = createClient(supabaseUrl, anonKey!, {
-                global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
-                auth: { autoRefreshToken: false, persistSession: false }
-            });
-        }
-
-        const { searchParams } = new URL(req.url);
-        const userId = searchParams.get('userId');
-
-        // Fetch all trainer profiles
-        const { data: trainers, error: trainersErr } = await supabaseAdmin
+        // Fetch all trainer profiles (every signed-in user may read profiles)
+        const { data: trainers, error: trainersErr } = await auth.supabase
             .from('profiles')
             .select('*')
             .eq('role', 'trainer')
@@ -41,19 +20,17 @@ export async function GET(req: NextRequest) {
             throw trainersErr;
         }
 
-        // If a userId is provided, fetch relationship statuses
-        let relationships: Record<string, string> = {};
-        if (userId) {
-            const { data: rels, error: relsErr } = await supabaseAdmin
-                .from('coaching_relationships')
-                .select('*')
-                .or(`coach_id.eq.${userId},athlete_id.eq.${userId}`);
+        // The caller's own relationships (RLS: coach or athlete)
+        const relationships: Record<string, string> = {};
+        const { data: rels, error: relsErr } = await auth.supabase
+            .from('coaching_relationships')
+            .select('*')
+            .or(`coach_id.eq.${userId},athlete_id.eq.${userId}`);
 
-            if (!relsErr && rels) {
-                for (const rel of rels) {
-                    if (rel.athlete_id === userId) {
-                        relationships[rel.coach_id] = rel.status;
-                    }
+        if (!relsErr && rels) {
+            for (const rel of rels) {
+                if (rel.athlete_id === userId) {
+                    relationships[rel.coach_id] = rel.status;
                 }
             }
         }
@@ -65,8 +42,9 @@ export async function GET(req: NextRequest) {
         }));
 
         return NextResponse.json({ trainers: enrichedTrainers });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Trainers fetch error:', error);
-        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+        const message = error instanceof Error && error.message ? error.message : 'Internal server error';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

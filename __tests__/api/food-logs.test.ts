@@ -2,25 +2,41 @@
  * @jest-environment node
  */
 import { GET, POST, DELETE } from '@/app/api/food-logs/route';
+import { NextRequest, NextResponse } from 'next/server';
 
-const mockGetByUserAndDate = jest.fn();
-const mockGetByUserDateRange = jest.fn();
-const mockCreate = jest.fn();
-const mockDelete = jest.fn();
+const mockGetUser = jest.fn();
+const mockFrom = jest.fn();
 
-jest.mock('@/lib/supabaseDb', () => ({
-    db: {
-        foodLogs: {
-            getByUserAndDate: (...args: unknown[]) => mockGetByUserAndDate(...args),
-            getByUserDateRange: (...args: unknown[]) => mockGetByUserDateRange(...args),
-            create: (...args: unknown[]) => mockCreate(...args),
-            delete: (...args: unknown[]) => mockDelete(...args),
-        },
-    },
-}));
+jest.mock('@/lib/auth', () => {
+    const { NextResponse: NR } = jest.requireActual('next/server');
+    return {
+        getUser: (...args: unknown[]) => mockGetUser(...args),
+        isErrorResponse: (r: unknown) => r instanceof NR,
+        getAdmin: jest.fn(),
+        userClient: jest.fn(),
+        bearerToken: jest.fn(),
+    };
+});
 
-function createRequest(url: string, options?: RequestInit) {
-    return new Request(url, options);
+function chain(result: { data?: unknown; error?: unknown }) {
+    const c: Record<string, unknown> = {};
+    for (const m of ['select', 'insert', 'delete', 'eq', 'gte', 'lte', 'order', 'single']) {
+        c[m] = jest.fn(() => c);
+    }
+    c.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(result).then(res, rej);
+    return c;
+}
+
+const USER = 'user-1';
+function signedIn() {
+    mockGetUser.mockResolvedValue({ user: { id: USER }, token: 'tok', supabase: { from: mockFrom } });
+}
+function signedOut() {
+    mockGetUser.mockResolvedValue(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+}
+
+function createRequest(url: string, options?: RequestInit): NextRequest {
+    return new NextRequest(url, options as never);
 }
 
 describe('/api/food-logs', () => {
@@ -29,62 +45,58 @@ describe('/api/food-logs', () => {
     });
 
     describe('GET', () => {
-        it('returns 400 when userId is missing', async () => {
-            const req = createRequest('http://localhost/api/food-logs');
-            const res = await GET(req as any);
-            const data = await res.json();
-            expect(res.status).toBe(400);
-            expect(data.error).toBe('userId is required');
+        it('returns 401 without a token', async () => {
+            signedOut();
+            const res = await GET(createRequest('http://localhost/api/food-logs?userId=user-1'));
+            expect(res.status).toBe(401);
         });
 
-        it('returns logs for a specific date', async () => {
-            const mockLogs = [
-                { id: 'log-1', food_name: 'Chicken', calories: 165, meal_type: 'lunch' },
-            ];
-            mockGetByUserAndDate.mockResolvedValue(mockLogs);
+        it("returns the caller's logs for a specific date (userId in the query is ignored)", async () => {
+            signedIn();
+            const q = chain({ data: [{ id: 'log-1', food_name: 'Chicken', calories: 165, meal_type: 'lunch' }], error: null });
+            mockFrom.mockReturnValue(q);
 
-            const req = createRequest('http://localhost/api/food-logs?userId=user-1&date=2025-01-15');
-            const res = await GET(req as any);
+            const res = await GET(createRequest('http://localhost/api/food-logs?userId=someone-else&date=2025-01-15'));
             const data = await res.json();
 
             expect(res.status).toBe(200);
             expect(data.logs).toHaveLength(1);
             expect(data.logs[0].food_name).toBe('Chicken');
-            expect(mockGetByUserAndDate).toHaveBeenCalledWith('user-1', '2025-01-15');
+            expect(q.eq).toHaveBeenCalledWith('user_id', USER);
+            expect(q.eq).toHaveBeenCalledWith('logged_date', '2025-01-15');
         });
 
         it('returns logs for a date range', async () => {
-            const mockLogs = [
-                { id: 'log-1', food_name: 'Chicken', logged_date: '2025-01-15' },
-                { id: 'log-2', food_name: 'Rice', logged_date: '2025-01-16' },
-            ];
-            mockGetByUserDateRange.mockResolvedValue(mockLogs);
+            signedIn();
+            const q = chain({ data: [{ id: 'log-1', logged_date: '2025-01-15' }, { id: 'log-2', logged_date: '2025-01-16' }], error: null });
+            mockFrom.mockReturnValue(q);
 
-            const req = createRequest('http://localhost/api/food-logs?userId=user-1&startDate=2025-01-15&endDate=2025-01-16');
-            const res = await GET(req as any);
+            const res = await GET(createRequest('http://localhost/api/food-logs?startDate=2025-01-15&endDate=2025-01-16'));
             const data = await res.json();
 
             expect(res.status).toBe(200);
             expect(data.logs).toHaveLength(2);
-            expect(mockGetByUserDateRange).toHaveBeenCalledWith('user-1', '2025-01-15', '2025-01-16');
+            expect(q.gte).toHaveBeenCalledWith('logged_date', '2025-01-15');
+            expect(q.lte).toHaveBeenCalledWith('logged_date', '2025-01-16');
         });
 
         it('uses today as default date when date is not provided', async () => {
-            mockGetByUserAndDate.mockResolvedValue([]);
+            signedIn();
+            const q = chain({ data: [], error: null });
+            mockFrom.mockReturnValue(q);
             const today = new Date().toISOString().split('T')[0];
 
-            const req = createRequest('http://localhost/api/food-logs?userId=user-1');
-            const res = await GET(req as any);
+            const res = await GET(createRequest('http://localhost/api/food-logs'));
 
             expect(res.status).toBe(200);
-            expect(mockGetByUserAndDate).toHaveBeenCalledWith('user-1', today);
+            expect(q.eq).toHaveBeenCalledWith('logged_date', today);
         });
 
         it('returns 500 on database error', async () => {
-            mockGetByUserAndDate.mockRejectedValue(new Error('DB error'));
+            signedIn();
+            mockFrom.mockReturnValue(chain({ data: null, error: { message: 'DB error' } }));
 
-            const req = createRequest('http://localhost/api/food-logs?userId=user-1&date=2025-01-15');
-            const res = await GET(req as any);
+            const res = await GET(createRequest('http://localhost/api/food-logs?date=2025-01-15'));
             const data = await res.json();
 
             expect(res.status).toBe(500);
@@ -94,72 +106,54 @@ describe('/api/food-logs', () => {
 
     describe('POST', () => {
         it('returns 400 when required fields are missing', async () => {
-            const req = createRequest('http://localhost/api/food-logs', {
+            signedIn();
+            const res = await POST(createRequest('http://localhost/api/food-logs', {
                 method: 'POST',
-                body: JSON.stringify({ user_id: 'user-1' }),
-            });
-            const res = await POST(req as any);
+                body: JSON.stringify({ food_name: 'Test' }),
+            }));
             const data = await res.json();
             expect(res.status).toBe(400);
-            expect(data.error).toBe('user_id, food_name, and meal_type are required');
+            expect(data.error).toBe('food_name and meal_type are required');
         });
 
         it('returns 400 for invalid meal_type', async () => {
-            const req = createRequest('http://localhost/api/food-logs', {
+            signedIn();
+            const res = await POST(createRequest('http://localhost/api/food-logs', {
                 method: 'POST',
-                body: JSON.stringify({ user_id: 'user-1', food_name: 'Test', meal_type: 'brunch' }),
-            });
-            const res = await POST(req as any);
+                body: JSON.stringify({ food_name: 'Test', meal_type: 'brunch' }),
+            }));
             const data = await res.json();
             expect(res.status).toBe(400);
             expect(data.error).toBe('meal_type must be breakfast, lunch, dinner, or snack');
         });
 
-        it('creates a food log successfully', async () => {
-            const mockLog = {
-                id: 'log-1',
-                user_id: 'user-1',
-                food_name: 'Chicken Breast',
-                meal_type: 'lunch',
-                calories: 165,
-                protein_g: 31,
-                carbs_g: 0,
-                fat_g: 3.6,
-            };
-            mockCreate.mockResolvedValue(mockLog);
+        it('creates a food log for the caller (user_id in the body is ignored)', async () => {
+            signedIn();
+            const mockLog = { id: 'log-1', user_id: USER, food_name: 'Chicken Breast', meal_type: 'lunch', calories: 165 };
+            const q = chain({ data: mockLog, error: null });
+            mockFrom.mockReturnValue(q);
 
-            const req = createRequest('http://localhost/api/food-logs', {
+            const res = await POST(createRequest('http://localhost/api/food-logs', {
                 method: 'POST',
-                body: JSON.stringify({
-                    user_id: 'user-1',
-                    food_name: 'Chicken Breast',
-                    meal_type: 'lunch',
-                    calories: 165,
-                    protein_g: 31,
-                    carbs_g: 0,
-                    fat_g: 3.6,
-                }),
-            });
-            const res = await POST(req as any);
+                body: JSON.stringify({ user_id: 'someone-else', food_name: 'Chicken Breast', meal_type: 'lunch', calories: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6 }),
+            }));
             const data = await res.json();
 
             expect(res.status).toBe(201);
             expect(data.log.food_name).toBe('Chicken Breast');
-            expect(mockCreate).toHaveBeenCalled();
+            const inserted = (q.insert as jest.Mock).mock.calls[0][0][0];
+            expect(inserted.user_id).toBe(USER);
+            expect(inserted.protein_g).toBe(31);
         });
 
         it('returns 500 on database error', async () => {
-            mockCreate.mockRejectedValue(new Error('DB error'));
+            signedIn();
+            mockFrom.mockReturnValue(chain({ data: null, error: { message: 'DB error' } }));
 
-            const req = createRequest('http://localhost/api/food-logs', {
+            const res = await POST(createRequest('http://localhost/api/food-logs', {
                 method: 'POST',
-                body: JSON.stringify({
-                    user_id: 'user-1',
-                    food_name: 'Test',
-                    meal_type: 'lunch',
-                }),
-            });
-            const res = await POST(req as any);
+                body: JSON.stringify({ food_name: 'Test', meal_type: 'lunch' }),
+            }));
             const data = await res.json();
 
             expect(res.status).toBe(500);
@@ -169,30 +163,32 @@ describe('/api/food-logs', () => {
 
     describe('DELETE', () => {
         it('returns 400 when id is missing', async () => {
-            const req = createRequest('http://localhost/api/food-logs');
-            const res = await DELETE(req as any);
+            signedIn();
+            const res = await DELETE(createRequest('http://localhost/api/food-logs'));
             const data = await res.json();
             expect(res.status).toBe(400);
             expect(data.error).toBe('id is required');
         });
 
-        it('deletes a food log successfully', async () => {
-            mockDelete.mockResolvedValue(undefined);
+        it("deletes the caller's food log", async () => {
+            signedIn();
+            const q = chain({ error: null });
+            mockFrom.mockReturnValue(q);
 
-            const req = createRequest('http://localhost/api/food-logs?id=log-1');
-            const res = await DELETE(req as any);
+            const res = await DELETE(createRequest('http://localhost/api/food-logs?id=log-1'));
             const data = await res.json();
 
             expect(res.status).toBe(200);
             expect(data.success).toBe(true);
-            expect(mockDelete).toHaveBeenCalledWith('log-1');
+            expect(q.eq).toHaveBeenCalledWith('id', 'log-1');
+            expect(q.eq).toHaveBeenCalledWith('user_id', USER);
         });
 
         it('returns 500 on database error', async () => {
-            mockDelete.mockRejectedValue(new Error('DB error'));
+            signedIn();
+            mockFrom.mockReturnValue(chain({ error: { message: 'DB error' } }));
 
-            const req = createRequest('http://localhost/api/food-logs?id=log-1');
-            const res = await DELETE(req as any);
+            const res = await DELETE(createRequest('http://localhost/api/food-logs?id=log-1'));
             const data = await res.json();
 
             expect(res.status).toBe(500);

@@ -1,28 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
+// `userId` in the query is ignored: the status is always the caller's.
 export async function GET(request: NextRequest) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
-        const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
-
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'Missing required parameter: userId' },
-                { status: 400 }
-            );
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const supabase = auth.supabase;
 
         // Get active challenge
         const { data: challenge, error: challengeError } = await supabase
             .from('consistency_challenges')
             .select('*')
-            .eq('user_id', userId)
+            .eq('user_id', auth.user.id)
             .in('status', ['active', 'grace_period'])
             .single();
 

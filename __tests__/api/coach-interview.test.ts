@@ -1,187 +1,112 @@
-/**
- * @jest-environment node
- */
-
-jest.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: jest.fn(),
-}));
-
-jest.mock('@/lib/supabaseDb', () => ({
-    db: {},
-}));
-
-jest.mock('@/lib/supabase', () => ({
-    supabase: {},
-}));
-
+/** @jest-environment node */
+import { NextResponse } from 'next/server';
+import { getUser } from '@/lib/auth';
+import { callModel, AiLimitError } from '@/lib/ai/gateway';
 import { POST } from '@/app/api/ai-coach/interview/route';
-import { NextRequest } from 'next/server';
 
-function createRequest(body: object): NextRequest {
-    return new NextRequest('http://localhost:3000/api/ai-coach/interview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+jest.mock('@/lib/auth', () => ({
+    ...jest.requireActual('@/lib/auth'),
+    getUser: jest.fn(),
+    getProfileBits: jest.fn(async () => ({ id: 'u1', role: 'trainee', tester: false, full_name: 'T', email: 't@x' })),
+    getAdmin: jest.fn(),
+}));
+jest.mock('@/lib/ai/gateway', () => ({
+    ...jest.requireActual('@/lib/ai/gateway'),
+    callModel: jest.fn(),
+    streamModel: jest.fn(),
+}));
+
+const mockGetUser = getUser as jest.Mock;
+const mockCallModel = callModel as jest.Mock;
+
+function signIn() {
+    mockGetUser.mockResolvedValue({ user: { id: 'u1', email: 't@x' }, token: 'tok', supabase: { from: jest.fn() } });
+}
+function signOut() {
+    mockGetUser.mockResolvedValue(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+}
+function post(body: unknown) {
+    return new Request('http://localhost/api/ai-coach/interview', {
+        method: 'POST', headers: { Authorization: 'Bearer tok', 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
 }
+const ZERO = { inputTokens: 0, outputTokens: 0, cachedTokens: 0, costUsd: 0 };
+const reply = (text: string, json?: unknown) => ({ text, json, usage: ZERO, model: 'test-model', cached: false, mocked: false });
 
-async function readStream(response: Response): Promise<string> {
-    const reader = response.body?.getReader();
-    if (!reader) return '';
-    const decoder = new TextDecoder();
-    let result = '';
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        result += decoder.decode(value, { stream: true });
-    }
-    return result;
-}
-
-describe('Coach Interview API Route', () => {
-    const originalEnv = process.env;
-
+describe('POST /api/ai-coach/interview', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env = { ...originalEnv };
-        delete process.env.GEMINI_API_KEY;
+        signIn();
     });
 
-    afterAll(() => {
-        process.env = originalEnv;
+    it('returns 401 without a user', async () => {
+        signOut();
+        const res = await POST(post({ messages: [], coachId: 'bodybuilding' }));
+        expect(res.status).toBe(401);
+        expect(mockCallModel).not.toHaveBeenCalled();
     });
 
-    it('returns 400 when messages array is missing', async () => {
-        const req = createRequest({ coachId: 'bodybuilding' });
-        const res = await POST(req);
-        expect(res.status).toBe(400);
-        const data = await res.json();
-        expect(data.error).toContain('Messages array is required');
+    it('returns 400 without messages or without a coachId', async () => {
+        expect((await POST(post({ coachId: 'bodybuilding' }))).status).toBe(400);
+        expect((await POST(post({ messages: [{ role: 'user', content: 'hi' }] }))).status).toBe(400);
+        expect(mockCallModel).not.toHaveBeenCalled();
     });
 
-    it('returns 400 when coachId is missing', async () => {
-        const req = createRequest({
-            messages: [{ role: 'user', content: 'Hello' }],
-        });
-        const res = await POST(req);
-        expect(res.status).toBe(400);
-        const data = await res.json();
-        expect(data.error).toContain('Coach ID is required');
-    });
-
-    it('returns a streaming mock response for valid request without API key', async () => {
-        const req = createRequest({
-            messages: [{ role: 'user', content: 'Hello' }],
-            coachId: 'bodybuilding',
-        });
-
-        const res = await POST(req);
+    it('replies as the chosen coach persona in plain text', async () => {
+        mockCallModel.mockResolvedValue(reply("Let's sculpt this physique. What's your name? [STEP:basic_info]"));
+        const res = await POST(post({ messages: [{ role: 'user', content: 'Hello' }], coachId: 'bodybuilding', prefilledFields: ['age', 'height'], userId: 'someone-else' }));
         expect(res.status).toBe(200);
-        expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
+        expect(res.headers.get('Content-Type')).toContain('text/plain');
+        expect(res.headers.get('X-Interview-Complete')).toBeNull();
+        expect(await res.text()).toContain("Let's sculpt this physique.");
 
-        const text = await readStream(res);
-        expect(text.length).toBeGreaterThan(0);
+        const opts = mockCallModel.mock.calls[0][0];
+        expect(opts).toMatchObject({ feature: 'interview', userId: 'u1', tester: false, messages: [{ role: 'user', content: 'Hello' }] });
+        expect(opts.userId).not.toBe('someone-else');
+        expect(opts.system).toContain('Marcus');
+        expect(opts.system).toContain('- age\n- height');
+        expect(opts.schema).toBeUndefined();
     });
 
-    it('returns mock intro for first message', async () => {
-        const req = createRequest({
-            messages: [{ role: 'user', content: 'Hi' }],
-            coachId: 'crossfit',
-        });
-
-        const res = await POST(req);
-        const text = await readStream(res);
-        expect(text).toContain('coach');
+    it('sets X-Interview-Complete and strips the marker when the interview is done', async () => {
+        mockCallModel.mockResolvedValue(reply('That is everything I need. Time to build. [INTERVIEW_COMPLETE]'));
+        const res = await POST(post({ messages: [{ role: 'user', content: 'Beginner' }], coachId: 'crossfit' }));
+        expect(res.status).toBe(200);
+        expect(res.headers.get('X-Interview-Complete')).toBe('true');
+        const text = await res.text();
+        expect(text).toBe('That is everything I need. Time to build.');
+        expect(text).not.toContain('[INTERVIEW_COMPLETE]');
     });
 
-    it('returns mock followup for subsequent messages', async () => {
-        const req = createRequest({
-            messages: [
-                { role: 'user', content: 'Hi' },
-                { role: 'assistant', content: 'Hello there!' },
-                { role: 'user', content: 'I am 27 years old' },
-            ],
-            coachId: 'bodybuilding',
-        });
-
-        const res = await POST(req);
-        const text = await readStream(res);
-        expect(text.length).toBeGreaterThan(0);
-    });
-
-    it('handles extract_form_data action without API key', async () => {
-        const req = createRequest({
-            messages: [
-                { role: 'user', content: 'I am John, 27 years old' },
-                { role: 'assistant', content: 'Great!' },
-            ],
+    it('extracts the intake form as JSON through a schema call', async () => {
+        const form = { name: 'Ali H', age: '29', height: "5'11", weight: '180 lbs', fitness_goals: 'build muscle', training_days_per_week: '4' };
+        mockCallModel.mockResolvedValue(reply(JSON.stringify(form), form));
+        const res = await POST(post({
             action: 'extract_form_data',
-        });
-
-        const res = await POST(req);
+            messages: [{ role: 'assistant', content: 'Name?' }, { role: 'user', content: "Ali H, 29, 5'11, 180 lbs" }],
+        }));
         expect(res.status).toBe(200);
-        const data = await res.json();
-        // In mock mode, returns empty form data
-        expect(data).toHaveProperty('name');
-        expect(data).toHaveProperty('age');
-        expect(data).toHaveProperty('height');
-        expect(data).toHaveProperty('weight');
-        expect(data).toHaveProperty('fitness_goals');
-        expect(data).toHaveProperty('fitness_level');
+        expect(await res.json()).toEqual(form);
+        const opts = mockCallModel.mock.calls[0][0];
+        expect(opts).toMatchObject({ feature: 'interview', userId: 'u1', temperature: 0.1 });
+        expect(opts.schema).toBeDefined();
+        expect(opts.prompt).toContain("CLIENT: Ali H, 29, 5'11, 180 lbs");
+        expect(opts.prompt).toContain('COACH: Name?');
     });
 
-    it('returns all 16 intake form fields in extract response', async () => {
-        const req = createRequest({
-            messages: [{ role: 'user', content: 'test' }],
-            action: 'extract_form_data',
-        });
-
-        const res = await POST(req);
-        const data = await res.json();
-        const expectedFields = [
-            'name', 'age', 'height', 'weight',
-            'sport_history', 'training_duration', 'training_style',
-            'fitness_goals',
-            'training_days_per_week', 'session_duration', 'preferred_time',
-            'available_equipment', 'training_location',
-            'injuries', 'medical_considerations',
-            'fitness_level',
-        ];
-        for (const field of expectedFields) {
-            expect(data).toHaveProperty(field);
-        }
+    it('passes a gateway limit through as 429 with the reason', async () => {
+        mockCallModel.mockRejectedValue(new AiLimitError('limit', 'daily_calls'));
+        const res = await POST(post({ messages: [{ role: 'user', content: 'hi' }], coachId: 'bodybuilding' }));
+        expect(res.status).toBe(429);
+        expect(await res.json()).toMatchObject({ reason: 'daily_calls' });
     });
 
-    it('supports all 10 coach personas', async () => {
-        const coachIds = [
-            'bodybuilding', 'booty-builder', 'crossfit', 'old-school',
-            'science-based', 'beach-body', 'everyday-fitness',
-            'athletic-functionality', 'sport-basketball', 'sport-climbing',
-        ];
-
-        for (const coachId of coachIds) {
-            const req = createRequest({
-                messages: [{ role: 'user', content: 'Hello' }],
-                coachId,
-            });
-
-            const res = await POST(req);
-            expect(res.status).toBe(200);
-            const text = await readStream(res);
-            expect(text.length).toBeGreaterThan(0);
-        }
-    }, 15000);
-
-    it('handles unknown coach ID gracefully', async () => {
-        const req = createRequest({
-            messages: [{ role: 'user', content: 'Hello' }],
-            coachId: 'unknown-coach',
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(200);
-        // Falls back to everyday-fitness persona
-        const text = await readStream(res);
-        expect(text.length).toBeGreaterThan(0);
+    it('returns 500 with the message on other errors', async () => {
+        const errSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        mockCallModel.mockRejectedValue(new Error('model exploded'));
+        const res = await POST(post({ messages: [{ role: 'user', content: 'hi' }], coachId: 'bodybuilding' }));
+        expect(res.status).toBe(500);
+        expect(await res.json()).toEqual({ error: 'model exploded' });
+        errSpy.mockRestore();
     });
 });

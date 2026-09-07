@@ -1,18 +1,46 @@
 /**
  * @jest-environment node
  */
+import { NextRequest, NextResponse } from 'next/server';
 import { GET } from '@/app/api/trainer/clients/progress/route';
 
-// Mock supabase
-const mockSelect = jest.fn();
-const mockEq = jest.fn();
-const mockIn = jest.fn();
-const mockOrder = jest.fn();
-const mockLimit = jest.fn();
-const mockSingle = jest.fn();
 const mockFrom = jest.fn();
 const mockCreateSignedUrl = jest.fn();
 const mockStorageFrom = jest.fn();
+const mockRequireTrainer = jest.fn();
+
+jest.mock('@/lib/auth', () => {
+    const { NextResponse: Res } = jest.requireActual('next/server');
+    return {
+        requireTrainer: (...args: unknown[]) => mockRequireTrainer(...args),
+        isErrorResponse: (r: unknown) => r instanceof Res,
+        getAdmin: jest.fn(),
+        isActiveCoachOf: jest.fn(),
+    };
+});
+
+const TRAINER_ID = 't1';
+
+/** Mirrors lib/auth requireTrainer: 401 without a token, 403 unless the caller is a trainer. */
+function trainerAuthFor(role: 'trainer' | 'trainee') {
+    return (request: Request) => {
+        if (!request.headers.get('Authorization')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+        if (role !== 'trainer') {
+            return NextResponse.json({ error: 'Trainer account required' }, { status: 403 });
+        }
+        return {
+            user: { id: TRAINER_ID },
+            token: 'token',
+            supabase: {
+                from: (...args: unknown[]) => mockFrom(...args),
+                storage: { from: (...args: unknown[]) => mockStorageFrom(...args) },
+            },
+            profile: { id: TRAINER_ID, role },
+        };
+    };
+}
 
 function createChain(resolvedData: unknown = null, resolvedError: unknown = null) {
     const chain: Record<string, jest.Mock> = {};
@@ -22,80 +50,62 @@ function createChain(resolvedData: unknown = null, resolvedError: unknown = null
     chain.order = jest.fn().mockReturnValue(chain);
     chain.limit = jest.fn().mockReturnValue(chain);
     chain.single = jest.fn().mockResolvedValue({ data: resolvedData, error: resolvedError });
-    // For non-single queries, resolve with data
-    chain.then = undefined as unknown as jest.Mock;
-    // Make the chain itself a thenable when awaited (for non-.single() queries)
     return chain;
 }
 
-jest.mock('@/lib/supabase', () => {
-    return {
-        supabase: {
-            from: (...args: unknown[]) => mockFrom(...args),
-            storage: {
-                from: (...args: unknown[]) => mockStorageFrom(...args),
-            },
-        },
-    };
-});
-
-function createRequest(url: string, options?: RequestInit): Request {
-    return new Request(new URL(url, 'http://localhost:3000'), options);
+function createRequest(url: string, withAuth = true): NextRequest {
+    return new NextRequest(new URL(url, 'http://localhost:3000'), {
+        headers: withAuth ? { Authorization: 'Bearer token' } : {},
+    });
 }
 
 describe('Trainer Client Progress API', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockRequireTrainer.mockImplementation(trainerAuthFor('trainer'));
         mockStorageFrom.mockReturnValue({
             createSignedUrl: mockCreateSignedUrl,
         });
     });
 
-    it('returns 400 if trainerId is missing', async () => {
-        const req = createRequest('/api/trainer/clients/progress?clientId=c1', {
-            headers: { Authorization: 'Bearer token' },
-        });
-        const res = await GET(req);
-        expect(res.status).toBe(400);
-        const body = await res.json();
-        expect(body.error).toBe('trainerId and clientId are required');
-    });
-
     it('returns 400 if clientId is missing', async () => {
-        const req = createRequest('/api/trainer/clients/progress?trainerId=t1', {
-            headers: { Authorization: 'Bearer token' },
-        });
-        const res = await GET(req);
+        const res = await GET(createRequest('/api/trainer/clients/progress?trainerId=t1'));
         expect(res.status).toBe(400);
         const body = await res.json();
-        expect(body.error).toBe('trainerId and clientId are required');
+        expect(body.error).toBe('clientId is required');
     });
 
     it('returns 401 if no Authorization header', async () => {
-        const req = createRequest('/api/trainer/clients/progress?trainerId=t1&clientId=c1');
-        const res = await GET(req);
+        const res = await GET(createRequest('/api/trainer/clients/progress?clientId=c1', false));
         expect(res.status).toBe(401);
+        expect(mockFrom).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 if the caller is not a trainer', async () => {
+        mockRequireTrainer.mockImplementation(trainerAuthFor('trainee'));
+
+        const res = await GET(createRequest('/api/trainer/clients/progress?clientId=c1'));
+        expect(res.status).toBe(403);
+        const body = await res.json();
+        expect(body.error).toBe('Trainer account required');
+        expect(mockFrom).not.toHaveBeenCalled();
     });
 
     it('returns 403 if no active coaching relationship', async () => {
-        // Mock coaching_relationships query returning nothing
+        // Under RLS the relationship row is absent for a non-coach: .single() errors
         const relChain = createChain(null, { code: 'PGRST116', message: 'Not found' });
         mockFrom.mockReturnValue(relChain);
 
-        const req = createRequest('/api/trainer/clients/progress?trainerId=t1&clientId=c1', {
-            headers: { Authorization: 'Bearer token' },
-        });
-        const res = await GET(req);
+        const res = await GET(createRequest('/api/trainer/clients/progress?clientId=c1'));
         expect(res.status).toBe(403);
         const body = await res.json();
-        expect(body.error).toBe('No active coaching relationship found');
+        expect(body.error).toBe('Coaching relationship error: Not found');
     });
 
     it('returns data without workouts when can_view_workouts is false', async () => {
-        let callCount = 0;
         mockFrom.mockImplementation((table: string) => {
             if (table === 'coaching_relationships') {
-                const chain = createChain({
+                return createChain({
                     id: 'rel-1',
                     coach_id: 't1',
                     athlete_id: 'c1',
@@ -103,10 +113,9 @@ describe('Trainer Client Progress API', () => {
                     can_view_workouts: false,
                     can_assign_plans: true,
                 });
-                return chain;
             }
             if (table === 'profiles') {
-                const chain = createChain({
+                return createChain({
                     id: 'c1',
                     email: 'client@test.com',
                     username: 'client1',
@@ -114,15 +123,11 @@ describe('Trainer Client Progress API', () => {
                     avatar_url: null,
                     role: 'trainee',
                 });
-                return chain;
             }
             return createChain(null);
         });
 
-        const req = createRequest('/api/trainer/clients/progress?trainerId=t1&clientId=c1', {
-            headers: { Authorization: 'Bearer token' },
-        });
-        const res = await GET(req);
+        const res = await GET(createRequest('/api/trainer/clients/progress?clientId=c1'));
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.permissions.can_view_workouts).toBe(false);
@@ -132,18 +137,17 @@ describe('Trainer Client Progress API', () => {
         expect(body.client.full_name).toBe('Test Client');
     });
 
-    it('returns full progress data when coach has view permission', async () => {
+    it('returns full progress data for the caller, ignoring the trainerId param', async () => {
+        const relChain = createChain({
+            id: 'rel-1',
+            coach_id: 't1',
+            athlete_id: 'c1',
+            status: 'active',
+            can_view_workouts: true,
+            can_assign_plans: true,
+        });
         mockFrom.mockImplementation((table: string) => {
-            if (table === 'coaching_relationships') {
-                return createChain({
-                    id: 'rel-1',
-                    coach_id: 't1',
-                    athlete_id: 'c1',
-                    status: 'active',
-                    can_view_workouts: true,
-                    can_assign_plans: true,
-                });
-            }
+            if (table === 'coaching_relationships') return relChain;
             if (table === 'profiles') {
                 return createChain({
                     id: 'c1',
@@ -205,10 +209,7 @@ describe('Trainer Client Progress API', () => {
             data: { signedUrl: 'https://storage.example.com/signed' },
         });
 
-        const req = createRequest('/api/trainer/clients/progress?trainerId=t1&clientId=c1', {
-            headers: { Authorization: 'Bearer token' },
-        });
-        const res = await GET(req);
+        const res = await GET(createRequest('/api/trainer/clients/progress?trainerId=someone-else&clientId=c1'));
         expect(res.status).toBe(200);
         const body = await res.json();
 
@@ -219,6 +220,11 @@ describe('Trainer Client Progress API', () => {
         expect(body.bodyMeasurements).toHaveLength(1);
         expect(body.progressMedia).toHaveLength(1);
         expect(body.progressMedia[0].url).toBe('https://storage.example.com/signed');
+
+        // The relationship is looked up from the caller's side, not the query param's
+        expect(relChain.eq).toHaveBeenCalledWith('coach_id', TRAINER_ID);
+        expect(relChain.eq).toHaveBeenCalledWith('athlete_id', 'c1');
+        expect(relChain.eq).not.toHaveBeenCalledWith('coach_id', 'someone-else');
     });
 
     it('returns 500 on unexpected error', async () => {
@@ -226,10 +232,7 @@ describe('Trainer Client Progress API', () => {
             throw new Error('Unexpected DB error');
         });
 
-        const req = createRequest('/api/trainer/clients/progress?trainerId=t1&clientId=c1', {
-            headers: { Authorization: 'Bearer token' },
-        });
-        const res = await GET(req);
+        const res = await GET(createRequest('/api/trainer/clients/progress?clientId=c1'));
         expect(res.status).toBe(500);
         const body = await res.json();
         expect(body.error).toBe('Unexpected DB error');

@@ -1,223 +1,84 @@
-/**
- * @jest-environment node
- */
+/** @jest-environment node */
+import { callModel } from '@/lib/ai/gateway';
+import { generateTrainingPlan } from '@/lib/ai/plans';
+import { POST } from '@/app/api/onboarding/generate-plans/route';
+import { signIn, signOut, post, modelJson } from '@/test-utils/api';
 
-const mockGenerateContent = jest.fn()
+jest.mock('@/lib/auth', () => jest.requireActual('@/test-utils/api').authMockFactory());
+jest.mock('@/lib/ai/gateway', () => jest.requireActual('@/test-utils/api').gatewayMockFactory());
+jest.mock('@/lib/ai/plans', () => ({ ...jest.requireActual('@/lib/ai/plans'), generateTrainingPlan: jest.fn() }));
+const mockCallModel = callModel as jest.Mock;
+const mockGenerate = generateTrainingPlan as jest.Mock;
 
-jest.mock('@google/generative-ai', () => {
-    return {
-        GoogleGenerativeAI: jest.fn(() => ({
-            getGenerativeModel: jest.fn(() => ({
-                generateContent: mockGenerateContent,
-            })),
-        })),
-    }
-})
-
-import { NextRequest } from 'next/server'
-import { POST } from '@/app/api/onboarding/generate-plans/route'
-
-const mockPlanResponse = {
-    extracted_profile: {
-        fitness_goals: ['build_muscle', 'lose_fat'],
-        experience_level: 'intermediate',
-        available_equipment: ['full_gym'],
-        training_days_per_week: 4,
-        injuries_limitations: [],
-        dietary_preferences: ['no_preference'],
-    },
-    training_plan: {
-        name: '4-Week Hypertrophy Program',
-        description: 'A progressive hypertrophy program for intermediate lifters',
-        duration_weeks: 4,
-        sessions: [
-            {
-                name: 'Upper Body Push',
-                description: 'Chest, shoulders, triceps focus',
-                day_number: 1,
-                week_number: 1,
-                exercises: [
-                    {
-                        exercise_name: 'Barbell Bench Press',
-                        sets: [
-                            { reps: '8-10', weight: 'moderate', rest_seconds: 90 },
-                            { reps: '8-10', weight: 'moderate', rest_seconds: 90 },
-                            { reps: '8-10', weight: 'moderate', rest_seconds: 90 },
-                        ],
-                        notes: 'Focus on controlled eccentric',
-                    },
-                ],
-            },
-        ],
-    },
-    nutrition_plan: {
-        daily_calories: 2500,
-        macros: { protein_g: 180, carbs_g: 280, fat_g: 78 },
-        meal_plan: [
-            {
-                day_number: 1,
-                meals: [
-                    {
-                        meal_type: 'breakfast',
-                        name: 'Protein Oatmeal',
-                        ingredients: ['oats', 'protein powder', 'banana'],
-                        calories: 450,
-                        protein_g: 35,
-                        carbs_g: 55,
-                        fat_g: 10,
-                        prep_time_minutes: 10,
-                    },
-                ],
-            },
-        ],
-        shopping_list: ['oats', 'protein powder', 'bananas'],
-        notes: 'Eat protein with every meal',
-    },
-}
+const extracted = {
+    fitness_goals: ['build muscle'], experience_level: 'intermediate', available_equipment: ['dumbbells'],
+    training_days_per_week: 4, injuries_limitations: ['bad knee'], dietary_preferences: ['vegetarian'],
+    age: '30', height: '180 cm', weight: '80 kg',
+};
+const plan = {
+    name: 'Dumbbell Upper/Lower', description: 'd', duration_weeks: 4, split_type: 'upper_lower',
+    periodization_blocks: [{ phase_type: 'general', phase_duration_weeks: 4, label: 'G' }],
+    sessions: [{ name: 'Day 1', description: '', day_number: 1, exercises: [
+        { exercise_id: 'Dumbbell_Bench_Press', exercise_name: 'Dumbbell Bench Press', fourd_id: 'bench', primary_muscles: ['chest'], equipment: 'dumbbell', sets: [{ reps: '10', weight: 'moderate', rest_seconds: 90 }], notes: '' },
+    ] }],
+};
+const messages = [
+    { role: 'assistant', content: 'What are your goals?' },
+    { role: 'user', content: 'Build muscle, I have dumbbells, 4 days a week, bad knee, vegetarian' },
+];
 
 describe('POST /api/onboarding/generate-plans', () => {
+    let supabase: ReturnType<typeof signIn>;
     beforeEach(() => {
-        jest.clearAllMocks()
-    })
+        jest.clearAllMocks();
+        supabase = signIn({ profiles: { id: 'u1', weight_kg: 80, height_cm: 180, gender: 'male', date_of_birth: '1996-01-01' } });
+        mockCallModel.mockResolvedValue(modelJson(extracted));
+        mockGenerate.mockResolvedValue({ plan, cached: false, mocked: false, usage: { inputTokens: 0, outputTokens: 0, cachedTokens: 0, costUsd: 0 } });
+    });
 
-    it('returns generated plans from conversation', async () => {
-        mockGenerateContent.mockResolvedValue({
-            response: {
-                text: () => JSON.stringify(mockPlanResponse),
-            },
-        })
+    it('returns 401 without a user (userId in the body is ignored)', async () => {
+        signOut();
+        expect((await POST(post('/api/onboarding/generate-plans', { messages, userId: 'x' }))).status).toBe(401);
+    });
 
-        const req = new NextRequest('http://localhost:3000/api/onboarding/generate-plans', {
-            method: 'POST',
-            body: JSON.stringify({
-                messages: [
-                    { role: 'assistant', content: 'What are your fitness goals?' },
-                    { role: 'user', content: 'Build muscle and lose fat' },
-                    { role: 'assistant', content: 'What is your experience level?' },
-                    { role: 'user', content: 'Intermediate' },
-                ],
-                userId: 'user-123',
-            }),
-        })
+    it('returns 400 without messages', async () => {
+        expect((await POST(post('/api/onboarding/generate-plans', { messages: [] }))).status).toBe(400);
+    });
 
-        const response = await POST(req)
-        const data = await response.json()
+    it('extracts the profile, generates the plan from the library, computes macros and saves onboarding', async () => {
+        const res = await POST(post('/api/onboarding/generate-plans', { messages }));
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json.success).toBe(true);
+        expect(json.data.extracted_profile).toEqual(extracted);
+        expect(json.data.training_plan.name).toBe('Dumbbell Upper/Lower');
+        expect(json.data.training_plan.sessions[0].week_number).toBe(1);
+        expect(json.data.training_plan.sessions[0].exercises[0].fourd_id).toBe('bench');
+        expect(json.data.nutrition_plan.daily_calories).toBeGreaterThan(2000);
+        expect(json.data.nutrition_plan.macros.protein_g).toBeGreaterThan(100);
+        expect(json.data.nutrition_plan.meal_plan).toEqual([]);
 
-        expect(data.success).toBe(true)
-        expect(data.data.training_plan.name).toBe('4-Week Hypertrophy Program')
-        expect(data.data.nutrition_plan.daily_calories).toBe(2500)
-        expect(data.data.extracted_profile.fitness_goals).toContain('build_muscle')
-    })
+        // one cheap extraction call, then the plan generator with the extracted fields
+        expect(mockCallModel).toHaveBeenCalledTimes(1);
+        expect(mockCallModel.mock.calls[0][0].feature).toBe('interview');
+        expect(mockCallModel.mock.calls[0][0].prompt).toContain('Build muscle');
+        const profile = mockGenerate.mock.calls[0][0].profile;
+        expect(profile.trainingDays).toBe(4);
+        expect(profile.injuries).toBe('bad knee');
+        expect(profile.equipment).toBe('dumbbells');
 
-    it('handles JSON wrapped in markdown code blocks', async () => {
-        mockGenerateContent.mockResolvedValue({
-            response: {
-                text: () => '```json\n' + JSON.stringify(mockPlanResponse) + '\n```',
-            },
-        })
+        // the onboarding row and the profile flag are written as the caller
+        const inserted = supabase.ops.find((o) => o.table === 'onboarding' && o.method === 'insert');
+        expect(inserted).toBeDefined();
+        expect((inserted!.args[0] as { dietary_preferences: string[] }).dietary_preferences).toEqual(['vegetarian']);
+        const flagged = supabase.ops.find((o) => o.table === 'profiles' && o.method === 'update');
+        expect((flagged!.args[0] as { onboarding_completed: boolean }).onboarding_completed).toBe(true);
+    });
 
-        const req = new NextRequest('http://localhost:3000/api/onboarding/generate-plans', {
-            method: 'POST',
-            body: JSON.stringify({
-                messages: [{ role: 'user', content: 'Build muscle' }],
-                userId: 'user-123',
-            }),
-        })
-
-        const response = await POST(req)
-        const data = await response.json()
-
-        expect(data.success).toBe(true)
-        expect(data.data.training_plan).toBeDefined()
-    })
-
-    it('returns 400 when messages are missing', async () => {
-        const req = new NextRequest('http://localhost:3000/api/onboarding/generate-plans', {
-            method: 'POST',
-            body: JSON.stringify({ userId: 'user-123' }),
-        })
-
-        const response = await POST(req)
-        expect(response.status).toBe(400)
-
-        const data = await response.json()
-        expect(data.error).toBe('Messages and userId are required')
-    })
-
-    it('returns 400 when userId is missing', async () => {
-        const req = new NextRequest('http://localhost:3000/api/onboarding/generate-plans', {
-            method: 'POST',
-            body: JSON.stringify({
-                messages: [{ role: 'user', content: 'Hello' }],
-            }),
-        })
-
-        const response = await POST(req)
-        expect(response.status).toBe(400)
-    })
-
-    it('returns 500 on Gemini API error', async () => {
-        mockGenerateContent.mockRejectedValue(new Error('API quota exceeded'))
-
-        const req = new NextRequest('http://localhost:3000/api/onboarding/generate-plans', {
-            method: 'POST',
-            body: JSON.stringify({
-                messages: [{ role: 'user', content: 'Hello' }],
-                userId: 'user-123',
-            }),
-        })
-
-        const response = await POST(req)
-        expect(response.status).toBe(500)
-
-        const data = await response.json()
-        expect(data.error).toBe('API quota exceeded')
-    })
-
-    it('returns 500 when Gemini returns invalid JSON', async () => {
-        mockGenerateContent.mockResolvedValue({
-            response: {
-                text: () => 'This is not valid JSON at all',
-            },
-        })
-
-        const req = new NextRequest('http://localhost:3000/api/onboarding/generate-plans', {
-            method: 'POST',
-            body: JSON.stringify({
-                messages: [{ role: 'user', content: 'Hello' }],
-                userId: 'user-123',
-            }),
-        })
-
-        const response = await POST(req)
-        expect(response.status).toBe(500)
-    })
-
-    it('includes conversation text in the prompt', async () => {
-        mockGenerateContent.mockResolvedValue({
-            response: {
-                text: () => JSON.stringify(mockPlanResponse),
-            },
-        })
-
-        const req = new NextRequest('http://localhost:3000/api/onboarding/generate-plans', {
-            method: 'POST',
-            body: JSON.stringify({
-                messages: [
-                    { role: 'user', content: 'I want to build muscle' },
-                    { role: 'assistant', content: 'Great goal!' },
-                ],
-                userId: 'user-123',
-            }),
-        })
-
-        await POST(req)
-
-        expect(mockGenerateContent).toHaveBeenCalledWith(
-            expect.stringContaining('I want to build muscle')
-        )
-        expect(mockGenerateContent).toHaveBeenCalledWith(
-            expect.stringContaining('Great goal!')
-        )
-    })
-})
+    it('returns 500 with a message when generation fails', async () => {
+        mockGenerate.mockRejectedValue(new Error('library empty'));
+        const res = await POST(post('/api/onboarding/generate-plans', { messages }));
+        expect(res.status).toBe(500);
+        expect((await res.json()).error).toBe('library empty');
+    });
+});

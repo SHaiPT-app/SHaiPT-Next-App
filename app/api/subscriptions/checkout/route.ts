@@ -1,20 +1,19 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getUser, isErrorResponse } from '@/lib/auth';
 import { getStripe, TIER_PRICE_IDS, TRIAL_DAYS } from '@/lib/subscriptions';
 import type { SubscriptionTier } from '@/lib/types';
 
 export async function POST(request: Request) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const { user, supabase } = auth;
 
-        const token = authHeader.replace('Bearer ', '');
-        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        // Test accounts have full access through profiles.tester; they never reach Stripe.
+        const { data: profile } = await supabase.from('profiles').select('tester').eq('id', user.id).single();
+        if (profile?.tester) {
+            return NextResponse.json({ error: 'Test accounts already have full access' }, { status: 403 });
         }
 
         const { tier } = await request.json() as { tier: SubscriptionTier };

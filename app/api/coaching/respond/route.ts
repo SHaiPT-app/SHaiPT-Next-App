@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { forbidden, getUser, isErrorResponse } from '@/lib/auth';
 import type { CoachingStatus } from '@/lib/types';
 
+/**
+ * Accept, decline or waitlist a coaching request. The caller must be a party of the relationship
+ * and not the side that requested it. The update runs as the caller (RLS: coach or athlete), and
+ * the SECURITY DEFINER trigger notifies the other side on accept.
+ */
 export async function POST(req: NextRequest) {
     try {
+        const auth = await getUser(req);
+        if (isErrorResponse(auth)) return auth;
+
         const { relationshipId, action, declineReason } = await req.json();
 
         if (!relationshipId || !action) {
@@ -15,29 +23,21 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `action must be one of: ${validActions.join(', ')}` }, { status: 400 });
         }
 
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || (!serviceKey && !anonKey)) {
-            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+        // RLS only returns the row when the caller is the coach or the athlete
+        const { data: existing, error: fetchErr } = await auth.supabase
+            .from('coaching_relationships')
+            .select('id, coach_id, athlete_id, requested_by')
+            .eq('id', relationshipId)
+            .maybeSingle();
+        if (fetchErr) throw fetchErr;
+        if (!existing) {
+            return NextResponse.json({ error: 'Coaching relationship not found' }, { status: 404 });
         }
-
-        let supabaseAdmin;
-        if (serviceKey) {
-            supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-                auth: { autoRefreshToken: false, persistSession: false }
-            });
-        } else {
-            const authHeader = req.headers.get('Authorization');
-            if (!authHeader) {
-                return NextResponse.json({ error: 'Authorization required' }, { status: 401 });
-            }
-            const token = authHeader.replace('Bearer ', '');
-            supabaseAdmin = createClient(supabaseUrl, anonKey!, {
-                global: { headers: { Authorization: `Bearer ${token}` } },
-                auth: { autoRefreshToken: false, persistSession: false }
-            });
+        if (existing.coach_id !== auth.user.id && existing.athlete_id !== auth.user.id) {
+            return forbidden('You are not a party of this coaching relationship');
+        }
+        if (existing.requested_by === auth.user.id) {
+            return forbidden('The side that sent the request cannot respond to it');
         }
 
         const statusMap: Record<string, CoachingStatus> = {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
             waitlist: 'waitlisted',
         };
 
-        const updates: Record<string, any> = {
+        const updates: Record<string, unknown> = {
             status: statusMap[action],
             updated_at: new Date().toISOString(),
         };
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
             updates.decline_reason = declineReason;
         }
 
-        const { data: relationship, error } = await supabaseAdmin
+        const { data: relationship, error } = await auth.supabase
             .from('coaching_relationships')
             .update(updates)
             .eq('id', relationshipId)
@@ -68,8 +68,9 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ relationship });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Coaching respond error:', error);
-        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+        const message = error instanceof Error && error.message ? error.message : 'Internal server error';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

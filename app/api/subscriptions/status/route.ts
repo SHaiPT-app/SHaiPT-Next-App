@@ -1,25 +1,16 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getUser, isErrorResponse } from '@/lib/auth';
 import type { Subscription } from '@/lib/types';
 
 export async function GET(request: Request) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const token = authHeader.replace('Bearer ', '');
-        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { data: subscription, error } = await supabase
+        const { data: subscription, error } = await auth.supabase
             .from('subscriptions')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('user_id', auth.user.id)
             .single();
 
         if (error && error.code !== 'PGRST116') {

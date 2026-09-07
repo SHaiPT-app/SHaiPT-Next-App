@@ -56,6 +56,10 @@ export interface Profile {
     weight?: number;
     experience?: string;
 
+    // Test phase
+    tester?: boolean; // full feature access without Stripe (scripts/create-test-users.ts)
+    onboarding_completed?: boolean;
+
     // Legal / liability
     terms_accepted_at?: string; // timestamptz, nullable — when user accepted health disclaimer & liability waiver
 

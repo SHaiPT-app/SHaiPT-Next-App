@@ -1,34 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getUser, isErrorResponse } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+    const auth = await getUser(request);
+    if (isErrorResponse(auth)) return auth;
+
     try {
         const body = await request.json();
-        const {
-            user_id,
-            session_id,
-            assignment_id,
-            date,
-            exercises,
-        } = body;
+        // user_id in the body is ignored: the log belongs to the caller.
+        const { session_id, assignment_id, date, exercises } = body;
 
-        if (!user_id || !session_id) {
+        if (!session_id) {
             return NextResponse.json(
-                { error: 'Missing required fields: user_id, session_id' },
+                { error: 'Missing required field: session_id' },
                 { status: 400 }
             );
         }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const supabase = auth.supabase;
 
         // Create workout log
         const { data: workoutLog, error: logError } = await supabase
             .from('workout_logs')
             .insert({
-                user_id,
+                user_id: auth.user.id,
                 session_id,
                 assignment_id,
                 date: date || new Date().toISOString().split('T')[0],
