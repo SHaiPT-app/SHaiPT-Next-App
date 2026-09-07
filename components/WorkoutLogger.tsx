@@ -3,7 +3,9 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { db } from '@/lib/supabaseDb';
-import type { WorkoutSession, Exercise, ExerciseLog, LoggedSet, TrainingPlan, TrainingPlanSession, SessionExercise } from '@/lib/types';
+import type { WorkoutSession, Exercise, ExerciseLog, LoggedSet, TrainingPlan, TrainingPlanSession, SessionExercise, WorkoutSummaryData } from '@/lib/types';
+import { WorkoutSummary } from '@/components/workout/WorkoutSummary';
+import { apiFetch, errorMessage } from '@/lib/apiClient';
 
 /** Build a fallback Exercise object from SessionExercise JSONB data when DB lookup fails */
 function buildFallbackExercise(se: SessionExercise): Exercise {
@@ -26,7 +28,8 @@ interface WorkoutLoggerProps {
 
 export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps) {
     const [viewMode, setViewMode] = useState<'plans' | 'workouts'>('plans');
-    const [step, setStep] = useState<'selectPlan' | 'selectSession' | 'formCheckerPrompt' | 'active'>('selectPlan');
+    const [step, setStep] = useState<'selectPlan' | 'selectSession' | 'formCheckerPrompt' | 'active' | 'summary'>('selectPlan');
+    const [summary, setSummary] = useState<WorkoutSummaryData | null>(null);
     const [plans, setPlans] = useState<TrainingPlan[]>([]);
     const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
     const [planSessions, setPlanSessions] = useState<(TrainingPlanSession & { session?: WorkoutSession })[]>([]);
@@ -580,13 +583,68 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
                 session={selectedSession}
                 userId={userId}
                 onBack={handleBack}
-                onComplete={onComplete}
+                onComplete={(data) => { setSummary(data); setStep('summary'); onComplete?.(); }}
                 formCheckerEnabled={formCheckerEnabled}
             />
         );
     }
 
+    if (step === 'summary' && summary) {
+        return (
+            <WorkoutDone
+                summary={summary}
+                onGoHome={() => { setSummary(null); setSelectedSession(null); setStep('selectPlan'); }}
+            />
+        );
+    }
+
     return null;
+}
+
+// ============================================
+// SUMMARY SCREEN (after Finish Workout): the numbers, the PRs, one gated AI feedback call
+// ============================================
+
+function WorkoutDone({ summary, onGoHome }: { summary: WorkoutSummaryData; onGoHome: () => void }) {
+    const [feedback, setFeedback] = useState<{ feedback: string; recommendations: string[] } | null>(null);
+    const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        apiFetch<{ feedback: string; recommendations: string[] }>('/api/ai-coach/workout-summary', {
+            method: 'POST',
+            body: {
+                sessionName: summary.sessionName,
+                durationMinutes: Math.round(summary.totalDurationSeconds / 60),
+                totalVolume: summary.totalVolume,
+                totalSets: summary.totalSets,
+                totalReps: summary.totalReps,
+                weightUnit: summary.volumeUnit,
+                exercises: summary.exercises ?? [],
+                prsAchieved: summary.prsAchieved.map((pr) => ({ exerciseName: pr.exerciseName, weight: pr.newValue, reps: 0, unit: summary.volumeUnit })),
+            },
+        })
+            .then((data) => { if (!cancelled) setFeedback(data); })
+            .catch((err) => { if (!cancelled) setFeedbackError(errorMessage(err, 'The coach could not review this session.')); });
+        return () => { cancelled = true; };
+    }, [summary]);
+
+    const aiText = feedback
+        ? [feedback.feedback, ...feedback.recommendations.map((r) => `• ${r}`)].join('\n')
+        : feedbackError ?? undefined;
+
+    return (
+        <WorkoutSummary
+            summary={summary}
+            aiFeedback={aiText}
+            onGoHome={onGoHome}
+            onShare={() => {
+                const text = `${summary.sessionName}: ${summary.totalSets} sets, ${summary.totalVolume.toLocaleString()} ${summary.volumeUnit} on SHaiPT`;
+                if (typeof navigator !== 'undefined' && navigator.share) navigator.share({ text }).catch(() => undefined);
+                else if (typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => undefined);
+            }}
+        />
+    );
 }
 
 // ============================================
@@ -780,13 +838,14 @@ interface ActiveWorkoutProps {
     session: WorkoutSession;
     userId: string;
     onBack: () => void;
-    onComplete?: () => void;
+    onComplete?: (summary: WorkoutSummaryData) => void;
     formCheckerEnabled?: boolean;
 }
 
 function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled }: ActiveWorkoutProps) {
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
     const [workoutLogId, setWorkoutLogId] = useState<string | null>(null);
+    const [startedAt, setStartedAt] = useState<number>(() => Date.now());
     const [exerciseLogs, setExerciseLogs] = useState<Map<number, ExerciseLog>>(new Map());
     const [currentSets, setCurrentSets] = useState<LoggedSet[]>([]);
     const [restTimer, setRestTimer] = useState<number>(0);
@@ -837,6 +896,7 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
                 started_at: new Date().toISOString()
             });
             setWorkoutLogId(log.id);
+            setStartedAt(Date.now());
         } catch (error) {
             console.error('Error initializing workout:', error);
         } finally {
@@ -901,8 +961,11 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
             newLogs.set(currentExerciseIndex, exerciseLog);
             setExerciseLogs(newLogs);
         } else {
-            // Update existing
+            // Update existing (and keep the in-memory copy in step, the summary and the PRs read it)
             await db.exerciseLogs.update(exerciseLog.id, { sets: updatedSets });
+            const newLogs = new Map(exerciseLogs);
+            newLogs.set(currentExerciseIndex, { ...exerciseLog, sets: updatedSets });
+            setExerciseLogs(newLogs);
         }
 
         // Start rest timer if applicable
@@ -947,7 +1010,7 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
             const profile = await db.profiles.getById(userId);
 
             // Check for PRs and create PR posts
-            const prsDetected: Array<{ exerciseId: string; exerciseName: string; weight: number; reps: number; unit: string }> = [];
+            const prsDetected: Array<{ exerciseId: string; exerciseName: string; weight: number; reps: number; unit: string; previous: number }> = [];
 
             for (const [index, log] of exerciseLogs.entries()) {
                 const exerciseId = session.exercises[index]?.exercise_id;
@@ -993,7 +1056,8 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
                         exerciseName: exercise?.name || 'Unknown Exercise',
                         weight: maxWeightSet.weight,
                         reps: maxWeightSet.reps,
-                        unit: maxWeightSet.weight_unit || 'lbs'
+                        unit: maxWeightSet.weight_unit || 'lbs',
+                        previous: Math.max(0, ...existingPRs.map((pr) => pr.max_weight || 0)),
                     });
 
                     // Mark old PRs as not current
@@ -1029,8 +1093,30 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
                 });
             }
 
-            if (onComplete) onComplete();
-            onBack();
+            const logs = [...exerciseLogs.entries()];
+            const allSets = logs.flatMap(([, log]) => log?.sets ?? []);
+            const volumeUnit: 'lbs' | 'kg' = (allSets[0]?.weight_unit as 'lbs' | 'kg') || 'lbs';
+            const data: WorkoutSummaryData = {
+                workoutLogId,
+                sessionName: session.name,
+                totalDurationSeconds: Math.max(1, Math.round((Date.now() - startedAt) / 1000)),
+                totalRestSeconds: allSets.reduce((sum, s) => sum + (s.rest_after_seconds ?? 0), 0),
+                totalWorkSeconds: 0,
+                totalSets: allSets.length,
+                totalReps: allSets.reduce((sum, s) => sum + (s.reps || 0), 0),
+                totalVolume: Math.round(allSets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0)),
+                volumeUnit,
+                exerciseCount: logs.filter(([, log]) => (log?.sets.length ?? 0) > 0).length,
+                prsAchieved: prsDetected.map((pr) => ({ exerciseId: pr.exerciseId, exerciseName: pr.exerciseName, prType: 'weight' as const, previousValue: pr.previous, newValue: pr.weight })),
+                completedAt: new Date().toISOString(),
+                exercises: logs.map(([index, log]) => ({
+                    name: session.exercises[index]?.exercise_name || session.exercises[index]?.exercise_id || 'Exercise',
+                    sets: (log?.sets ?? []).map((s) => ({ set_number: s.set_number, weight: s.weight, reps: s.reps, weight_unit: s.weight_unit, rpe: s.rpe })),
+                })),
+            };
+            data.totalWorkSeconds = Math.max(0, data.totalDurationSeconds - data.totalRestSeconds);
+            if (onComplete) onComplete(data);
+            else onBack();
         } catch (error) {
             console.error('Error finishing workout:', error);
         }

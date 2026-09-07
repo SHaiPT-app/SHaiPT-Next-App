@@ -1339,6 +1339,8 @@ export interface WorkoutSummaryData {
     prsAchieved: WorkoutPRSummary[];
     averageRpe?: number;
     completedAt: string;
+    /** per-exercise sets, for the AI summary */
+    exercises?: Array<{ name: string; sets: Array<{ set_number: number; weight: number; reps: number; weight_unit: string; rpe?: number }> }>;
 }
 
 // ============================================

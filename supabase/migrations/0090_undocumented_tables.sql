@@ -131,6 +131,13 @@ RETURNS numeric AS $$
     WHERE COALESCE((s ->> 'is_warmup')::boolean, false) = false;
 $$ LANGUAGE sql IMMUTABLE;
 
+-- Reps in one exercise_logs.sets array.
+CREATE OR REPLACE FUNCTION sets_reps(p_sets jsonb)
+RETURNS integer AS $fn$
+    SELECT COALESCE(SUM(COALESCE((s ->> 'reps')::integer, 0)), 0)::integer
+    FROM jsonb_array_elements(COALESCE(p_sets, '[]'::jsonb)) s;
+$fn$ LANGUAGE sql IMMUTABLE;
+
 -- Recompute user_stats and today's user_stats_history row for one user.
 CREATE OR REPLACE FUNCTION recompute_user_stats(p_user_id uuid)
 RETURNS void AS $$
@@ -153,7 +160,10 @@ BEGIN
       INTO v_total_workouts, v_total_minutes, v_last_date
       FROM workout_logs WHERE user_id = p_user_id AND completed_at IS NOT NULL;
 
-    SELECT COALESCE(SUM(el.total_sets), 0), COALESCE(SUM(el.total_reps), 0), COALESCE(SUM(sets_volume_kg(el.sets)), 0)
+    -- the logger stores the sets as JSON and may leave total_sets / total_reps empty
+    SELECT COALESCE(SUM(COALESCE(el.total_sets, jsonb_array_length(COALESCE(el.sets, '[]'::jsonb)))), 0),
+           COALESCE(SUM(COALESCE(el.total_reps, sets_reps(el.sets))), 0),
+           COALESCE(SUM(sets_volume_kg(el.sets)), 0)
       INTO v_total_sets, v_total_reps, v_total_volume
       FROM exercise_logs el JOIN workout_logs wl ON wl.id = el.workout_log_id
      WHERE wl.user_id = p_user_id AND wl.completed_at IS NOT NULL;
@@ -186,8 +196,9 @@ BEGIN
         last_7_days_workouts = EXCLUDED.last_7_days_workouts, last_calculated_at = now(), updated_at = now();
 
     INSERT INTO user_stats_history (user_id, date, total_volume_kg, total_sets, total_reps, total_workouts, workout_minutes)
-    SELECT p_user_id, wl.date, COALESCE(SUM(sets_volume_kg(el.sets)), 0), COALESCE(SUM(el.total_sets), 0),
-           COALESCE(SUM(el.total_reps), 0), COUNT(DISTINCT wl.id), COALESCE(SUM(wl.total_duration_seconds) / 60, 0)::integer
+    SELECT p_user_id, wl.date, COALESCE(SUM(sets_volume_kg(el.sets)), 0),
+           COALESCE(SUM(COALESCE(el.total_sets, jsonb_array_length(COALESCE(el.sets, '[]'::jsonb)))), 0),
+           COALESCE(SUM(COALESCE(el.total_reps, sets_reps(el.sets))), 0), COUNT(DISTINCT wl.id), COALESCE(SUM(wl.total_duration_seconds) / 60, 0)::integer
       FROM workout_logs wl LEFT JOIN exercise_logs el ON el.workout_log_id = wl.id
      WHERE wl.user_id = p_user_id AND wl.completed_at IS NOT NULL AND wl.date >= CURRENT_DATE - 90
      GROUP BY wl.date
