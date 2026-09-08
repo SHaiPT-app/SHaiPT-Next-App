@@ -143,7 +143,7 @@ export default function CoachInterviewPage() {
                     .from('profiles')
                     .select('terms_accepted_at')
                     .eq('id', user.id)
-                    .single();
+                    .maybeSingle();
 
                 if (profile?.terms_accepted_at) {
                     setWaiverAccepted(true);
@@ -177,7 +177,7 @@ export default function CoachInterviewPage() {
                     .select('intake_data, is_complete')
                     .eq('user_id', user.id)
                     .eq('coach_id', coachId)
-                    .single();
+                    .maybeSingle();
 
                 if (interview?.intake_data) {
                     const v1Data = interview.intake_data as IntakeFormData;
@@ -185,6 +185,10 @@ export default function CoachInterviewPage() {
                     setFormDataV2(intakeV1toV2(v1Data));
                     if (interview.is_complete) {
                         setIsInterviewComplete(true);
+                        // The answers are here, so open on them: the chat starts at its first
+                        // question again and would read as if nothing had been saved. From the
+                        // form the user can go straight to Submit & Generate Plan.
+                        setActiveTab('form');
                     }
                 } else {
                     // No data for this coach — fall back to most recent completed interview from any coach
@@ -195,7 +199,7 @@ export default function CoachInterviewPage() {
                         .eq('is_complete', true)
                         .order('updated_at', { ascending: false })
                         .limit(1)
-                        .single();
+                        .maybeSingle();
 
                     if (anyInterview?.intake_data) {
                         const v1Data = anyInterview.intake_data as IntakeFormData;
@@ -324,6 +328,24 @@ export default function CoachInterviewPage() {
         setIsFormSubmitted(true);
         setInterviewMessages(messages);
 
+        // Keep the answers: without this a reload before the plan is generated starts the
+        // interview from the first question again. loadPreviousData reads this row back.
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase.from('coach_interviews').upsert({
+                    user_id: user.id,
+                    coach_id: coachId,
+                    intake_data: formDataRef.current,
+                    chat_messages: messages,
+                    is_complete: true,
+                    updated_at: new Date().toISOString(),
+                }, { onConflict: 'user_id,coach_id' });
+            }
+        } catch (error) {
+            console.warn('Could not save the interview answers:', error);
+        }
+
         // Auto-switch to Form tab so user can review pre-filled data
         setActiveTab('form');
 
@@ -351,7 +373,7 @@ export default function CoachInterviewPage() {
         } finally {
             setIsLoadingSplits(false);
         }
-    }, []);
+    }, [coachId]);
 
     const handleConfirmSplit = useCallback(async () => {
         if (!selectedSplit) return;
@@ -1007,17 +1029,30 @@ export default function CoachInterviewPage() {
                                 readOnly={isFormSubmitted}
                             />
                             {/* Submit button on form tab */}
-                            {!isFormSubmitted && (
-                                <div className="shrink-0 border-t border-[var(--line-soft)] px-4 py-3">
-                                    <button
-                                        onClick={handleFormSubmit}
-                                        disabled={!formDataV2.first_name || !formDataV2.fitness_level}
-                                        className="btn-brand font-display w-full !py-3.5 !text-[0.9rem]"
-                                    >
-                                        Submit & Generate Plan
-                                    </button>
-                                </div>
-                            )}
+                            {!isFormSubmitted && (() => {
+                                // Say what is missing: a disabled button with no reason reads as broken.
+                                const missing = [
+                                    !formDataV2.first_name && 'your first name',
+                                    !formDataV2.fitness_level && 'your fitness level',
+                                ].filter(Boolean) as string[];
+                                return (
+                                    <div className="shrink-0 border-t border-[var(--line-soft)] px-4 py-3">
+                                        <button
+                                            onClick={handleFormSubmit}
+                                            disabled={missing.length > 0}
+                                            title={missing.length ? `Still needed: ${missing.join(' and ')}` : undefined}
+                                            className="btn-brand font-display w-full !py-3.5 !text-[0.9rem]"
+                                        >
+                                            Submit & Generate Plan
+                                        </button>
+                                        {missing.length > 0 && (
+                                            <p className="mt-2 mb-0 text-center text-xs text-ink-low">
+                                                Add {missing.join(' and ')} to generate a plan.
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 )}
