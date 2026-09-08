@@ -16,7 +16,7 @@ the outcome, keep answers short, put anything Ali must do themselves in a number
 
 The previous session (Fable) did the first four of six workstreams from the original handoff and
 verified the trainee loop in a real browser against the real database. This prompt is the state
-as of **2026-09-07 evening**. The old handoff text is in git history (`git show cb1532c:HANDOFF-platform.md`)
+as of **2026-09-08 morning**. The old handoff text is in git history (`git show cb1532c:HANDOFF-platform.md`)
 if you need the original wording of a workstream.
 
 ## The goal (unchanged)
@@ -43,9 +43,12 @@ Both repos commit as `alihomaei1997@gmail.com`.
   role key, the database password and `SUPABASE_DB_URL` (session pooler
   `aws-0-us-west-2.pooler.supabase.com:5432`, user `postgres.ayaynfcdoumhzledqoec`) are all in
   `.env.local` (gitignored, mode 600). Dashboard: https://supabase.com/dashboard/project/ayaynfcdoumhzledqoec
-- **OpenAI**: `OPENAI_API_KEY` in `.env.local` (valid; the account had **no credits** at the end
-  of the session, so real calls returned a billing 429). Ali pasted the key into chat; suggest
-  they rotate it once things run.
+- **OpenAI**: `OPENAI_API_KEY` in `.env.local` (valid). Ali added credits and a monthly usage
+  limit on 2026-09-08, but `pnpm ai:smoke` still returned `429 You have no credits remaining`
+  right after. Most likely the credits went to a different project or organization than the key,
+  or they had not propagated: check the key's project on platform.openai.com, rerun
+  `pnpm ai:smoke`, and only then remove `AI_MOCK=1` from `.env.local`. Ali pasted the key into
+  chat; suggest they rotate it once things run.
 - **Tester account** (Ali's own): `alihomaei1997@gmail.com`, password given to Ali in chat,
   role trainee, `tester = true`, id `ab455050-e410-499c-ba87-0cd9c3f5b280`. It already has one
   saved plan, ~12 workout logs (test runs; 3 completed) and 5 personal records.
@@ -78,12 +81,11 @@ cannot target a partial index); the coach policy on `body_measurements` moved to
 before the table existed); `ai_usage_today()` ignores `status = 'mock'`; `recompute_user_stats()`
 derives set/rep counts from the sets JSON.
 
-Not done from the Supabase checklist: **Authentication → URL configuration** (site URL
-`https://www.shaipt.com`, redirect URLs `https://www.shaipt.com/auth/callback` and
-`http://localhost:3000/auth/callback`) and **Confirm email** (currently the project default,
-which is ON; `create-test-users` confirms the email itself, so scripted accounts work either
-way, but self-service sign-up with an invite will need the confirm mail or the setting off).
-Google/Apple OAuth are not configured (the login page shows the buttons; hide them or configure).
+Ali did **Authentication → URL configuration** on 2026-09-08 (site URL and the two redirect
+URLs). Verify in the dashboard whether **Confirm email** is on or off (`create-test-users`
+confirms the email itself, so scripted accounts work either way; self-service sign-up with an
+invite needs the confirm mail or the setting off). Google/Apple OAuth are not configured (the
+login page shows the buttons; hide them or configure).
 
 ### Auth (workstream 2) — done, verified
 `lib/auth.ts` (`getUser`, `getAdmin`, `requireTrainer`, `isActiveCoachOf`) is used by every API
@@ -168,22 +170,52 @@ Google Cloud DNS for shaipt.com (Ali), then `curl -s https://coach-api.shaipt.co
 `VITE_4DCOACH_SERVER=https://coach-api.shaipt.com` on the Vercel project `sh-ai-pt-simple` plus
 a deploy of 4Dcoach `main`.
 
-## What Ali must do (put this list in your first reply, numbered, and tick off what they confirm)
+## Ali has done
 
-1. Add credits to the OpenAI account (https://platform.openai.com/settings/organization/billing/)
-   and set a monthly usage limit there (Billing → Limits, e.g. $10). Then remove `AI_MOCK=1`
-   from `.env.local` and run `pnpm ai:smoke`.
-2. Supabase dashboard → Authentication → URL configuration (site URL and the two redirect URLs
-   above) and decide on Confirm email (off for the test phase is simplest).
-3. Vercel env for `s-hai-pt-de3g`: set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `AI_MONTHLY_CAP_USD=15`,
-   `ALLOW_SIGNUP_EMAILS` (optional), `ADMIN_EMAILS=alihomaei1997@gmail.com`; remove the ten
-   `FIREBASE_*` / `NEXT_PUBLIC_FIREBASE_*` vars. Values are in `.env.local`; `vercel env add NAME production`
-   reads the value from stdin. Then `vercel deploy --prod --yes --scope alis-projects-e60465e8`.
-4. DNS: `A` record `coach-api.shaipt.com` → `45.77.142.86`. Then `VITE_4DCOACH_SERVER` on the
-   `sh-ai-pt-simple` Vercel project and a 4Dcoach deploy.
-5. Vercel Spend Management cap if the team is Pro; Stripe stays in test mode.
-6. Give you the friends' email addresses for `pnpm db:test-users`.
+- OpenAI credits and a monthly usage limit (2026-09-08). Not yet visible to the key, see
+  "Accounts and secrets"; do not assume real calls work until `pnpm ai:smoke` prints three results.
+- Supabase Authentication → URL configuration (2026-09-08).
+
+## Your first tasks (Ali asked for these to be done by you; do them before workstream A)
+
+1. **Vercel env + deploy for the Next app** (project `s-hai-pt-de3g`, scope `alis-projects-e60465e8`).
+   Values are in `.env.local` (never print them). For each of `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`,
+   `AI_MONTHLY_CAP_USD` (15), `ADMIN_EMAILS` (alihomaei1997@gmail.com), and optionally
+   `ALLOW_SIGNUP_EMAILS`: remove the old value where one exists and add the new one for
+   production (and preview/development for the public ones), e.g.
+
+   ```bash
+   cd ~/SHaiPT/SHaiPT-Next-App
+   for e in production preview development; do vercel env rm NEXT_PUBLIC_SUPABASE_URL $e -y --scope alis-projects-e60465e8; done
+   grep '^NEXT_PUBLIC_SUPABASE_URL=' .env.local | cut -d= -f2- | vercel env add NEXT_PUBLIC_SUPABASE_URL production --scope alis-projects-e60465e8
+   ```
+
+   Remove the ten dead vars: `OPENAI_API_KEY` (old value, then add the new one),
+   `NEXT_PUBLIC_FIREBASE_APP_ID`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`,
+   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`,
+   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `FIREBASE_PRIVATE_KEY`,
+   `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PROJECT_ID` (each exists for development and production).
+   Do NOT set `AI_MOCK` on Vercel. Then `vercel deploy --prod --yes --scope alis-projects-e60465e8`
+   and check: `curl -sI https://www.shaipt.com/home` is a 307 to `/login?next=%2Fhome`,
+   `curl -s https://www.shaipt.com/api/notifications` is a 401, and the tester account can log
+   in. If the permission classifier blocks `vercel env` or `vercel deploy` (it did in the last
+   session), give Ali the exact commands as a numbered list and continue.
+2. **DNS for the 4Dcoach route**: an `A` record `coach-api.shaipt.com` → `45.77.142.86` in
+   Google Cloud DNS for shaipt.com. That is Ali's account; ask for it in your first reply. When
+   `dig +short coach-api.shaipt.com` answers, Caddy on the VM issues the certificate within a
+   minute and `curl -s https://coach-api.shaipt.com/health` returns the 4Dcoach server's name
+   (the Mac must be awake; the tunnel agent restarts on its own). Then set
+   `VITE_4DCOACH_SERVER=https://coach-api.shaipt.com` on the Vercel project `sh-ai-pt-simple`
+   (production), merge `4dcoach-spec` into `main` with `git merge --no-ff` in a temporary
+   worktree, push `main` (it deploys on push), and check the deployed app's server setting.
+
+## Still on Ali (ask in your first reply)
+
+1. The DNS record above.
+2. Confirm which OpenAI project or organization the credits went to (the key still reports none).
+3. Vercel Spend Management cap if the team is Pro; Stripe stays in test mode.
+4. The friends' email addresses for `pnpm db:test-users`.
 
 ## Your workstreams, in order
 
@@ -291,12 +323,13 @@ checkbox), interview input placeholder "Type your answer...", logger buttons "Co
   app screens are dark, Fitbod/Strava-like; reuse the tokens in `app/globals.css`. The AI coach
   must never give medical advice (guardrails are in the prompts; keep them).
 
-## Deliverables (in order, each committed, pushed, and deployed once Ali has set the Vercel env)
+## Deliverables (in order, each committed, pushed, and deployed)
 
-1. Nutrition, chat, analytics, plan adaptation working (or hidden) for the tester account,
+1. Vercel env set and www.shaipt.com deployed from this branch; the Vultr DNS confirmed and
+   4Dcoach `main` deployed with `VITE_4DCOACH_SERVER`.
+2. Nutrition, chat, analytics, plan adaptation working (or hidden) for the tester account,
    verified at both widths; the 4D link per exercise; the hidden features listed.
-2. The trainer loop with two accounts, `e2e/trainer-loop.spec.ts`.
-3. `e2e/tester-journey.spec.ts` covering the whole loop, empty/error states, TESTERS.md and
-   docs updated, the deploy checked on www.shaipt.com, the Vultr DNS confirmed, 4Dcoach `main`
-   merged and deployed with `VITE_4DCOACH_SERVER`, two friend accounts created.
-4. A fresh `HANDOFF-platform.md`.
+3. The trainer loop with two accounts, `e2e/trainer-loop.spec.ts`.
+4. `e2e/tester-journey.spec.ts` covering the whole loop, empty/error states, TESTERS.md and
+   docs updated, two friend accounts created.
+5. A fresh `HANDOFF-platform.md`.
