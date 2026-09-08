@@ -38,12 +38,12 @@ export default function AICoachChat({ user, isOpen, onToggle }: AICoachChatProps
 
     const loadChatHistory = useCallback(async () => {
         try {
-            const data = await apiFetch<{ chats?: AIChat[] }>(`/api/ai-coach/chat/history?userId=${user.id}`);
+            const data = await apiFetch<{ chats?: AIChat[] }>('/api/ai-coach/chat/history');
             setChatHistory(data.chats || []);
         } catch {
             // Silently fail - history is non-critical
         }
-    }, [user.id]);
+    }, []);
 
     // Load chat history on mount
     useEffect(() => {

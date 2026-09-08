@@ -1,26 +1,26 @@
-import { db } from '@/lib/supabaseDb';
-import { NextRequest, NextResponse } from 'next/server';
+/**
+ * GET /api/ai-coach/chat/history → { chats } — every conversation of the caller, newest first.
+ *
+ * The caller comes from the token. The route used to take `?userId=`, which both trusted the
+ * client and read through the anon client with no session, so it always answered `{"chats":[]}`.
+ */
+import { NextResponse } from 'next/server';
+import { getUser, isErrorResponse } from '@/lib/auth';
 
-export async function GET(req: NextRequest) {
-    try {
-        const userId = req.nextUrl.searchParams.get('userId');
+export async function GET(req: Request) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+    const { user, supabase } = auth;
 
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'userId is required' },
-                { status: 400 }
-            );
-        }
+    const { data, error } = await supabase
+        .from('ai_chats')
+        .select('id, title, messages, created_at, updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
 
-        const chats = await db.aiChats.getByUser(userId);
-
-        return NextResponse.json({ chats });
-    } catch (error: unknown) {
-        console.error('Failed to fetch chat history:', error);
-        const message = error instanceof Error ? error.message : 'Failed to fetch chat history';
-        return NextResponse.json(
-            { error: message },
-            { status: 500 }
-        );
+    if (error) {
+        console.error('[ai-coach/chat/history]', user.id, error.message);
+        return NextResponse.json({ error: 'Failed to fetch chat history' }, { status: 500 });
     }
+    return NextResponse.json({ chats: data ?? [] });
 }

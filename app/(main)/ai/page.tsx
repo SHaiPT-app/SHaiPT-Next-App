@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/supabaseDb';
-import { apiFetchRaw, ApiError } from '@/lib/apiClient';
+import { apiFetch, apiFetchRaw, ApiError } from '@/lib/apiClient';
 
 const FITNESS_SUGGESTIONS = [
     {
@@ -43,6 +43,25 @@ export default function AIPage() {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    // Reopen the last conversation, so a reload does not throw the thread away.
+    useEffect(() => {
+        let cancelled = false;
+        apiFetch<{ chatId: string | null; messages: Message[] }>('/api/ai-coach/chat')
+            .then((data) => {
+                if (cancelled || !data?.chatId || !data.messages?.length) return;
+                setChatId(data.chatId);
+                setMessages(data.messages.map((m) => ({ role: m.role, content: m.content })));
+            })
+            .catch(() => undefined);
+        return () => { cancelled = true; };
+    }, []);
+
+    const startNewChat = () => {
+        setChatId(null);
+        setMessages([]);
+        setInput('');
+    };
 
     const handleSendMessage = async (messageText?: string) => {
         const textToSend = messageText || input;
@@ -148,9 +167,27 @@ export default function AIPage() {
                             style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                         />
                         <span style={{ color: isPrivate ? 'var(--primary)' : '#888' }}>
-                            Private Mode {isPrivate && '(locked)'}
+                            Private Mode {isPrivate && '(not saved)'}
                         </span>
                     </label>
+
+                    {messages.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={startNewChat}
+                            style={{
+                                background: 'transparent',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                borderRadius: '999px',
+                                color: '#888',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                padding: '0.25rem 0.7rem',
+                            }}
+                        >
+                            New chat
+                        </button>
+                    )}
                 </div>
                 <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>
                     Your personal fitness AI assistant

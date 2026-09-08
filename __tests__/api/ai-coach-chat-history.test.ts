@@ -1,92 +1,65 @@
-/**
- * @jest-environment node
- */
+/** @jest-environment node */
+import { NextResponse } from 'next/server';
+import { getUser } from '@/lib/auth';
 import { GET } from '@/app/api/ai-coach/chat/history/route';
-import { NextRequest } from 'next/server';
 
-// Mock dependencies
-jest.mock('@supabase/supabase-js', () => ({
-    createClient: jest.fn(),
+jest.mock('@/lib/auth', () => ({
+    ...jest.requireActual('@/lib/auth'),
+    getUser: jest.fn(),
+    getAdmin: jest.fn(),
 }));
 
-jest.mock('@/lib/supabase', () => ({
-    supabase: {
-        from: jest.fn(() => ({
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            order: jest.fn().mockResolvedValue({ data: [], error: null }),
-        })),
-    },
-}));
+type Op = { table: string; method: string; args: unknown[] };
+function fakeSupabase(rows: unknown, error: { message: string } | null = null) {
+    const ops: Op[] = [];
+    const from = jest.fn((table: string) => {
+        const q: Record<string, jest.Mock> = {};
+        for (const m of ['select', 'eq', 'order']) {
+            q[m] = jest.fn((...args: unknown[]) => { ops.push({ table, method: m, args }); return q; });
+        }
+        q.then = jest.fn((res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
+            Promise.resolve({ data: error ? null : rows, error }).then(res, rej));
+        return q;
+    });
+    return { from, ops };
+}
 
-jest.mock('@/lib/supabaseDb', () => ({
-    db: {
-        aiChats: {
-            getByUser: jest.fn(),
-        },
-    },
-}));
+const mockGetUser = getUser as jest.Mock;
+const req = () => new Request('http://localhost/api/ai-coach/chat/history', { headers: { Authorization: 'Bearer tok' } });
 
-describe('/api/ai-coach/chat/history', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
+describe('GET /api/ai-coach/chat/history', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    it('returns 401 without a user', async () => {
+        mockGetUser.mockResolvedValue(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+        expect((await GET(req())).status).toBe(401);
     });
 
-    it('returns 400 when no userId provided', async () => {
-        const req = new NextRequest('http://localhost:3000/api/ai-coach/chat/history');
-        const response = await GET(req);
-        expect(response.status).toBe(400);
+    it('returns the caller’s own chats and never a user id from the query', async () => {
+        const chats = [{ id: 'chat-1', title: 'Test Chat', messages: [], created_at: 'x', updated_at: 'y' }];
+        const supabase = fakeSupabase(chats);
+        mockGetUser.mockResolvedValue({ user: { id: 'u1' }, token: 'tok', supabase });
 
-        const data = await response.json();
-        expect(data.error).toBe('userId is required');
+        const res = await GET(new Request('http://localhost/api/ai-coach/chat/history?userId=someone-else', {
+            headers: { Authorization: 'Bearer tok' },
+        }));
+        expect(res.status).toBe(200);
+        expect((await res.json()).chats).toEqual(chats);
+        expect(supabase.ops).toContainEqual(expect.objectContaining({ table: 'ai_chats', method: 'eq', args: ['user_id', 'u1'] }));
+        expect(supabase.ops.some((o) => JSON.stringify(o.args).includes('someone-else'))).toBe(false);
     });
 
-    it('returns chats for valid userId', async () => {
-        const { db } = require('@/lib/supabaseDb');
-        const mockChats = [
-            {
-                id: 'chat-1',
-                user_id: 'test-user',
-                title: 'Test Chat',
-                messages: [
-                    { role: 'user', content: 'Hello', timestamp: '2025-01-20T00:00:00Z' },
-                ],
-                created_at: '2025-01-20T00:00:00Z',
-                updated_at: '2025-01-20T00:00:00Z',
-            },
-        ];
-        db.aiChats.getByUser.mockResolvedValue(mockChats);
-
-        const req = new NextRequest('http://localhost:3000/api/ai-coach/chat/history?userId=test-user');
-        const response = await GET(req);
-        expect(response.status).toBe(200);
-
-        const data = await response.json();
-        expect(data.chats).toHaveLength(1);
-        expect(data.chats[0].title).toBe('Test Chat');
+    it('returns an empty list when there are no chats', async () => {
+        mockGetUser.mockResolvedValue({ user: { id: 'u1' }, token: 'tok', supabase: fakeSupabase([]) });
+        expect((await (await GET(req())).json()).chats).toEqual([]);
     });
 
-    it('returns empty array when no chats exist', async () => {
-        const { db } = require('@/lib/supabaseDb');
-        db.aiChats.getByUser.mockResolvedValue([]);
-
-        const req = new NextRequest('http://localhost:3000/api/ai-coach/chat/history?userId=new-user');
-        const response = await GET(req);
-        expect(response.status).toBe(200);
-
-        const data = await response.json();
-        expect(data.chats).toHaveLength(0);
-    });
-
-    it('returns 500 on database error', async () => {
-        const { db } = require('@/lib/supabaseDb');
-        db.aiChats.getByUser.mockRejectedValue(new Error('Database error'));
-
-        const req = new NextRequest('http://localhost:3000/api/ai-coach/chat/history?userId=test-user');
-        const response = await GET(req);
-        expect(response.status).toBe(500);
-
-        const data = await response.json();
-        expect(data.error).toBe('Database error');
+    it('returns 500 on a database error', async () => {
+        mockGetUser.mockResolvedValue({ user: { id: 'u1' }, token: 'tok', supabase: fakeSupabase(null, { message: 'db down' }) });
+        const errSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        const res = await GET(req());
+        expect(res.status).toBe(500);
+        expect((await res.json()).error).toBe('Failed to fetch chat history');
+        errSpy.mockRestore();
     });
 });

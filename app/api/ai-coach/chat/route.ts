@@ -112,13 +112,30 @@ async function saveChatHistory(supabase: SupabaseClient, userId: string, chatId:
     }
 }
 
+/** GET /api/ai-coach/chat → { chatId, messages } of the most recent conversation, or nulls. */
+export async function GET(req: Request) {
+    const auth = await getUser(req);
+    if (isErrorResponse(auth)) return auth;
+    const { user, supabase } = auth;
+
+    const { data, error } = await supabase.from('ai_chats')
+        .select('id, messages').eq('user_id', user.id)
+        .order('updated_at', { ascending: false }).limit(1).maybeSingle();
+    if (error) {
+        console.error('[ai-coach/chat] load', user.id, error.message);
+        return NextResponse.json({ chatId: null, messages: [] });
+    }
+    const messages = (Array.isArray(data?.messages) ? data.messages : []) as AIChatMessage[];
+    return NextResponse.json({ chatId: data?.id ?? null, messages });
+}
+
 export async function POST(req: Request) {
     const auth = await getUser(req);
     if (isErrorResponse(auth)) return auth;
     const { user, supabase } = auth;
 
     try {
-        const { messages, chatId } = await req.json() as { messages?: ChatMessage[]; chatId?: string };
+        const { messages, chatId, isPrivate } = await req.json() as { messages?: ChatMessage[]; chatId?: string; isPrivate?: boolean };
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
         }
@@ -133,19 +150,25 @@ export async function POST(req: Request) {
         });
 
         // persist when the model is done; the client gets the chat id in the header, so create the
-        // row up front when this is a new conversation
+        // row up front when this is a new conversation. Private mode writes nothing at all: the
+        // toggle in the UI has to mean what it says.
         let savedChatId = chatId;
-        if (!savedChatId) {
-            savedChatId = await saveChatHistory(supabase, user.id, undefined,
-                history.map((m) => ({ ...m, timestamp: new Date().toISOString() })), history[0]?.content);
+        if (!isPrivate) {
+            if (!savedChatId) {
+                savedChatId = await saveChatHistory(supabase, user.id, undefined,
+                    history.map((m) => ({ ...m, timestamp: new Date().toISOString() })), history[0]?.content);
+            }
+            done.then(({ text }) => {
+                const all: AIChatMessage[] = [
+                    ...history.map((m) => ({ role: m.role, content: m.content, timestamp: new Date().toISOString() })),
+                    { role: 'assistant', content: text, timestamp: new Date().toISOString() },
+                ];
+                return saveChatHistory(supabase, user.id, savedChatId, all, history[0]?.content);
+            }).catch(() => undefined);
+        } else {
+            savedChatId = undefined;
+            done.catch(() => undefined);
         }
-        done.then(({ text }) => {
-            const all: AIChatMessage[] = [
-                ...history.map((m) => ({ role: m.role, content: m.content, timestamp: new Date().toISOString() })),
-                { role: 'assistant', content: text, timestamp: new Date().toISOString() },
-            ];
-            return saveChatHistory(supabase, user.id, savedChatId, all, history[0]?.content);
-        }).catch(() => undefined);
 
         return new Response(stream, {
             headers: {

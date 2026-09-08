@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
 import { streamModel, AiLimitError } from '@/lib/ai/gateway';
-import { POST } from '@/app/api/ai-coach/chat/route';
+import { GET, POST } from '@/app/api/ai-coach/chat/route';
 
 jest.mock('@/lib/auth', () => ({
     ...jest.requireActual('@/lib/auth'),
@@ -148,5 +148,40 @@ describe('POST /api/ai-coach/chat', () => {
         expect(res.headers.get('X-Chat-Id')).toBeNull();
         expect(mockStreamModel.mock.calls[0][0].system).not.toContain('Current user context');
         errSpy.mockRestore();
+    });
+
+    it('writes nothing and returns no chat id in private mode', async () => {
+        const supabase = signIn();
+        const res = await POST(post({ messages: [{ role: 'user', content: 'just between us' }], isPrivate: true }));
+        expect(res.status).toBe(200);
+        expect(res.headers.get('X-Chat-Id')).toBeNull();
+        await res.text();
+        await flush();
+        expect(supabase.ops.some((o) => o.table === 'ai_chats')).toBe(false);
+    });
+});
+
+describe('GET /api/ai-coach/chat', () => {
+    const get = () => new Request('http://localhost/api/ai-coach/chat', { headers: { Authorization: 'Bearer tok' } });
+
+    beforeEach(() => jest.clearAllMocks());
+
+    it('returns 401 without a user', async () => {
+        signOut();
+        expect((await GET(get())).status).toBe(401);
+    });
+
+    it('returns the most recent conversation for the caller', async () => {
+        const messages = [{ role: 'user', content: 'hi' }, { role: 'assistant', content: 'hello' }];
+        const supabase = signIn({ ai_chats: { id: 'chat-1', messages } });
+        const res = await GET(get());
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({ chatId: 'chat-1', messages });
+        expect(supabase.ops).toContainEqual(expect.objectContaining({ table: 'ai_chats', method: 'eq', args: ['user_id', 'u1'] }));
+    });
+
+    it('returns nulls when the caller has never chatted', async () => {
+        signIn({ ai_chats: null });
+        expect(await (await GET(get())).json()).toEqual({ chatId: null, messages: [] });
     });
 });
