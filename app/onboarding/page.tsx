@@ -330,7 +330,7 @@ export default function OnboardingPage() {
     };
 
     const handleContinue = () => {
-        router.push('/dashboard');
+        router.push('/home');
     };
 
     const handleSubmit = (e: React.FormEvent) => {

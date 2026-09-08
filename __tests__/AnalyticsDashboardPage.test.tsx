@@ -46,7 +46,7 @@ jest.mock('date-fns', () => {
     }
 })
 
-import AnalyticsDashboardPage from '@/app/dashboard/analytics/page'
+import AnalyticsDashboardPage from '@/app/(main)/progress/page'
 import type { PersonalRecord, ExerciseLog } from '@/lib/types'
 
 // ============================================
@@ -151,6 +151,7 @@ function setupSupabaseMock({
         chain.order = jest.fn().mockReturnValue(chain)
         chain.limit = jest.fn().mockReturnValue(chain)
         chain.single = jest.fn().mockReturnValue(chain)
+        chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null })
 
         if (table === 'workout_logs') {
             chain.limit = jest.fn().mockResolvedValue({ data: logs, error: null })

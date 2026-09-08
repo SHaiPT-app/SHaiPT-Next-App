@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dumbbell, ClipboardList, Bot, UtensilsCrossed, Trash2, Pencil, ChevronRight, X, Video } from 'lucide-react';
+import { Dumbbell, ClipboardList, Bot, UtensilsCrossed, Trash2, Pencil, ChevronRight, X, Video, TrendingUp, Ruler } from 'lucide-react';
 import { fourDcoachUrl } from '@/lib/fourDcoach';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import EmptyState from '@/components/EmptyState';
@@ -325,6 +325,31 @@ export default function HomePage() {
                     </div>
                     <ChevronRight size={20} className="shrink-0 text-ink-low" />
                 </button>
+            </div>
+
+            {/* The rest of the app: these pages have no pill in the header, so this is the way in. */}
+            <div
+                data-testid="secondary-links"
+                className="mb-10 grid grid-cols-3 gap-3"
+            >
+                {[
+                    { label: 'Nutrition', hint: 'Meals and macros', href: '/nutrition', icon: UtensilsCrossed },
+                    { label: 'Progress', hint: 'Charts and records', href: '/progress', icon: TrendingUp },
+                    { label: 'Body', hint: 'Weight and measurements', href: '/body', icon: Ruler },
+                ].map(({ label, hint, href, icon: Icon }) => (
+                    <button
+                        key={href}
+                        data-testid={`secondary-link-${label.toLowerCase()}`}
+                        onClick={() => router.push(href)}
+                        className="glass-card glass-card-hover flex cursor-pointer flex-col gap-2 px-4 py-4 text-left"
+                    >
+                        <Icon size={18} className="text-brand" />
+                        <div>
+                            <div className="text-sm font-semibold text-ink-hi">{label}</div>
+                            <div className="text-xs text-ink-low">{hint}</div>
+                        </div>
+                    </button>
+                ))}
             </div>
 
             {/* My Library Section */}
