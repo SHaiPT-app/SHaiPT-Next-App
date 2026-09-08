@@ -238,6 +238,30 @@ describe('extractGroceryItems', () => {
         expect(items).toHaveLength(0)
     })
 
+    it('lists a food once when the shopping list and the meals both name it', () => {
+        const plan: NutritionPlan = {
+            ...mockPlan,
+            daily_schedule: {
+                day_1: {
+                    breakfast: { name: 'Bowl', ingredients: ['150 g Broccoli (steamed)'], nutrition: { calories: 50, protein_g: 4, carbs_g: 10, fat_g: 0 } },
+                    lunch: { name: 'Plate', ingredients: ['180 g Chicken Breast (cooked)'], nutrition: { calories: 300, protein_g: 56, carbs_g: 0, fat_g: 6 } },
+                    dinner: { name: 'Plate', ingredients: [], nutrition: { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 } },
+                },
+            },
+            shopping_list: {
+                vegetables: ['Broccoli (steamed) (1890 g for the week)'],
+                protein: ['Chicken Breast (cooked) (1260 g for the week)'],
+            },
+        }
+
+        const items = extractGroceryItems(plan)
+        expect(items.map((i) => i.name).sort()).toEqual(['Broccoli', 'Chicken Breast'])
+        // The weekly total from the shopping list wins over the single serving in the meal.
+        expect(items.find((i) => i.name === 'Broccoli')?.quantity).toBe('1890 g for the week')
+        // One category vocabulary, so "protein" and "proteins" cannot both appear.
+        expect(items.find((i) => i.name === 'Chicken Breast')?.category).toBe('proteins')
+    })
+
     it('preserves original quantity from ingredient string', () => {
         const items = extractGroceryItems(mockPlan)
 

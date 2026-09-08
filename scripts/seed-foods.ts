@@ -103,9 +103,12 @@ async function main() {
 
     const rows = foods.map((f) => {
         const n = nutrients.get(f.fdc_id) ?? new Map<string, number>();
-        const protein = n.get(NUTRIENT.protein) ?? 0;
-        const fat = n.get(NUTRIENT.fat) ?? 0;
-        const carbs = n.get(NUTRIENT.carbs) ?? 0;
+        // USDA derives carbohydrate "by difference", which lands slightly below zero for a few
+        // meats. A tester reading "C: -0.48g" sees a bug, so clamp every macro at zero.
+        const atLeastZero = (v: number | undefined) => Math.max(0, v ?? 0);
+        const protein = atLeastZero(n.get(NUTRIENT.protein));
+        const fat = atLeastZero(n.get(NUTRIENT.fat));
+        const carbs = atLeastZero(n.get(NUTRIENT.carbs));
         const kcal = n.get(NUTRIENT.kcal) ?? n.get(NUTRIENT.kcalAtwaterSpecific) ?? n.get(NUTRIENT.kcalAtwaterGeneral)
             ?? Math.round(protein * 4 + carbs * 4 + fat * 9);
         return {
@@ -118,9 +121,9 @@ async function main() {
             protein_g: Math.round(protein * 100) / 100,
             carbs_g: Math.round(carbs * 100) / 100,
             fat_g: Math.round(fat * 100) / 100,
-            fiber_g: n.get(NUTRIENT.fiber) ?? 0,
-            sugar_g: n.get(NUTRIENT.sugarsTotal) ?? n.get(NUTRIENT.sugars) ?? 0,
-            sodium_mg: n.get(NUTRIENT.sodium) ?? 0,
+            fiber_g: atLeastZero(n.get(NUTRIENT.fiber)),
+            sugar_g: atLeastZero(n.get(NUTRIENT.sugarsTotal) ?? n.get(NUTRIENT.sugars)),
+            sodium_mg: atLeastZero(n.get(NUTRIENT.sodium)),
             is_verified: true,
             source: 'usda-foundation',
             source_id: `usda:${f.fdc_id}`,

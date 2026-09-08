@@ -63,53 +63,61 @@ export function normalizeIngredient(ingredient: string): string {
         .trim();
 }
 
+/**
+ * The amount to shop for, without the ingredient name: the trailing parenthetical when it
+ * carries a number ("Broccoli (steamed) (1890 g for the week)" → "1890 g for the week"),
+ * otherwise the leading measure of a recipe line ("150 g Broccoli (steamed)" → "150 g").
+ */
+export function ingredientQuantity(raw: string): string | undefined {
+    const trailing = raw.trim().match(/\(([^()]*\d[^()]*)\)\s*$/);
+    if (trailing) return trailing[1].trim();
+    const leading = raw.trim().match(/^\d+(?:[\s/.]\d+)*\s*(?:g|kg|mg|ml|l|oz|lb|cup|cups|tbsp|tsp|tablespoon|teaspoon|bunch|head|clove|cloves|piece|pieces|slice|slices|handful|pinch)s?\b/i);
+    return leading ? leading[0].trim() : undefined;
+}
+
 export function extractGroceryItems(plan: NutritionPlan): GroceryListItem[] {
     const ingredientMap = new Map<string, GroceryListItem>();
 
-    const schedule = plan.daily_schedule;
-    if (!schedule) return [];
+    /** One entry per ingredient, keyed on the normalized name so the same food never lands twice. */
+    const add = (raw: string) => {
+        const normalized = normalizeIngredient(raw);
+        const key = normalized.toLowerCase();
+        if (!key || key.length < 2) return;
 
-    for (const dayMeals of Object.values(schedule)) {
-        const meals = [dayMeals.breakfast, dayMeals.lunch, dayMeals.dinner];
-        if (dayMeals.snacks) {
-            meals.push(...dayMeals.snacks);
+        const quantity = ingredientQuantity(raw);
+        const existing = ingredientMap.get(key);
+        if (existing) {
+            if (quantity && !existing.quantity) existing.quantity = quantity;
+            return;
         }
+        ingredientMap.set(key, {
+            name: normalized.charAt(0).toUpperCase() + normalized.slice(1),
+            category: categorizeIngredient(normalized),
+            quantity,
+            checked: false,
+        });
+    };
 
-        for (const meal of meals) {
-            if (!meal?.ingredients) continue;
-
-            for (const rawIngredient of meal.ingredients) {
-                const normalized = normalizeIngredient(rawIngredient);
-                const key = normalized.toLowerCase();
-
-                if (!key || key.length < 2) continue;
-
-                if (!ingredientMap.has(key)) {
-                    ingredientMap.set(key, {
-                        name: normalized.charAt(0).toUpperCase() + normalized.slice(1),
-                        category: categorizeIngredient(normalized),
-                        quantity: rawIngredient,
-                        checked: false,
-                    });
-                }
-            }
+    // The plan's own shopping list goes first: its amounts are the totals for the whole week,
+    // where a meal's ingredient line only carries one serving. Categories come from
+    // categorizeIngredient either way, so "protein" and "proteins" cannot both appear.
+    if (plan.shopping_list) {
+        for (const items of Object.values(plan.shopping_list)) {
+            for (const item of items) add(item);
         }
     }
 
-    // Also merge items from the plan's existing shopping_list if present
-    if (plan.shopping_list) {
-        for (const [category, items] of Object.entries(plan.shopping_list)) {
-            for (const item of items) {
-                const key = item.toLowerCase().trim();
-                if (!key || key.length < 2) continue;
+    const schedule = plan.daily_schedule;
+    if (schedule) {
+        for (const dayMeals of Object.values(schedule)) {
+            const meals = [dayMeals.breakfast, dayMeals.lunch, dayMeals.dinner];
+            if (dayMeals.snacks) {
+                meals.push(...dayMeals.snacks);
+            }
 
-                if (!ingredientMap.has(key)) {
-                    ingredientMap.set(key, {
-                        name: item.charAt(0).toUpperCase() + item.slice(1),
-                        category: category,
-                        checked: false,
-                    });
-                }
+            for (const meal of meals) {
+                if (!meal?.ingredients) continue;
+                for (const rawIngredient of meal.ingredients) add(rawIngredient);
             }
         }
     }

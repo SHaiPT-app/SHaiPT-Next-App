@@ -20,6 +20,9 @@ export async function POST(req: Request) {
         const items = extractGroceryItems(plan);
         if (items.length === 0) return NextResponse.json({ error: 'No ingredients found in the meal plan' }, { status: 400 });
 
+        // Regenerating replaces the plan's list rather than stacking another copy next to it.
+        await supabase.from('grocery_lists').delete().eq('user_id', user.id).eq('nutrition_plan_id', plan.id);
+
         const { data: list, error } = await supabase.from('grocery_lists')
             .insert({ user_id: user.id, nutrition_plan_id: plan.id, name: `Grocery List - ${plan.name || 'Meal Plan'}`, items, is_completed: false })
             .select().single();

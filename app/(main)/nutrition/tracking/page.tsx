@@ -643,7 +643,9 @@ export default function MacroTrackingPage() {
                     food_id: food.id.startsWith('custom_') ? undefined : food.id,
                     food_name: food.name,
                     meal_type: activeMealType,
-                    serving_size: servings,
+                    // The log records the amount eaten in the food's own unit (2 × 100 g → "200 g"),
+                    // not the number of servings, which would read as "2 g".
+                    serving_size: Math.round(servings * (Number(food.serving_size) || 1) * 10) / 10,
                     serving_unit: food.serving_unit,
                     calories: Math.round(food.calories * servings),
                     protein_g: Math.round(food.protein_g * servings * 10) / 10,
