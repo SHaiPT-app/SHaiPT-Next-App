@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Orbitron, Caveat, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import { SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,19 +52,26 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "SHaiPT" }],
   creator: "SHaiPT",
-  metadataBase: new URL("https://shaipt.com"),
+  // The apex 307s to www; absolute URLs must point at the host that actually serves 200.
+  metadataBase: new URL(SITE_URL),
+  // "./" resolves against the *current* route, so every page emits a self-referencing canonical
+  // rather than every page claiming to be a duplicate of the landing page.
+  alternates: {
+    canonical: "./",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    siteName: "SHaiPT",
+    siteName: SITE_NAME,
     title: "SHaiPT - AI Personal Training",
     description: "Your AI-powered fitness companion with personalized workout plans, nutrition guidance, and real-time form checking.",
+    url: "./",
     images: [
       {
-        url: "/logo_transparent.png",
-        width: 512,
-        height: 512,
-        alt: "SHaiPT - AI Personal Training",
+        url: "/og.png",
+        width: OG_IMAGE.width,
+        height: OG_IMAGE.height,
+        alt: OG_IMAGE.alt,
       },
     ],
   },
@@ -71,7 +79,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SHaiPT - AI Personal Training",
     description: "Train smarter with AI-powered workout plans, nutrition guidance, and real-time form checking.",
-    images: ["/logo_transparent.png"],
+    images: ["/og.png"],
   },
   robots: {
     index: true,
