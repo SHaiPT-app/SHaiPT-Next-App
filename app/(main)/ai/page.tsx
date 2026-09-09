@@ -44,16 +44,27 @@ export default function AIPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Reopen the last conversation, so a reload does not throw the thread away.
+    // Reopen the last conversation, so a reload does not throw the thread away. On a cold
+    // load the Supabase session can still be hydrating, so the first call goes out without a
+    // token and comes back 401; retry a couple of times before giving up.
     useEffect(() => {
         let cancelled = false;
-        apiFetch<{ chatId: string | null; messages: Message[] }>('/api/ai-coach/chat')
-            .then((data) => {
+
+        const load = async (attempt = 0): Promise<void> => {
+            try {
+                const data = await apiFetch<{ chatId: string | null; messages: Message[] }>('/api/ai-coach/chat');
                 if (cancelled || !data?.chatId || !data.messages?.length) return;
                 setChatId(data.chatId);
                 setMessages(data.messages.map((m) => ({ role: m.role, content: m.content })));
-            })
-            .catch(() => undefined);
+            } catch (err) {
+                const unauthorized = err instanceof ApiError && err.status === 401;
+                if (cancelled || !unauthorized || attempt >= 3) return;
+                await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+                if (!cancelled) await load(attempt + 1);
+            }
+        };
+
+        load();
         return () => { cancelled = true; };
     }, []);
 
@@ -286,6 +297,7 @@ export default function AIPage() {
                         {messages.map((message, index) => (
                             <div
                                 key={index}
+                                data-testid={`chat-message-${message.role}`}
                                 style={{
                                     display: 'flex',
                                     gap: '0.75rem',

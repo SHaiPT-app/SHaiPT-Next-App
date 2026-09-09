@@ -5,31 +5,33 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
  * The trainer / trainee loop against a real project, in two browser contexts:
  * request → accept → roster → assign an AI plan → message both ways.
  *
- * Needs a trainee (TEST_EMAIL / TEST_PASSWORD, from `pnpm db:test-users -- email`) and a
- * trainer (TRAINER_EMAIL / TRAINER_PASSWORD, from the same script with --trainer); skipped
- * otherwise. With AI_MOCK=1 on the server the plan step costs nothing.
+ * Needs a trainer (TRAINER_EMAIL / TRAINER_PASSWORD, from
+ * `pnpm db:test-users -- --trainer email`) and SUPABASE_SERVICE_ROLE_KEY; skipped otherwise.
+ * With AI_MOCK=1 on the server the plan step costs nothing.
  *
- * SUPABASE_SERVICE_ROLE_KEY makes the run repeatable: the coaching relationship between the
- * two accounts is removed first, because a second request to the same coach is a 409.
+ * The trainee is created for the run and deleted after it, which keeps the spec repeatable —
+ * a second coaching request to the same coach is a 409 — and stops it from fighting over an
+ * account another spec is signed in to.
  */
-const TRAINEE_EMAIL = process.env.TEST_EMAIL;
-const TRAINEE_PASSWORD = process.env.TEST_PASSWORD;
 const TRAINER_EMAIL = process.env.TRAINER_EMAIL;
 const TRAINER_PASSWORD = process.env.TRAINER_PASSWORD;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 test.skip(
-    !TRAINEE_EMAIL || !TRAINEE_PASSWORD || !TRAINER_EMAIL || !TRAINER_PASSWORD,
-    'TEST_EMAIL / TEST_PASSWORD / TRAINER_EMAIL / TRAINER_PASSWORD not set',
+    !TRAINER_EMAIL || !TRAINER_PASSWORD || !SERVICE_KEY || !SUPABASE_URL,
+    'TRAINER_EMAIL / TRAINER_PASSWORD / SUPABASE_SERVICE_ROLE_KEY / NEXT_PUBLIC_SUPABASE_URL not set',
 );
+
+/** A trainee of this spec's own, so a parallel run cannot drive the same account. */
+const TRAINEE_EMAIL = `coached-${Date.now()}@shaipt.com`;
+const TRAINEE_PASSWORD = 'Coached-Passw0rd-4k';
 
 /** The whole loop is one test: each step is the setup for the next. */
 test.describe.configure({ mode: 'serial', timeout: 5 * 60_000 });
 
-function admin(): SupabaseClient | null {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) return null;
-    return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+function admin(): SupabaseClient {
+    return createClient(SUPABASE_URL!, SERVICE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
 async function profileByEmail(sb: SupabaseClient, email: string) {
@@ -64,21 +66,39 @@ async function signIn(browser: Browser, email: string, password: string): Promis
 /** The page's own tabs have text; the header's icon buttons only have an aria-label. */
 const tab = (page: Page, name: string) => page.getByRole('button').filter({ hasText: new RegExp(`^${name}$`) });
 
+let traineeId: string | null = null;
+
+test.beforeAll(async () => {
+    const sb = admin();
+    await sb.from('invites').upsert({ email: TRAINEE_EMAIL, role: 'trainee', note: 'e2e trainer loop' }, { onConflict: 'email' });
+    const { data, error } = await sb.auth.admin.createUser({
+        email: TRAINEE_EMAIL,
+        password: TRAINEE_PASSWORD,
+        email_confirm: true,
+        user_metadata: { full_name: 'Loop Trainee', role: 'trainee' },
+    });
+    if (error || !data.user) throw new Error(`could not create the trainee: ${error?.message}`);
+    traineeId = data.user.id;
+    await sb.from('profiles').update({ role: 'trainee', tester: true }).eq('id', traineeId);
+    await sb.from('user_preferences').upsert({ user_id: traineeId }, { onConflict: 'user_id' });
+});
+
+test.afterAll(async () => {
+    const sb = admin();
+    if (traineeId) await sb.auth.admin.deleteUser(traineeId);
+    await sb.from('invites').delete().eq('email', TRAINEE_EMAIL);
+});
+
 test('a trainee is coached: request, accept, plan, messages', async ({ browser }) => {
     const sb = admin();
-    const trainee = sb ? await profileByEmail(sb, TRAINEE_EMAIL!) : null;
-    const trainer = sb ? await profileByEmail(sb, TRAINER_EMAIL!) : null;
+    const trainee = await profileByEmail(sb, TRAINEE_EMAIL);
+    const trainer = await profileByEmail(sb, TRAINER_EMAIL!);
 
-    if (sb && trainee && trainer) {
-        // a second request to the same coach is a 409, so start from no relationship
-        await sb.from('coaching_relationships').delete().eq('coach_id', trainer.id).eq('athlete_id', trainee.id);
-    }
-
-    const traineeName = displayName(trainee, TRAINEE_EMAIL!);
+    const traineeName = displayName(trainee, TRAINEE_EMAIL);
     const trainerName = displayName(trainer, TRAINER_EMAIL!);
 
     // ── the trainee asks the trainer to coach them ─────────────────────────────
-    const asTrainee = await signIn(browser, TRAINEE_EMAIL!, TRAINEE_PASSWORD!);
+    const asTrainee = await signIn(browser, TRAINEE_EMAIL, TRAINEE_PASSWORD);
     await asTrainee.goto('/coach');
     await asTrainee.getByRole('button', { name: 'Human Coaches' }).click();
     await expect(asTrainee.getByText(trainerName).first()).toBeVisible({ timeout: 30_000 });
@@ -91,7 +111,7 @@ test('a trainee is coached: request, accept, plan, messages', async ({ browser }
     // a trainer lands on their own dashboard, not the trainee home
     await expect(asTrainer).toHaveURL(/\/trainer/);
     await expect(asTrainer.getByText(/Pending Requests \(1\)/)).toBeVisible({ timeout: 30_000 });
-    await expect(asTrainer.getByText(TRAINEE_EMAIL!)).toBeVisible();
+    await expect(asTrainer.getByText(TRAINEE_EMAIL)).toBeVisible();
     await asTrainer.getByRole('button', { name: /^Accept/ }).first().click();
     await expect(asTrainer.getByText('Client Roster')).toBeVisible({ timeout: 30_000 });
     await expect(asTrainer.getByText(traineeName).first()).toBeVisible({ timeout: 30_000 });
@@ -117,14 +137,12 @@ test('a trainee is coached: request, accept, plan, messages', async ({ browser }
     await tab(asTrainer, 'Plans').click();
     await expect(asTrainer.getByText(/[1-9]\d* plans? assigned/)).toBeVisible({ timeout: 30_000 });
 
-    if (sb && trainee) {
-        const { data: assignments } = await sb
-            .from('training_plan_assignments')
-            .select('is_self_assigned, is_active')
-            .eq('user_id', trainee.id)
-            .eq('is_self_assigned', false);
-        expect(assignments?.some((a) => a.is_active)).toBe(true);
-    }
+    const { data: assignments } = await sb
+        .from('training_plan_assignments')
+        .select('is_self_assigned, is_active')
+        .eq('user_id', trainee!.id)
+        .eq('is_self_assigned', false);
+    expect(assignments?.some((a) => a.is_active)).toBe(true);
 
     // ── they message each other ────────────────────────────────────────────────
     const fromCoach = `Nice session. Add 2.5 kg next time. (${Date.now()})`;

@@ -195,6 +195,8 @@ test.describe('a new tester walks the loop', () => {
         await page.getByPlaceholder('Ask me anything about fitness...').fill(question);
         await page.getByRole('button', { name: 'Send' }).click();
         await expect(page.getByText(question)).toBeVisible({ timeout: 60_000 });
+        // wait for the reply: reloading mid-stream aborts the POST before it saves anything
+        await expect(page.getByTestId('chat-message-assistant')).not.toBeEmpty({ timeout: 60_000 });
         await page.reload();
         await expect(page.getByText(question)).toBeVisible({ timeout: 60_000 });
 

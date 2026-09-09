@@ -86,10 +86,13 @@ PLAYWRIGHT_BASE_URL=https://www.shaipt.com npx playwright test e2e/access.spec.t
   and bogus tokens, the invite gate.
 - `e2e/tester-journey.spec.ts` — makes a throw-away tester, walks interview → plan → workout →
   nutrition → chat → progress → body, and deletes it. ~3 minutes.
-- `e2e/trainer-loop.spec.ts` — request, accept, roster, assign a plan, message both ways. ~20s.
+- `e2e/trainer-loop.spec.ts` — request, accept, roster, assign a plan, message both ways, with
+  a trainee it creates and deletes. ~35s.
 
-The last two read `TEST_EMAIL` / `TEST_PASSWORD` / `TRAINER_EMAIL` / `TRAINER_PASSWORD` and
-`SUPABASE_SERVICE_ROLE_KEY` from `.env.local`, and skip themselves without them.
+They read `TEST_EMAIL` / `TEST_PASSWORD` (the journey's sign-in checks), `TRAINER_EMAIL` /
+`TRAINER_PASSWORD` and `SUPABASE_SERVICE_ROLE_KEY` from `.env.local`, and skip themselves
+without them. Each makes its own throw-away account for the long walks, so nothing accumulates
+and two specs never drive the same login at once.
 
 ## Reading usage and cost
 

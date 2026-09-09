@@ -16,7 +16,7 @@ the outcome, keep answers short, put anything Ali must do themselves in a number
 
 This prompt is the state as of **2026-09-09**. The previous handoff is in git history
 (`git show cd47b5e:HANDOFF-platform.md`); the session after it did the rest of the trainee loop,
-the trainer loop and the tester-readiness pass, in eleven commits `66d3801..f0eb9b1`.
+the trainer loop and the tester-readiness pass, in thirteen commits `66d3801..HEAD`.
 
 ## The goal
 
@@ -31,7 +31,7 @@ calls, and watching a friend actually use it.
 
 | What | Where | Branch | Live |
 |---|---|---|---|
-| SHaiPT Next app | `~/SHaiPT/SHaiPT-Next-App`, GitHub `SHaiPT-app/SHaiPT-Next-App` | `v2-overhaul` (work here; `main` is stale). Last commit `f0eb9b1`. | www.shaipt.com via Vercel project `s-hai-pt-de3g` (team `alis-projects-e60465e8`). The project is Git-linked to the *old* repo `Alihomaei/SHaiPT`, so production comes from the local checkout: `vercel deploy --prod --yes --scope alis-projects-e60465e8`. **The last deploy was at `6aa4057`; `28c8c71..f0eb9b1` are not live yet.** |
+| SHaiPT Next app | `~/SHaiPT/SHaiPT-Next-App`, GitHub `SHaiPT-app/SHaiPT-Next-App` | `v2-overhaul` (work here; `main` is stale). Last commit on `v2-overhaul`. | www.shaipt.com via Vercel project `s-hai-pt-de3g` (team `alis-projects-e60465e8`). The project is Git-linked to the *old* repo `Alihomaei/SHaiPT`, so production comes from the local checkout: `vercel deploy --prod --yes --scope alis-projects-e60465e8`. **The last deploy was at `6aa4057`; everything after it is not live yet.** |
 | 4Dcoach app + Mac server | `~/SHaiPT/SHaiPT_simple/4Dcoach/app` and `/server`, GitHub `Alihomaei/shaipt-simple` | `4dcoach-spec` (`7481dfb`), merged into `main` (`1d96eb9`) | https://sh-ai-pt-simple.vercel.app, deployed from `main` on push. `VITE_4DCOACH_SERVER=https://coach-api.shaipt.com` is set on the project, and the deployed Settings screen shows that address. `app/design/` is untracked: leave it out of git. |
 
 Both repos commit as `alihomaei1997@gmail.com`.
@@ -88,11 +88,14 @@ list → a chat message still there after a reload → /progress with personal r
 measurement that saves**, asserts the "Form check in 4D" link carries a `#live=` href and that
 **no request in the whole walk answered 4xx or 5xx**, then deletes the account.
 
-### The trainer loop — `e2e/trainer-loop.spec.ts` (~20 s)
+### The trainer loop — `e2e/trainer-loop.spec.ts` (~35 s)
 Two browser contexts: the trainee asks the trainer to coach them from the Human Coaches tab, the
 trainer accepts on `/trainer`, the trainee appears on the roster, the trainer opens the client,
-generates and assigns a plan, and the two message each other. It resets the coaching relationship
-with the service role first (a second request to the same coach is a 409), so it is repeatable.
+generates and assigns a plan, and the two message each other. The trainee is created and deleted
+by the spec, so it is repeatable (a second request to the same coach is a 409) and never fights
+the tester journey over an account.
+
+All eighteen e2e tests pass together in about four minutes (`npx playwright test`).
 
 ### Access — `e2e/access.spec.ts` (12 checks, no database)
 The proxy, the API's refusal of missing and bogus tokens, the invite gate. It passes against
@@ -125,7 +128,7 @@ activity feed (off the nav; `/activity` and `/feed` still answer), the pre-overh
 
 1. **OpenAI credits on the key's organization.** Check which project owns the key on
    platform.openai.com, then `pnpm ai:smoke`. Three results means it is live.
-2. **Redeploy** — `28c8c71..f0eb9b1` are not on www.shaipt.com yet:
+2. **Redeploy** — everything after `6aa4057` is not on www.shaipt.com yet:
    `cd ~/SHaiPT/SHaiPT-Next-App && vercel deploy --prod --yes --scope alis-projects-e60465e8`
    (the permission classifier blocks `vercel deploy` and `vercel env add/rm` for you).
 3. **Vercel Spend Management cap** if the team is Pro. Stripe stays in test mode.
