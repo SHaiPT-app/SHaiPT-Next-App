@@ -7,6 +7,10 @@ import { useFourDcoachUrl } from '@/lib/fourDcoach';
 
 const LINES = ['Real-time', 'smart 4D', 'form check.'];
 
+/** The closing line of the heading. Smaller than the display lines: the hero is a hard 100vh
+ *  sticky box, so a fourth line at display size would be clipped on a short viewport. */
+const DECK = 'Your AI personal trainer.';
+
 /**
  * Title sequence: a black screen, three lines of editorial type revealed one
  * after another, one red rule, and a HUD that keeps time. Nothing floats,
@@ -70,11 +74,15 @@ export default function TitleSequence() {
                 <h1 className="ts-h1">
                     {LINES.map((line, i) => (
                         <span key={line} className={`ts-line${i === 1 ? ' ts-line--em' : ''}`} style={{ animationDelay: `${0.5 + i * 0.85}s` }}>
-                            {/* Trailing space is collapsed by the block layout but keeps the three
-                                lines readable as one sentence when the HTML text is extracted. */}
-                            {i < LINES.length - 1 ? `${line} ` : line}
+                            {/* Trailing space is collapsed by the block layout but keeps the lines
+                                readable as one sentence when the HTML text is extracted. Every line
+                                gets one: the deck follows the last of them. */}
+                            {`${line} `}
                         </span>
                     ))}
+                    <span className="ts-line ts-line--deck" style={{ animationDelay: `${0.5 + LINES.length * 0.85}s` }}>
+                        {DECK}
+                    </span>
                 </h1>
                 <div className="ts-rule" />
                 <p className="ts-sub">All you want from a personal trainer. At home or in the gym, form is king: one phone, no wearable, every rep measured, replayed in 3D, scored.</p>
@@ -277,6 +285,15 @@ export default function TitleSequence() {
                     color: var(--brand);
                     padding-left: clamp(0rem, 8vw, 9rem);
                 }
+                /* The deck: the term the <title> promises, at a third the size, so the heading
+                   says it without the title sequence turning into four display lines. */
+                .ts-line--deck {
+                    font-size: clamp(1.2rem, 2.7vw, 2.45rem);
+                    line-height: 1.1;
+                    letter-spacing: -0.01em;
+                    margin-top: clamp(0.4rem, 0.9vh, 0.9rem);
+                    color: rgba(255, 255, 255, 0.82);
+                }
                 .ts-rule {
                     width: min(28rem, 60%);
                     height: 2px;
@@ -284,7 +301,7 @@ export default function TitleSequence() {
                     background: var(--brand);
                     transform-origin: left center;
                     transform: scaleX(0);
-                    animation: ts-rule 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 3.1s forwards;
+                    animation: ts-rule 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 3.9s forwards;
                 }
                 @keyframes ts-rule {
                     to { transform: scaleX(1); }
@@ -299,7 +316,7 @@ export default function TitleSequence() {
                     text-transform: uppercase;
                     color: rgba(255, 255, 255, 0.7);
                     opacity: 0;
-                    animation: ts-fade 1s ease 3.5s forwards;
+                    animation: ts-fade 1s ease 4.3s forwards;
                 }
                 @keyframes ts-fade {
                     to { opacity: 1; }
@@ -315,7 +332,7 @@ export default function TitleSequence() {
                     letter-spacing: 0.14em;
                     text-transform: uppercase;
                     opacity: 0;
-                    animation: ts-fade 0.9s ease 3.9s forwards;
+                    animation: ts-fade 0.9s ease 4.7s forwards;
                 }
                 :global(.ts-btn) {
                     color: #fff;
