@@ -38,7 +38,9 @@ nutrition prompts from `ai_cache` for 24 h. Without `OPENAI_API_KEY` outside pro
 
 | Route | Body | Returns |
 |---|---|---|
-| `POST /api/ai-coach/chat` | `{ messages: [{role, content}], chatId? }` | streamed `text/plain`; header `X-Chat-Id`; history saved in `ai_chats` |
+| `POST /api/ai-coach/chat` | `{ messages: [{role, content}], chatId?, isPrivate? }` | streamed `text/plain`; header `X-Chat-Id`; history saved in `ai_chats`. `isPrivate` writes nothing and returns no chat id |
+| `GET /api/ai-coach/chat` | — | `{ chatId, messages }` of the caller's most recent conversation, or `{ chatId: null, messages: [] }`. The chat page reopens it on load |
+| `GET /api/ai-coach/chat/history` | — | `{ chats }`, every conversation of the caller, newest first. The caller comes from the token; a `userId` in the query is ignored |
 | `POST /api/ai-coach/interview` | `{ messages, coachId, prefilledFields? }` | `text/plain` reply; header `X-Interview-Complete: true` when done |
 | `POST /api/ai-coach/interview` | `{ action: 'extract_form_data', messages }` | `IntakeFormData` JSON |
 | `POST /api/ai-coach/dietitian-interview` | `{ messages, previousContext? }` / `{ action: 'extract_form_data', messages }` | as above, `DietIntakeFormData` |

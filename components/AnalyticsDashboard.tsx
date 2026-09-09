@@ -44,7 +44,7 @@ export default function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) 
                 .from('user_stats')
                 .select('*')
                 .eq('user_id', userId)
-                .single();
+                .maybeSingle();
 
             // 3. Fetch History (Recent Trends)
             // Using RPC if available, or fallback to manual query

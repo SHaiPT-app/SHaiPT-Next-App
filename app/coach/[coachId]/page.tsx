@@ -240,7 +240,7 @@ export default function CoachInterviewPage() {
                                 .from('training_plans')
                                 .select('id, name')
                                 .eq('id', id)
-                                .single();
+                                .maybeSingle();
                             return data;
                         })
                     );

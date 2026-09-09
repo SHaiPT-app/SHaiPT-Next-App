@@ -143,7 +143,7 @@ export default function SettingsPage() {
                     .eq('user_id', authUser.id)
                     .order('updated_at', { ascending: false })
                     .limit(1)
-                    .single();
+                    .maybeSingle();
 
                 if (interview?.intake_data) {
                     setIntakeData(interview.intake_data as IntakeFormData);

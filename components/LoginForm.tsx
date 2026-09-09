@@ -257,7 +257,7 @@ export default function LoginForm() {
                         .from('profiles')
                         .select('id')
                         .eq('email', email)
-                        .single();
+                        .maybeSingle();
 
                     if (existingEmailProfile) {
                         setError('Account already exists. Please log in instead.');
@@ -273,7 +273,7 @@ export default function LoginForm() {
                         .from('profiles')
                         .select('id')
                         .eq('username', username)
-                        .single();
+                        .maybeSingle();
 
                     if (existingUsername) {
                         setError('Username already taken. Please choose another.');
