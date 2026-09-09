@@ -23,7 +23,7 @@ rules:
   - "Use Supabase for database, auth, storage, and realtime"
   - "Use Google Gemini (Generative AI) for all AI features"
   - "Use MediaPipe for client-side pose detection and form analysis"
-  - "Dark theme with neon accents is the default visual style. Primary accent color for buttons, links, CTAs, borders, glows must be NEON ORANGE (#FF6600 or similar, matching the SHaiPT logo). NEVER use blue or green as primary accent. Body text is WHITE. Background is DARK (#15151F)"
+  - "Brand v2: red on coal black, no gradients and no glows. The accent for buttons, links, CTAs and borders is the brand red --brand (#da0023); the background is coal black (#08080C). NEVER use blue or green as an accent, and never the old neon orange (#FF6600) or navy (#15151F) — both are the retired v1 palette. Body text is WHITE."
   - "NEVER use emojis anywhere in the UI — no emoji in headings, buttons, labels, descriptions, cards, or any user-facing text"
   - "All layouts must be mobile-first and responsive"
   - "Camera/MediaPipe features must work in mobile Safari and Chrome"

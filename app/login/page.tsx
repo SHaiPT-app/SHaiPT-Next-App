@@ -7,7 +7,7 @@ import { fadeInUp } from '@/lib/animations';
 
 export default function LoginPage() {
     return (
-        <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#15151F] p-4">
+        <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#08080C] p-4">
             {/* Ambient brand glow */}
             <div className="glow-orb -top-[15%] left-[15%] h-[45vw] w-[45vw]" />
             <div className="glow-orb glow-orb--pink -bottom-[15%] right-[10%] h-[35vw] w-[35vw]" />

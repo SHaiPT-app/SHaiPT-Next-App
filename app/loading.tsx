@@ -6,7 +6,7 @@ export default function Loading() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#15151F',
+        background: '#08080C',
       }}
     >
       <div style={{ textAlign: 'center' }}>

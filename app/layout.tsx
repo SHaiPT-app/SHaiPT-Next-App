@@ -105,7 +105,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
-        <meta name="theme-color" content="#15151F" />
+        <meta name="theme-color" content="#08080C" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${caveat.variable} ${editorial.variable}`}>

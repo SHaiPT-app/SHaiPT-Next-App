@@ -14,7 +14,7 @@ export default function Error({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#15151F',
+        background: '#08080C',
         color: '#E5E5E7',
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}

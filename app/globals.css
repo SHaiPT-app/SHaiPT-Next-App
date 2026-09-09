@@ -5,7 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Neon accent colors */
+  /* Legacy aliases from the old neon-orange-on-navy palette. They hold the brand red now and
+     exist only so older components keep resolving; use --brand in anything new. */
   --neon-orange: #da0023;
   --neon-orange-light: #ff3352;
   --neon-pink: #ff3352;
@@ -26,7 +27,7 @@
   --ink-mid: rgba(255, 255, 255, 0.72);
   --ink-low: rgba(255, 255, 255, 0.45);
 
-  /* Primary uses neon orange */
+  /* Primary is the brand red */
   --primary: #da0023;
   --primary-hover: #b8001e;
   --success: #10b981;
@@ -638,7 +639,7 @@ button, a, input, select, textarea {
 }
 /* ═══════════════════════════════════════════════════════════════
    SHaiPT Design System v2 — brand utilities
-   Orange (#da0023) on deep charcoal (#15151F), glassmorphism,
+   Red (#da0023) on coal black (#08080C), glassmorphism,
    Orbitron display type, and the three-bar logo motif.
    ═══════════════════════════════════════════════════════════════ */
 

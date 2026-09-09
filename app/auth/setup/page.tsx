@@ -70,7 +70,7 @@ function UsernameSetupForm() {
     }
 
     return (
-        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#15151F] p-4">
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#08080C] p-4">
             {/* Ambient brand glow */}
             <div className="glow-orb -top-[15%] left-[15%] h-[45vw] w-[45vw]" />
             <div className="glow-orb glow-orb--pink -bottom-[15%] right-[10%] h-[35vw] w-[35vw]" />
@@ -178,7 +178,7 @@ function UsernameSetupForm() {
 export default function UsernameSetup() {
     return (
         <Suspense fallback={
-            <div className="flex min-h-screen items-center justify-center bg-[#15151F]">
+            <div className="flex min-h-screen items-center justify-center bg-[#08080C]">
                 <p className="text-ink-low">Loading...</p>
             </div>
         }>
