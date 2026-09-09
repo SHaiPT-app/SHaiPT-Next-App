@@ -85,6 +85,9 @@ export async function GET(req: NextRequest) {
             .from('workout_logs')
             .select('*')
             .eq('user_id', clientId)
+            // finished sessions only: every "Start" writes a row, and a coach reading the
+            // roster should not see abandoned starts as workouts
+            .not('completed_at', 'is', null)
             .order('date', { ascending: false })
             .limit(50);
 

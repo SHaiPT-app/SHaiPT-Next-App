@@ -49,7 +49,9 @@ function createChain(resolvedData: unknown = null, resolvedError: unknown = null
     chain.in = jest.fn().mockReturnValue(chain);
     chain.order = jest.fn().mockReturnValue(chain);
     chain.limit = jest.fn().mockReturnValue(chain);
+    chain.not = jest.fn().mockReturnValue(chain);
     chain.single = jest.fn().mockResolvedValue({ data: resolvedData, error: resolvedError });
+    chain.maybeSingle = jest.fn().mockResolvedValue({ data: resolvedData, error: resolvedError });
     return chain;
 }
 
@@ -163,7 +165,9 @@ describe('Trainer Client Progress API', () => {
             chain.select = jest.fn().mockReturnValue(chain);
             chain.eq = jest.fn().mockReturnValue(chain);
             chain.in = jest.fn().mockReturnValue(chain);
+            chain.not = jest.fn().mockReturnValue(chain);
             chain.single = jest.fn().mockResolvedValue({ data: null, error: null });
+            chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
 
             if (table === 'workout_logs') {
                 chain.order = jest.fn().mockReturnValue(chain);

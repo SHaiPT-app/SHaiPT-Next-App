@@ -1,12 +1,32 @@
 import { defineConfig, devices } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * `.env.local` without a dotenv dependency: the specs that touch the real project need
+ * TEST_EMAIL / TEST_PASSWORD (and TRAINER_EMAIL / TRAINER_PASSWORD, SUPABASE_SERVICE_ROLE_KEY
+ * for the trainer loop), and keeping them in one file beats exporting them by hand. Anything
+ * already in the environment wins.
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+function loadEnvLocal() {
+    try {
+        const text = readFileSync(path.resolve(__dirname, '.env.local'), 'utf8');
+        for (const line of text.split('\n')) {
+            const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line);
+            if (!m) continue;
+            const [, key, raw] = m;
+            if (process.env[key] !== undefined) continue;
+            process.env[key] = raw.replace(/^["']|["']$/g, '');
+        }
+    } catch {
+        // no .env.local (CI): the specs that need it skip themselves
+    }
+}
+loadEnvLocal();
+
+/** Point the run at a deployment with PLAYWRIGHT_BASE_URL; the dev server is then left alone. */
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
+const external = !!process.env.PLAYWRIGHT_BASE_URL;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -26,7 +46,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:3000',
+    baseURL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -40,10 +60,12 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
+  /* Run your local dev server before starting the tests, unless a deployment was named */
+  ...(external ? {} : {
+    webServer: {
+      command: 'pnpm dev',
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+    },
+  }),
 });

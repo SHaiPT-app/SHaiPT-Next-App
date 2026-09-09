@@ -460,16 +460,21 @@ export default function AssignPlanPage() {
                     <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
                         The AI will use the client&apos;s intake data, goals, and available equipment to create a personalized plan.
                     </p>
+                    {/*
+                      handleGenerateAIPlan needs the client's profile to fill the intake, and
+                      returned silently without it: clicking before fetchData resolved did
+                      nothing at all, with no spinner and no message. The button waits for it.
+                    */}
                     <button
                         onClick={handleGenerateAIPlan}
-                        disabled={assigning}
+                        disabled={assigning || !clientProfile}
                         style={{
-                            background: assigning ? 'rgba(218, 0, 35, 0.5)' : 'var(--primary)',
+                            background: assigning || !clientProfile ? 'rgba(218, 0, 35, 0.5)' : 'var(--primary)',
                             border: 'none',
                             borderRadius: '10px',
                             padding: '0.75rem 2rem',
                             color: 'white',
-                            cursor: assigning ? 'not-allowed' : 'pointer',
+                            cursor: assigning || !clientProfile ? 'not-allowed' : 'pointer',
                             fontSize: '0.95rem',
                             fontWeight: '600',
                             display: 'inline-flex',

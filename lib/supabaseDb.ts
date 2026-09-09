@@ -74,8 +74,8 @@ export const db = {
                 .from('profiles')
                 .select('*')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -84,8 +84,8 @@ export const db = {
                 .from('profiles')
                 .select('*')
                 .eq('email', email)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -94,8 +94,8 @@ export const db = {
                 .from('profiles')
                 .select('*')
                 .eq('username', username)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -161,8 +161,8 @@ export const db = {
                 .from('workout_sessions')
                 .select('*')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -258,8 +258,8 @@ export const db = {
                 .from('training_plans')
                 .select('*')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -420,8 +420,8 @@ export const db = {
                 .gte('end_date', today)
                 .order('start_date', { ascending: false })
                 .limit(1)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -490,8 +490,8 @@ export const db = {
                 .from('workout_logs')
                 .select('*, exercise_logs(*)')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -760,8 +760,8 @@ export const db = {
                 .eq('athlete_id', athleteId)
                 .in('status', ['pending', 'active', 'waitlisted'])
                 .limit(1)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1118,8 +1118,8 @@ export const db = {
                 .from('ai_chats')
                 .select('*')
                 .eq('id', chatId)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1172,8 +1172,8 @@ export const db = {
                 .from('exercises')
                 .select('*')
                 .eq('exercise_id', exerciseId)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1219,8 +1219,8 @@ export const db = {
                 .from('nutrition_plans')
                 .select('*')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1231,8 +1231,8 @@ export const db = {
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1298,8 +1298,8 @@ export const db = {
                 .from('food_database')
                 .select('*')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1393,8 +1393,8 @@ export const db = {
                 .from('grocery_lists')
                 .select('*')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1449,8 +1449,8 @@ export const db = {
                 .from('body_measurements')
                 .select('*')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1460,8 +1460,8 @@ export const db = {
                 .select('*')
                 .eq('user_id', userId)
                 .eq('date', date)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1516,8 +1516,8 @@ export const db = {
                 .from('progress_media')
                 .select('*')
                 .eq('id', id)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1550,8 +1550,8 @@ export const db = {
                 .from('phone_verifications')
                 .select('*')
                 .eq('user_id', userId)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1616,8 +1616,8 @@ export const db = {
                 .from('consistency_challenges')
                 .select('*')
                 .eq('user_id', userId)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1627,8 +1627,8 @@ export const db = {
                 .select('*')
                 .eq('user_id', userId)
                 .in('status', ['active', 'grace_period'])
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1768,8 +1768,8 @@ export const db = {
                 .from('user_preferences')
                 .select('*')
                 .eq('user_id', userId)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 
@@ -1813,8 +1813,8 @@ export const db = {
                 .select('*')
                 .eq('user_id', userId)
                 .eq('session_id', sessionId)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error;
+                .maybeSingle();
+            if (error) throw error;
             return data;
         },
 

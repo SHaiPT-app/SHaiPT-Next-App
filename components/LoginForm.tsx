@@ -17,6 +17,22 @@ function oauthAvailable(): boolean {
     return process.env.NEXT_PUBLIC_ENABLE_OAUTH === '1';
 }
 
+/**
+ * Where to go after signing in: back to the page the proxy interrupted (`?next=`), else the
+ * screen for this role. A trainer landing on /home gets the trainee dashboard instead of
+ * their client roster. Only same-origin paths are followed, so `next` cannot send anyone off
+ * to another host.
+ */
+function destination(role?: string): string {
+    try {
+        const next = new URLSearchParams(window.location.search).get('next');
+        if (next && next.startsWith('/') && !next.startsWith('//')) return next;
+    } catch {
+        // no window (or a malformed query): fall through to the role's home
+    }
+    return role === 'trainer' ? '/trainer' : '/home';
+}
+
 export default function LoginForm() {
     const [isLogin, setIsLogin] = useState(true);
     const [identifier, setIdentifier] = useState('');
@@ -64,7 +80,7 @@ export default function LoginForm() {
             if (session) {
                 const profile = await db.profiles.getById(session.user.id);
                 if (profile) {
-                    router.push('/home');
+                    router.push(destination(profile.role));
                 }
             }
         };
@@ -176,7 +192,7 @@ export default function LoginForm() {
                 }
 
                 localStorage.setItem('user', JSON.stringify(profile));
-                router.push('/home');
+                router.push(destination(profile.role));
             } else {
                 const email = identifier;
 
