@@ -49,8 +49,9 @@ sitemap.xml both 200, self-referencing canonicals on `/` and `/login`, three JSO
 `<h1>`, `og.png` served as a 1200x630 PNG, `/demo` emitting `noindex, follow`, apex still 307ing
 to www.
 
-**Awaiting a deploy:** `1e6e3e4` (the "Your AI personal trainer." deck in the H1) and `2c087c8`
-(Instagram in `sameAs`). Production still shows the old three-line heading and no `sameAs`. Ali
+**Awaiting a deploy:** `1e6e3e4` (the "Your AI personal trainer." deck in the H1), `2c087c8`
+(Instagram in `sameAs`), `fd6fd62` (the navy retired from the chrome) and `64415b4` (the logo
+re-cut). Production still shows the old three-line heading, no `sameAs`, and the v1 logo art. Ali
 runs `vercel deploy --prod --yes --scope alis-projects-e60465e8`; the permission classifier blocks
 it for the assistant. Re-run the verification recipe below afterwards.
 
@@ -89,6 +90,30 @@ Notes for whoever picks this up:
 - The `<title>` is still "SHaiPT - AI Personal Training" and Google still rewrites it to
   "SHaiPT — AI Personal Trainer". Left alone pending the positioning decision below.
 
+### Brand palette — v1 is fully retired as of 2026-09-09
+
+v1 was neon orange `#FF6600` on navy `#15151F`. **v2 is red `#DA0023` on coal black `#08080C`,**
+and `#DA0023` is canonical: the logo art was re-cut to it, so the mark and the UI now use the same
+red. There is no `#FF6600`, `#FF002A` or `#15151F` anywhere outside `node_modules`; if any of them
+reappears, it is a regression.
+
+The navy survived the v2 rollout in seven places CSS never reached — `theme-color` in the document
+head, the `/login` background, `error.tsx`, `loading.tsx`, `global-error.tsx` and two in
+`auth/setup` — plus baked into the pixels of three logo PNGs, one of which (`circular_logo.png`)
+is the signed-in app's header logo. All fixed.
+
+`.ralphy/config.yaml` was the worst offender: it stated the retired palette as a *rule* for any
+agent reading it ("must be NEON ORANGE (#FF6600 ...)"), so it would have kept regenerating itself.
+It now names the v2 colours and marks both v1 colours as retired.
+
+`public/logo_transparent.png` is the master; `logo.png`, `circular_logo.png` and
+`logo_app_icon.png` are rebuilt from it by `node scripts/recut-logo.mjs`, so the four cannot drift
+apart again. Do not hand-edit the derived three.
+
+The `--neon-orange` / `--neon-orange-light` / `--neon-pink` variables in `globals.css` hold the
+brand red today and keep their names only so older components resolve. Use `--brand` in anything
+new.
+
 ### Search Console / Bing submission log
 
 Nothing submitted yet. **Record the date here when it happens** — without it there is no way to
@@ -107,9 +132,9 @@ helps Google separate SHaiPT from shaip.com, so add further profiles there as th
 never invent one.
 
 The profile itself still needs updating by Ali; the assistant cannot and should not log in.
-Prepared assets and copy were handed over on 2026-09-09 (avatar on the brand's black ground,
-centred on the mark's true ink bounds; a Name field carrying "AI Personal Trainer", which
-Instagram's own search indexes; bio options). The website link should be
+Prepared assets and copy were handed over on 2026-09-09 (avatar on coal black, centred on the
+mark's true ink bounds and re-cut to the v2 red; a Name field carrying "AI Personal Trainer",
+which Instagram's own search indexes; bio options). The website link should be
 `https://www.shaipt.com` — the www host, so it does not spend a redirect.
 
 `shaiptapp@gmail.com` was deliberately **not** put into the JSON-LD: publishing it there makes it
