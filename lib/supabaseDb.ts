@@ -469,11 +469,16 @@ export const db = {
             return data || [];
         },
 
+        /**
+         * Finished workouts, newest first. Every "Start" writes a workout_logs row, so an
+         * unfiltered read counts abandoned starts as workouts.
+         */
         getByUser: async (userId: string, limit = 50): Promise<WorkoutLog[]> => {
             const { data, error } = await supabase
                 .from('workout_logs')
                 .select('*')
                 .eq('user_id', userId)
+                .not('completed_at', 'is', null)
                 .order('date', { ascending: false })
                 .limit(limit);
             if (error) throw error;

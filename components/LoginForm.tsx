@@ -8,6 +8,15 @@ import { motion } from 'framer-motion';
 import { fadeInUp, tapScale } from '@/lib/animations';
 import { Eye, EyeOff, Mail, Lock, User, CheckCircle } from 'lucide-react';
 
+/**
+ * Google and Apple sign-in are only offered when the Supabase project actually has those
+ * providers configured; without that the buttons bounce off Supabase with a provider error.
+ * Set NEXT_PUBLIC_ENABLE_OAUTH=1 once they are set up.
+ */
+function oauthAvailable(): boolean {
+    return process.env.NEXT_PUBLIC_ENABLE_OAUTH === '1';
+}
+
 export default function LoginForm() {
     const [isLogin, setIsLogin] = useState(true);
     const [identifier, setIdentifier] = useState('');
@@ -483,13 +492,16 @@ export default function LoginForm() {
                     </motion.button>
 
                     {/* Divider */}
+                    {oauthAvailable() && (
                     <div className="my-1 flex items-center gap-3">
                         <div className="h-px flex-1 bg-line-soft" />
                         <span className="text-sm text-ink-mid">or</span>
                         <div className="h-px flex-1 bg-line-soft" />
                     </div>
+                    )}
 
                     {/* OAuth buttons */}
+                    {oauthAvailable() && (
                     <div className="flex flex-col gap-2">
                         <motion.button
                             type="button"
@@ -520,6 +532,7 @@ export default function LoginForm() {
                             <span>Continue with Apple</span>
                         </motion.button>
                     </div>
+                    )}
 
                     {/* Toggle login/signup */}
                     <p className="text-center text-sm text-ink-mid">

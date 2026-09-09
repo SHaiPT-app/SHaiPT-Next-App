@@ -225,7 +225,7 @@ describe('OnboardingPage', () => {
         })
     })
 
-    it('navigates to /dashboard when continue button is clicked', async () => {
+    it('navigates to /home when continue button is clicked', async () => {
         // Mock: interview start, user response (complete), plan generation
         mockFetch
             .mockResolvedValueOnce({
@@ -278,7 +278,7 @@ describe('OnboardingPage', () => {
         })
 
         fireEvent.click(screen.getByTestId('continue-button'))
-        expect(mockPush).toHaveBeenCalledWith('/dashboard')
+        expect(mockPush).toHaveBeenCalledWith('/home')
     })
 
     it('does not send empty messages', async () => {
@@ -424,7 +424,7 @@ describe('OnboardingPage', () => {
         })
     })
 
-    it('allows skipping to dashboard when plan generation fails', async () => {
+    it('allows skipping to home when plan generation fails', async () => {
         mockFetch
             .mockResolvedValueOnce({
                 json: () => Promise.resolve({
@@ -459,7 +459,7 @@ describe('OnboardingPage', () => {
         })
 
         fireEvent.click(screen.getByTestId('skip-button'))
-        expect(mockPush).toHaveBeenCalledWith('/dashboard')
+        expect(mockPush).toHaveBeenCalledWith('/home')
     })
 
     it('calls generate-plans API when onboarding completes', async () => {

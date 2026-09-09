@@ -95,7 +95,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           logo="/circular_logo.png"
           logoAlt="SHaiPT Logo"
           items={[
-            { label: 'Activity', href: '/activity' },
+            // Activity is left out: posts are private by default, so the feed can only ever be
+            // empty for a handful of testers. /activity still answers if someone has the URL.
+            { label: 'Progress', href: '/progress' },
             { label: 'Home', href: '/home' },
             { label: 'Coach List', href: '/coach' },
             { label: '4Dcoach', href: fourD },

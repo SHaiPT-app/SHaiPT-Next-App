@@ -60,10 +60,13 @@ function TrendIndicator({ current, previous }: { current?: number; previous?: nu
 
 function MeasurementCard({ field, value, previousValue, onClick }: {
     field: { key: keyof BodyMeasurement; label: string; unit: string };
-    value?: number;
-    previousValue?: number;
+    value?: number | null;
+    previousValue?: number | null;
     onClick: () => void;
 }) {
+    // A column the user left blank comes back as null, which read as "nullcm" on the card.
+    const shown = value ?? undefined;
+    const previous = previousValue ?? undefined;
     return (
         <button
             onClick={onClick}
@@ -88,10 +91,10 @@ function MeasurementCard({ field, value, previousValue, onClick }: {
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                 <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{field.label}</span>
-                <TrendIndicator current={value} previous={previousValue} />
+                <TrendIndicator current={shown} previous={previous} />
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: value !== undefined ? '#da0023' : 'rgba(255,255,255,0.2)' }}>
-                {value !== undefined ? `${value}` : '--'}
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: shown !== undefined ? '#da0023' : 'rgba(255,255,255,0.2)' }}>
+                {shown !== undefined ? `${shown}` : '--'}
                 <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'rgba(255,255,255,0.4)', marginLeft: '0.25rem' }}>
                     {field.unit}
                 </span>
@@ -574,8 +577,8 @@ export default function BodyCompositionPage() {
                                     <MeasurementCard
                                         key={field.key}
                                         field={field}
-                                        value={latestMeasurement[field.key] as number | undefined}
-                                        previousValue={previousMeasurement?.[field.key] as number | undefined}
+                                        value={latestMeasurement[field.key] as number | null | undefined}
+                                        previousValue={previousMeasurement?.[field.key] as number | null | undefined}
                                         onClick={() => handleOpenForm(latestMeasurement)}
                                     />
                                 ))}

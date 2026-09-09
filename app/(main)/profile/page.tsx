@@ -258,9 +258,11 @@ export default function ProfilePage() {
                                         })}
                                     </span>
                                 </div>
-                                {log.total_duration_seconds && (
+                                {!!log.total_duration_seconds && (
                                     <span className="text-brand">
-                                        {Math.floor(log.total_duration_seconds / 60)} min
+                                        {log.total_duration_seconds < 60
+                                            ? `${log.total_duration_seconds} sec`
+                                            : `${Math.floor(log.total_duration_seconds / 60)} min`}
                                     </span>
                                 )}
                             </div>
