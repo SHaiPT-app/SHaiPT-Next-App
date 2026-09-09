@@ -42,9 +42,17 @@ Google can read properly and one it cannot.
 
 ### 2026-09-09 — workstream A shipped (commits 238c4d4..1f181b7, branch v2-overhaul)
 
-Everything in workstream A is done and pushed. **Not yet deployed at the time of writing** — Ali
+Everything in workstream A is done and pushed.
+
+**Verified live on https://www.shaipt.com** for commits `238c4d4..96c10a0`: robots.txt and
+sitemap.xml both 200, self-referencing canonicals on `/` and `/login`, three JSON-LD blocks, one
+`<h1>`, `og.png` served as a 1200x630 PNG, `/demo` emitting `noindex, follow`, apex still 307ing
+to www.
+
+**Awaiting a deploy:** `1e6e3e4` (the "Your AI personal trainer." deck in the H1) and `2c087c8`
+(Instagram in `sameAs`). Production still shows the old three-line heading and no `sameAs`. Ali
 runs `vercel deploy --prod --yes --scope alis-projects-e60465e8`; the permission classifier blocks
-it for the assistant. Re-run the verification recipe below against production after the deploy.
+it for the assistant. Re-run the verification recipe below afterwards.
 
 | Check | Was (measured live, 2026-09-09) | Now (verified in the build) |
 |---|---|---|
@@ -91,15 +99,35 @@ tell "not indexed yet" apart from "not working".
 | — | `https://www.shaipt.com` (GSC) | not yet created |
 | — | Bing Webmaster Tools | not yet created |
 
+### Social
+
+Instagram **@shaiptofficial** is the only profile that exists (account email
+`shaiptapp@gmail.com`). It is listed in `Organization.sameAs` — that is the entity signal that
+helps Google separate SHaiPT from shaip.com, so add further profiles there as they appear and
+never invent one.
+
+The profile itself still needs updating by Ali; the assistant cannot and should not log in.
+Prepared assets and copy were handed over on 2026-09-09 (avatar on the brand's black ground,
+centred on the mark's true ink bounds; a Name field carrying "AI Personal Trainer", which
+Instagram's own search indexes; bio options). The website link should be
+`https://www.shaipt.com` — the www host, so it does not spend a redirect.
+
+`shaiptapp@gmail.com` was deliberately **not** put into the JSON-LD: publishing it there makes it
+scrapeable, and Ali mentioned it as context rather than asking for it to be published. Add a
+`contactPoint` only if Ali asks.
+
 ### Still open
 
-1. **The H1 wording.** The structure is fixed (one `<h1>`) but the words are unchanged:
-   "Real-time smart 4D form check." Proposed alternatives are in the reply that shipped this work;
-   the brand is A24-editorial and Ali picks the copy. Change `LINES` in
-   `components/landing/TitleSequence.tsx` — the array drives both the animation and the heading.
-2. **`Organization.sameAs`** is omitted until Ali supplies real social profile URLs. Add them in
-   `components/landing/StructuredData.tsx`; do not invent any.
-3. All of workstream B below.
+1. **The mono sub-heading now repeats the H1.** The deck says "Your AI personal trainer." and
+   `.ts-sub` directly beneath it opens "ALL YOU WANT FROM A PERSONAL TRAINER." Proposed to Ali,
+   not changed — landing copy is Ali's call. It is the first sentence of `ts-sub` in
+   `components/landing/TitleSequence.tsx`.
+2. **The hero clips its own CTA below ~800px of viewport height.** Pre-existing, not caused by the
+   deck — measured at five viewports before and after the change. At 1440x900 the CTA lands 23px
+   inside the fold. Worth fixing on its own terms.
+3. **The `<title>`** is still "SHaiPT - AI Personal Training" while Google rewrites it to
+   "SHaiPT — AI Personal Trainer". Now that the H1 says the latter, consider matching it.
+4. All of workstream B below.
 
 ## What was measured on 2026-09-09, before any of the above (facts, not guesses)
 
