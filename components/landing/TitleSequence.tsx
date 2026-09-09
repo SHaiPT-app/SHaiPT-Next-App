@@ -65,11 +65,17 @@ export default function TitleSequence() {
             <div className="ts-meta ts-meta--tr">Vol. 01 — 2026</div>
 
             <div className="ts-title">
-                {LINES.map((line, i) => (
-                    <h1 key={line} className={`ts-line${i === 1 ? ' ts-line--em' : ''}`} style={{ animationDelay: `${0.5 + i * 0.85}s` }}>
-                        {line}
-                    </h1>
-                ))}
+                {/* One <h1> for the page, three lines of type inside it. Each line is still its own
+                    block with its own entrance delay; only the element changed, not the sequence. */}
+                <h1 className="ts-h1">
+                    {LINES.map((line, i) => (
+                        <span key={line} className={`ts-line${i === 1 ? ' ts-line--em' : ''}`} style={{ animationDelay: `${0.5 + i * 0.85}s` }}>
+                            {/* Trailing space is collapsed by the block layout but keeps the three
+                                lines readable as one sentence when the HTML text is extracted. */}
+                            {i < LINES.length - 1 ? `${line} ` : line}
+                        </span>
+                    ))}
+                </h1>
                 <div className="ts-rule" />
                 <p className="ts-sub">All you want from a personal trainer. At home or in the gym, form is king: one phone, no wearable, every rep measured, replayed in 3D, scored.</p>
                 <div className="ts-actions">
@@ -245,7 +251,12 @@ export default function TitleSequence() {
                     width: 100%;
                     margin: 0 auto;
                 }
+                .ts-h1 {
+                    margin: 0;
+                    font-weight: 400;
+                }
                 .ts-line {
+                    display: block;
                     margin: 0;
                     font-family: var(--font-editorial), 'Times New Roman', serif;
                     font-weight: 400;
