@@ -47,11 +47,11 @@ Both repos commit as `alihomaei1997@gmail.com`.
   with no session and waits for mail that free-tier Supabase may never send — and the half-made
   account then blocks the script. Turning it off is a one-click change if Ali wants the sign-up
   form to work; the invite gate is separate and stays.
-- **OpenAI**: `OPENAI_API_KEY` in `.env.local`. The key is valid (`GET /v1/models` → 200) but
-  chat completions answer `429 credit_balance_exhausted`, which is an **organization** balance:
-  the credits Ali bought are on a different org or project than the key. Until that is sorted,
-  `.env.local` keeps `AI_MOCK=1` and every AI step uses canned replies. Nothing sets `AI_MOCK` on
-  Vercel. Ali pasted the key into chat once; suggest they rotate it.
+- **OpenAI**: `OPENAI_API_KEY` in `.env.local`. **Credits work as of 2026-09-09**: Ali moved them
+  to the key's project and `pnpm ai:smoke` now passes — three calls, gpt-5-nano and gpt-5-mini,
+  `$0.000078` total. `.env.local` still carries `AI_MOCK=1` so routine test runs stay free;
+  nothing sets `AI_MOCK` on Vercel, so production has been making real calls since the deploy.
+  Ali pasted the key into chat once; suggest they rotate it.
 - **Test accounts** (all `tester = true`, full access, never Stripe):
   | Email | Role | Purpose |
   |---|---|---|
@@ -126,18 +126,16 @@ activity feed (off the nav; `/activity` and `/feed` still answer), the pre-overh
 
 ## Still on Ali (ask in your first reply)
 
-1. **OpenAI credits on the key's organization.** Check which project owns the key on
-   platform.openai.com, then `pnpm ai:smoke`. Three results means it is live.
-2. **Redeploy** — everything after `6aa4057` is not on www.shaipt.com yet:
+1. **Redeploy after any change** — the permission classifier blocks `vercel deploy` and
+   `vercel env add/rm` for you:
    `cd ~/SHaiPT/SHaiPT-Next-App && vercel deploy --prod --yes --scope alis-projects-e60465e8`
-   (the permission classifier blocks `vercel deploy` and `vercel env add/rm` for you).
-3. **Vercel Spend Management cap** if the team is Pro. Stripe stays in test mode.
-4. Whether to turn **Confirm email** off so the sign-up form works on its own.
+2. **Vercel Spend Management cap** if the team is Pro. Stripe stays in test mode.
+3. Whether to turn **Confirm email** off so the sign-up form works on its own.
 
 ## Your workstreams, in order
 
-### A. Make the AI real
-The moment `pnpm ai:smoke` prints three results: remove `AI_MOCK=1` from `.env.local`, run each
+### A. Cost the AI for real
+`pnpm ai:smoke` passes, so this is unblocked. Remove `AI_MOCK=1` from `.env.local`, run each
 AI step **once** for real — interview, split recommendation, plan, dietitian, nutrition plan,
 chat, workout summary, weekly insight — and read `GET /api/admin/usage` for the true cost per
 step. Write those numbers into TESTERS.md so Ali can predict a month. Two things will change
