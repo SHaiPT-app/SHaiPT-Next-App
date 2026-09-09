@@ -3,17 +3,17 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import TitleSequence from '@/components/landing/TitleSequence';
-import PhoneReveal from '@/components/landing/PhoneReveal';
-import Faq from '@/components/landing/Faq';
-import ClosingBeat from '@/components/landing/ClosingBeat';
-import SpecSheet from '@/components/landing/SpecSheet';
-import Statement from '@/components/landing/Statement';
-import Pricing from '@/components/landing/Pricing';
-import Footer from '@/components/landing/Footer';
+import TitleSequence from './TitleSequence';
+import PhoneReveal from './PhoneReveal';
+import Faq from './Faq';
+import ClosingBeat from './ClosingBeat';
+import SpecSheet from './SpecSheet';
+import Statement from './Statement';
+import Pricing from './Pricing';
+import Footer from './Footer';
 import StaticBackground from '@/components/StaticBackground';
 
-export default function Home() {
+export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
