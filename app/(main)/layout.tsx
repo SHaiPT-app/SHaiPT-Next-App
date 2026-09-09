@@ -90,7 +90,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Top header: PillNav centered, actions on both sides */}
-      <header className="sticky top-0 z-[999] flex min-h-[80px] items-center justify-center border-b border-line-soft bg-[rgba(21,21,31,0.6)] px-4 py-6 shadow-[0_4px_30px_rgba(0,0,0,0.15)] backdrop-blur-xl">
+      {/*
+        On a phone PillNav is full width (logo at one end, hamburger at the other), so the two
+        icon groups cannot be absolutely positioned on top of it: at z-1000 the nav swallowed
+        every tap, which left Profile, Messages, notifications, Settings and Log Out dead and
+        put the hamburger under the Log Out button. Below md the three groups are a plain flex
+        row; from md the nav is centred with the groups pinned to the edges as before.
+      */}
+      <header className="sticky top-0 z-[999] flex min-h-[80px] flex-wrap items-center justify-between gap-1 border-b border-line-soft bg-[rgba(21,21,31,0.6)] px-4 py-6 shadow-[0_4px_30px_rgba(0,0,0,0.15)] backdrop-blur-xl md:flex-nowrap md:justify-center md:gap-2">
+        <div className="order-2 min-w-0 flex-1 md:order-none md:flex-none">
         <PillNav
           logo="/circular_logo.png"
           logoAlt="SHaiPT Logo"
@@ -110,9 +118,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           pillTextColor="rgba(255, 255, 255, 0.7)"
           initialLoadAnimation={false}
         />
+        </div>
 
         {/* Left group: profile & DMs */}
-        <div className="absolute left-4 flex h-full items-center gap-3">
+        <div className="order-1 flex items-center gap-1 md:absolute md:left-4 md:order-none md:h-full md:gap-3">
           <HeaderIconButton label="Profile" onClick={() => router.push('/profile')}>
             <User size={20} />
           </HeaderIconButton>
@@ -122,7 +131,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         {/* Right group: notifications, settings, logout */}
-        <div className="absolute right-4 flex h-full items-center gap-3">
+        <div className="order-3 flex items-center gap-1 md:absolute md:right-4 md:order-none md:h-full md:gap-3">
           {user?.id && <NotificationBell userId={user.id} />}
           <HeaderIconButton label="Settings" onClick={() => router.push('/settings')}>
             <Settings size={20} />

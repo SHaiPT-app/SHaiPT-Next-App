@@ -19,6 +19,8 @@ export interface PillNavProps {
   pillColor?: string;
   hoveredPillTextColor?: string;
   pillTextColor?: string;
+  /** Background of the mobile drop-down. Must be opaque: it sits over the page. */
+  menuBackground?: string;
   onMobileMenuClick?: () => void;
   initialLoadAnimation?: boolean;
 }
@@ -34,6 +36,7 @@ const PillNav: React.FC<PillNavProps> = ({
   pillColor = '#060010',
   hoveredPillTextColor = '#060010',
   pillTextColor,
+  menuBackground = '#16161f',
   onMobileMenuClick,
   initialLoadAnimation = true
 }) => {
@@ -243,7 +246,8 @@ const PillNav: React.FC<PillNavProps> = ({
     ['--nav-h']: '42px',
     ['--logo']: '36px',
     ['--pill-pad-x']: '22px',
-    ['--pill-gap']: '6px'
+    ['--pill-gap']: '6px',
+    ['--menu-bg']: menuBackground
   } as React.CSSProperties;
 
   return (
@@ -262,7 +266,7 @@ const PillNav: React.FC<PillNavProps> = ({
             ref={el => {
               logoRef.current = el;
             }}
-            className="rounded-full p-2 inline-flex items-center justify-center overflow-hidden"
+            className="shrink-0 rounded-full p-2 inline-flex items-center justify-center overflow-hidden"
             style={{
               width: 'var(--nav-h)',
               height: 'var(--nav-h)',
@@ -282,7 +286,7 @@ const PillNav: React.FC<PillNavProps> = ({
             ref={el => {
               logoRef.current = el;
             }}
-            className="rounded-full p-2 inline-flex items-center justify-center overflow-hidden"
+            className="shrink-0 rounded-full p-2 inline-flex items-center justify-center overflow-hidden"
             style={{
               width: 'var(--nav-h)',
               height: 'var(--nav-h)',
@@ -406,7 +410,7 @@ const PillNav: React.FC<PillNavProps> = ({
           onClick={toggleMobileMenu}
           aria-label="Toggle menu"
           aria-expanded={isMobileMenuOpen}
-          className="md:hidden rounded-full border-0 flex flex-col items-center justify-center gap-1 cursor-pointer p-0 relative"
+          className="md:hidden shrink-0 rounded-full border-0 flex flex-col items-center justify-center gap-1 cursor-pointer p-0 relative"
           style={{
             width: 'var(--nav-h)',
             height: 'var(--nav-h)',
@@ -415,21 +419,26 @@ const PillNav: React.FC<PillNavProps> = ({
         >
           <span
             className="hamburger-line w-4 h-0.5 rounded origin-center transition-all duration-[10ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]"
-            style={{ background: 'var(--pill-bg, #fff)' }}
+            style={{ background: 'var(--pill-text, #fff)' }}
           />
           <span
             className="hamburger-line w-4 h-0.5 rounded origin-center transition-all duration-[10ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]"
-            style={{ background: 'var(--pill-bg, #fff)' }}
+            style={{ background: 'var(--pill-text, #fff)' }}
           />
         </button>
       </nav>
 
       <div
         ref={mobileMenuRef}
-        className="md:hidden absolute top-[3em] left-4 right-4 rounded-[27px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-[998] origin-top"
+        /*
+          Fixed rather than absolute: the panel spans the viewport instead of the nav's own
+          box, which on a phone is only as wide as the logo and the hamburger. --menu-bg is
+          opaque so the page does not read through the menu.
+        */
+        className="md:hidden fixed left-4 right-4 top-[76px] rounded-[27px] shadow-[0_8px_32px_rgba(0,0,0,0.45)] z-[998] origin-top backdrop-blur-xl"
         style={{
           ...cssVars,
-          background: 'var(--base, #f0f0f0)'
+          background: 'var(--menu-bg, #16161f)'
         }}
       >
         <ul className="list-none m-0 p-[3px] flex flex-col gap-[3px]">
