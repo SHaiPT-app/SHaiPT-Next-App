@@ -5,6 +5,10 @@
  *   pnpm db:test-users -- --trainer coach@example.com
  *   pnpm db:test-users -- --revoke friend@example.com      delete the account and its data
  *   pnpm db:test-users -- --reset friend@example.com       new password, same account
+ *   pnpm db:test-users -- --password 'chosen-one' friend@example.com    set it yourself
+ *
+ * Without --password the script generates one and prints it once. A password you choose is
+ * only as good as you make it: these accounts are real sign-ins on the live project.
  *
  * Each account: email confirmed, an `invites` row (so the sign-up path is on record), the
  * profile marked tester = true, role trainee (or trainer with --trainer), a `user_preferences`
@@ -13,6 +17,17 @@
  */
 import { randomBytes } from 'node:crypto';
 import { adminClient, hasFlag } from './db';
+
+/** The value after --password, when the caller wants a specific one. */
+function chosenPassword(): string | null {
+    const i = process.argv.indexOf('--password');
+    const value = i === -1 ? undefined : process.argv[i + 1];
+    if (i !== -1 && (!value || value.startsWith('--'))) {
+        console.error('--password needs a value');
+        process.exit(2);
+    }
+    return value ?? null;
+}
 
 function password(): string {
     // 16 chars, mixed, readable: no 0/O/l/1 confusion
@@ -26,7 +41,14 @@ function password(): string {
 async function main() {
     const admin = adminClient();
     const role: 'trainee' | 'trainer' = hasFlag('--trainer') ? 'trainer' : 'trainee';
-    const emails = process.argv.slice(2).filter((a) => !a.startsWith('--')).map((e) => e.trim().toLowerCase());
+    const chosen = chosenPassword();
+    const newPassword = () => chosen ?? password();
+    // drop the flags and, when it is there, the value that follows --password
+    const args = process.argv.slice(2);
+    const passwordValueIndex = chosen === null ? -1 : args.indexOf('--password') + 1;
+    const emails = args
+        .filter((a, i) => !a.startsWith('--') && i !== passwordValueIndex)
+        .map((e) => e.trim().toLowerCase());
     if (emails.length === 0) {
         console.error('usage: pnpm db:test-users -- [--trainer|--revoke|--reset] email [email…]');
         process.exit(2);
@@ -48,7 +70,7 @@ async function main() {
 
         if (hasFlag('--reset')) {
             if (!existing) { console.log(`${email}: no such user`); continue; }
-            const pw = password();
+            const pw = newPassword();
             const { error } = await admin.auth.admin.updateUserById(existing.id, { password: pw });
             console.log(`${email}: ${error ? `FAILED (${error.message})` : `new password ${pw}`}`);
             continue;
@@ -57,7 +79,7 @@ async function main() {
         if (existing) { console.log(`${email}: already exists (use --reset for a new password)`); continue; }
 
         await admin.from('invites').upsert({ email, role, note: 'created by scripts/create-test-users.ts' }, { onConflict: 'email' }).select();
-        const pw = password();
+        const pw = newPassword();
         const { data, error } = await admin.auth.admin.createUser({
             email,
             password: pw,
