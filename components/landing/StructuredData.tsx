@@ -9,8 +9,9 @@ import { SITE_URL, SITE_NAME, absoluteUrl } from '@/lib/seo';
  * markup cannot drift from the visible content. There is deliberately no WebSite/SearchAction:
  * that is only honest when a site has a real search endpoint, and this one does not.
  *
- * `sameAs` on the Organization is intentionally absent until there are real profiles to point at —
- * inventing social URLs is worse than omitting the property.
+ * `sameAs` lists only profiles that actually exist. It is how Google ties this site to the same
+ * entity elsewhere, which is most of the work of telling SHaiPT apart from shaip.com — so add real
+ * profiles here as they appear, and never invent one.
  */
 export default function StructuredData() {
     const softwareApplication = {
@@ -59,6 +60,7 @@ export default function StructuredData() {
         },
         description:
             'SHaiPT builds an AI personal trainer that measures and scores lifting technique from an ordinary phone camera.',
+        sameAs: ['https://www.instagram.com/shaiptofficial'],
     };
 
     const faqPage = {

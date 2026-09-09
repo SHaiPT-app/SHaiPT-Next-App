@@ -43,8 +43,11 @@ test('the landing page has exactly one h1 and a self-referencing canonical', asy
 
     const headings = page.locator('h1');
     await expect(headings).toHaveCount(1);
-    // The three animated lines still have to read as one sentence.
-    await expect(headings.first()).toHaveText(/Real-time\s+smart 4D\s+form check\./);
+    // The animated lines and the deck still have to read as one sentence, and the heading has to
+    // contain the term the <title> promises.
+    await expect(headings.first()).toHaveText(
+        /^Real-time\s+smart 4D\s+form check\.\s+Your AI personal trainer\.$/,
+    );
 
     const canonical = page.locator('link[rel="canonical"]');
     await expect(canonical).toHaveAttribute('href', 'https://www.shaipt.com');
@@ -96,6 +99,11 @@ test('structured data parses and describes what is on the page', async ({ page }
 
     const byType = new Map(blocks.map((b) => [(b as { '@type': string })['@type'], b]));
     expect([...byType.keys()].sort()).toEqual(['FAQPage', 'Organization', 'SoftwareApplication']);
+
+    // sameAs is the entity signal that separates SHaiPT from shaip.com. Every URL in it must be a
+    // profile that exists.
+    const org = byType.get('Organization') as { sameAs?: string[] };
+    expect(org.sameAs).toContain('https://www.instagram.com/shaiptofficial');
 
     const app = byType.get('SoftwareApplication') as {
         name: string;
