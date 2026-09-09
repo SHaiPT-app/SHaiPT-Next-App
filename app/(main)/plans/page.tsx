@@ -21,6 +21,8 @@ import {
     Save,
 } from 'lucide-react';
 import ErrorState from '@/components/ErrorState';
+import { fourDcoachExerciseUrl } from '@/lib/exerciseLibrary';
+import { useFourDcoachUrl } from '@/lib/fourDcoach';
 import type {
     Profile,
     TrainingPlan,
@@ -990,6 +992,7 @@ function ExerciseCard({
     onRemoveSet,
     onRemoveExercise,
 }: ExerciseCardProps) {
+    const fourD = useFourDcoachUrl();
     const exerciseName = exerciseDetail?.name || exercise.exercise_id;
     const targetMuscles = exerciseDetail?.target_muscles?.join(', ') || '';
 
@@ -1011,6 +1014,18 @@ function ExerciseCard({
                         <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.1rem' }}>
                             {targetMuscles}
                         </div>
+                    )}
+                    {/* 4Dcoach covers form: film this lift and get the replay */}
+                    {exercise.fourd_id && (
+                        <a
+                            data-testid={`fourd-link-${exerciseIndex}`}
+                            href={fourDcoachExerciseUrl(fourD, exercise.fourd_id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: 'var(--brand)', fontSize: '0.72rem', marginTop: '0.25rem', display: 'inline-block' }}
+                        >
+                            Form check in 4D
+                        </a>
                     )}
                 </div>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>

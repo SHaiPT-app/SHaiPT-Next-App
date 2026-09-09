@@ -69,10 +69,14 @@ export default function AnalyticsDashboardPage() {
             setLoading(true);
             try {
                 // Fetch workout logs with exercise logs
+                // Only finished workouts: every "Start" writes a workout_logs row, so abandoned
+                // starts would otherwise show as "0 exercises, 0 sets" here and be counted in
+                // the week's adherence.
                 const { data: logs } = await supabase
                     .from('workout_logs')
                     .select('*, exercise_logs(*)')
                     .eq('user_id', userId)
+                    .not('completed_at', 'is', null)
                     .order('date', { ascending: false })
                     .limit(50);
 
@@ -194,6 +198,7 @@ export default function AnalyticsDashboardPage() {
 
     const formatDuration = (seconds: number | undefined | null): string => {
         if (!seconds) return '--';
+        if (seconds < 60) return `${seconds}s`; // a short session should not read as "0m"
         const mins = Math.floor(seconds / 60);
         if (mins < 60) return `${mins}m`;
         const hrs = Math.floor(mins / 60);

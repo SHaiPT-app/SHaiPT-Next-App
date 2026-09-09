@@ -152,11 +152,14 @@ function setupSupabaseMock({
         chain.limit = jest.fn().mockReturnValue(chain)
         chain.single = jest.fn().mockReturnValue(chain)
         chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null })
+        chain.not = jest.fn().mockReturnValue(chain)
 
         if (table === 'workout_logs') {
+            // select -> eq(user_id) -> not(completed_at) -> order -> limit
             chain.limit = jest.fn().mockResolvedValue({ data: logs, error: null })
             chain.order = jest.fn().mockReturnValue({ ...chain, limit: chain.limit })
-            chain.eq = jest.fn().mockReturnValue({ ...chain, order: chain.order })
+            chain.not = jest.fn().mockReturnValue({ ...chain, order: chain.order })
+            chain.eq = jest.fn().mockReturnValue({ ...chain, not: chain.not, order: chain.order })
             chain.select = jest.fn().mockReturnValue({ ...chain, eq: chain.eq })
         } else if (table === 'personal_records') {
             chain.order = jest.fn().mockResolvedValue({ data: prs, error: null })

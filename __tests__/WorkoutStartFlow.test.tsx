@@ -229,9 +229,33 @@ function resetMocks() {
 // ─── Tests ──────────────────────────────────────────────────────────
 
 describe('WorkoutLogger - Start Flow', () => {
+    // The in-app pose overlay only exists when the build asks for it; the rest of this file
+    // covers that build. The default (hidden) is asserted at the bottom.
+    const formCheckerFlag = process.env.NEXT_PUBLIC_ENABLE_FORM_CHECKER;
     beforeEach(() => {
         resetMocks();
         setupDefaultMocks();
+        process.env.NEXT_PUBLIC_ENABLE_FORM_CHECKER = '1';
+    });
+    afterAll(() => {
+        if (formCheckerFlag === undefined) delete process.env.NEXT_PUBLIC_ENABLE_FORM_CHECKER;
+        else process.env.NEXT_PUBLIC_ENABLE_FORM_CHECKER = formCheckerFlag;
+    });
+
+    describe('Form checker off by default', () => {
+        it('does not offer the in-app form checker unless the build enables it', async () => {
+            delete process.env.NEXT_PUBLIC_ENABLE_FORM_CHECKER;
+            render(<WorkoutLogger userId="user-1" />);
+            await waitFor(() => {
+                expect(screen.getByTestId('start-today-workout-btn')).toBeInTheDocument();
+            });
+            fireEvent.click(screen.getByTestId('start-today-workout-btn'));
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /start workout/i })).toBeInTheDocument();
+            });
+            expect(screen.queryByTestId('form-checker-prompt')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('form-checker-toggle')).not.toBeInTheDocument();
+        });
     });
 
     describe('Today\'s Workout Card', () => {

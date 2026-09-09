@@ -6,6 +6,8 @@ import { db } from '@/lib/supabaseDb';
 import type { WorkoutSession, Exercise, ExerciseLog, LoggedSet, TrainingPlan, TrainingPlanSession, SessionExercise, WorkoutSummaryData } from '@/lib/types';
 import { WorkoutSummary } from '@/components/workout/WorkoutSummary';
 import { apiFetch, errorMessage } from '@/lib/apiClient';
+import { fourDcoachExerciseUrl } from '@/lib/exerciseLibrary';
+import { useFourDcoachUrl } from '@/lib/fourDcoach';
 
 /** Build a fallback Exercise object from SessionExercise JSONB data when DB lookup fails */
 function buildFallbackExercise(se: SessionExercise): Exercise {
@@ -18,6 +20,15 @@ function buildFallbackExercise(se: SessionExercise): Exercise {
 }
 
 const FORM_CHECKER_PREF_KEY = 'shaipt_form_checker_enabled';
+
+/**
+ * The in-app MediaPipe pose overlay is untested and 4Dcoach covers form (there is a
+ * "Form check in 4D" link on every mapped exercise), so it is off unless a build asks
+ * for it with NEXT_PUBLIC_ENABLE_FORM_CHECKER=1.
+ */
+function formCheckerAvailable(): boolean {
+    return process.env.NEXT_PUBLIC_ENABLE_FORM_CHECKER === '1';
+}
 
 const PoseDetectionOverlay = lazy(() => import('@/components/PoseDetectionOverlay'));
 
@@ -49,7 +60,7 @@ export default function WorkoutLogger({ userId, onComplete }: WorkoutLoggerProps
         try {
             const saved = localStorage.getItem(FORM_CHECKER_PREF_KEY);
             if (saved !== null) {
-                setFormCheckerEnabled(saved === 'true');
+                setFormCheckerEnabled(formCheckerAvailable() && saved === 'true');
             }
         } catch {
             // localStorage unavailable
@@ -710,6 +721,7 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
             </motion.div>
 
             {/* Form Checker Toggle */}
+            {formCheckerAvailable() && (
             <motion.div
                 data-testid="form-checker-prompt"
                 className="glass-panel"
@@ -764,6 +776,7 @@ function FormCheckerPrompt({ session, formCheckerEnabled, onToggleFormChecker, o
                     </button>
                 </div>
             </motion.div>
+            )}
 
             {/* Start Button */}
             <motion.div
@@ -843,6 +856,8 @@ interface ActiveWorkoutProps {
 }
 
 function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled }: ActiveWorkoutProps) {
+    // resolved on the client: the LAN dev server points at the Vite dev server of the same host
+    const fourD = useFourDcoachUrl();
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
     const [workoutLogId, setWorkoutLogId] = useState<string | null>(null);
     const [startedAt, setStartedAt] = useState<number>(() => Date.now());
@@ -1196,6 +1211,30 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
                         <span style={{ color: '#666' }}>No GIF available</span>
                     )}
                 </div>
+
+                {/* 4Dcoach covers form: film the set on a phone and get the replay for this lift */}
+                {sessionExercise?.fourd_id && (
+                    <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
+                        <a
+                            data-testid="fourd-form-check-link"
+                            href={fourDcoachExerciseUrl(fourD, sessionExercise.fourd_id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                                display: 'inline-block',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                borderRadius: '8px',
+                                color: '#aaa',
+                                fontSize: '0.8rem',
+                                padding: '0.5rem 1rem',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            Form check in 4D
+                        </a>
+                    </div>
+                )}
 
                 {/* Form Check Toggle */}
                 {formCheckerEnabled && (
