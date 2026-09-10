@@ -64,7 +64,8 @@ describe('POST /api/ai-coach/interview', () => {
         expect(opts).toMatchObject({ feature: 'interview', userId: 'u1', tester: false, messages: [{ role: 'user', content: 'Hello' }] });
         expect(opts.userId).not.toBe('someone-else');
         expect(opts.system).toContain('Marcus');
-        expect(opts.system).toContain('- age\n- height');
+        // The prefilled fields are now named on one line rather than as a bullet list.
+        expect(opts.system).toContain('never ask about these: age, height');
         expect(opts.schema).toBeUndefined();
     });
 
