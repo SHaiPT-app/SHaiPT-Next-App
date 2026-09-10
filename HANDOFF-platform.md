@@ -148,6 +148,47 @@ is why a mock plan says "3 days/week" whatever the answers were), and plans will
 production. Ask Ali to have one of them do a session on a phone and report what confused them.
 That is worth more than another audit. Fix what they hit.
 
+### The intake interview — reworked 2026-09-10 (commits 2a3da44..ddbc4bb)
+
+Ali reported this from a phone, with screenshots. Seven things, all fixed and all verified against
+the running server rather than by reading the code.
+
+1. **`400 Invalid schema for response_format 'result'`** on "Generate My Plan", for every user.
+   `SplitsSchema` is a `z.array` at the root and `json_schema` requires an object there. Fixed in
+   `lib/ai/gateway`: `responseSchema` wraps any non-object root in a one-key envelope and
+   `unwrapEnvelope` removes it before zod validates, so call sites keep their natural schema.
+2. **An abuse harness** (`lib/ai/guard.ts`) — the thing Ali cared most about. 500 characters per
+   answer, 6,000 per interview, 30 turns, plus a short pattern list for code/essay/translation
+   requests and prompt-injection. A rejection costs **no model call at all**; the gateway's daily
+   and monthly caps only limit damage after the fact.
+3. **Talked too much.** The prompt allowed "2-3 paragraphs"; it is now 45 words and one question.
+4. **Gaffing and `[INTERVIEW_CONTINUES]`.** Every message must now end with exactly one question.
+   That marker was never in the prompt — the model invented it by analogy with
+   `[INTERVIEW_COMPLETE]`. `stripInventedMarkers` removes any tag we did not define.
+5. **Option buttons.** `QuickReplyChips` had been in the repo unused. `TOPICS` in the interview
+   route holds each topic's choices as data; the coach emits `[OPTIONS: a | b | c]` and the client
+   renders buttons, with the text box still live for anyone whose answer is not on the list.
+6. **No scrollback.** The card showed only the coach's latest line. A History toggle now opens the
+   whole conversation as a chat.
+7. **Equipment and training history never reaching the form.** Not the interview's fault at all —
+   `intakeV1toV2` matched substrings in the wrong order, so "Home Gym" was filed as
+   `commercial_gym` (it contains "gym"), "Calisthenics park" as `outdoor` (it contains "park"),
+   and "5-10 years" as `10+yr` (it contains "10 "). Round-trip tests now cover every enum value.
+
+Two things worth knowing for whoever works here next:
+
+- **`components/ai-coach/InterviewChat.tsx` is dead code.** Nothing imports it; the live component
+  is `GamifiedChat`, on `app/coach/[coachId]/page.tsx`. Two Jest suites still mock the dead one.
+  Do not "fix" the interview there by mistake — the same trap as `landing/Hero.tsx`.
+- **`AI_MOCK=1` is set in `.env.local`,** so local interviews are canned replies, not the model.
+  The mocks are now generated from `TOPICS` so they obey the same contract; before this they were
+  long, marker-free and sometimes question-free, quietly demonstrating the behaviour being removed.
+  To exercise the real prompt, unset `AI_MOCK` — and expect to pay for it.
+
+Guard limits live in one place (`lib/ai/guard.ts`) and the client imports `MAX_ANSWER_CHARS` from
+it for the input's `maxLength`, so the two cannot drift. The input cap is a convenience; the server
+is the control.
+
 ### C. The rough edges left, in the order they matter
 1. **`/workouts` is a 404** — only `/workouts/new` exists; the history list lives on `/progress`.
    Either add a page or leave it (nothing links to it).
@@ -162,7 +203,7 @@ That is worth more than another audit. Fix what they hit.
    from them. It grants no data access — `is_coach_of()` requires an *active* row in
    `coaching_relationships`, which is what `/api/trainer/clients` and the RLS policies use — so
    it is a dead limb rather than a hole. Delete it, or make it require the relationship.
-5. **The 17 red Jest suites** (18 before this session) are component tests with stale mocks:
+5. **The 17 red Jest suites** are component tests with stale mocks:
    LoginForm, Dashboard, CoachInterviewPage, landing/*, both AICoachChat files. None of them
    reflects a broken screen. Worth a pass when there is nothing better to do; compare against a
    `git worktree` at the previous commit before assuming you caused one.
