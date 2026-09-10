@@ -248,11 +248,38 @@ async function cacheSet(key: string, feature: Feature, model: string, response: 
 // Schema → OpenAI json_schema response format
 // ---------------------------------------------------------------------------
 
+/**
+ * The key a non-object schema rides under. `response_format: json_schema` requires an object at
+ * the root — an array root is rejected outright with
+ * `schema must be a JSON Schema of 'type: "object"', got 'type: "array"'` — so anything that is
+ * not an object is wrapped here on the way out and unwrapped on the way back.
+ */
+const ENVELOPE_KEY = 'items';
+
+function needsEnvelope(schema: ZodType): boolean {
+    return (z.toJSONSchema(schema) as { type?: unknown }).type !== 'object';
+}
+
 /** JSON Schema for the response_format. Not strict: zod validates on the way out anyway. */
 export function responseSchema(schema: ZodType): Record<string, unknown> {
     const json = z.toJSONSchema(schema) as Record<string, unknown>;
     delete json.$schema;
-    return json;
+    if (json.type === 'object') return json;
+    return {
+        type: 'object',
+        properties: { [ENVELOPE_KEY]: json },
+        required: [ENVELOPE_KEY],
+        additionalProperties: false,
+    };
+}
+
+/** Takes the envelope back off, so call sites keep their natural schema. */
+export function unwrapEnvelope(schema: ZodType, value: unknown): unknown {
+    if (!needsEnvelope(schema)) return value;
+    if (value && typeof value === 'object' && !Array.isArray(value) && ENVELOPE_KEY in value) {
+        return (value as Record<string, unknown>)[ENVELOPE_KEY];
+    }
+    return value;
 }
 
 // ---------------------------------------------------------------------------
@@ -392,7 +419,7 @@ export async function callModel<T = unknown>(opts: CallOptions<T> & { tester?: b
         usage = usageFrom(model, result.usage);
         if (opts.schema) {
             try {
-                json = opts.schema.parse(extractJson(text));
+                json = opts.schema.parse(unwrapEnvelope(opts.schema, extractJson(text)));
             } catch (parseErr) {
                 // one repair attempt: ask the model to return only the JSON
                 const repair = await api.chat.completions.create({
@@ -403,7 +430,7 @@ export async function callModel<T = unknown>(opts: CallOptions<T> & { tester?: b
                 const u2 = usageFrom(model, repair.usage);
                 usage = { inputTokens: usage.inputTokens + u2.inputTokens, outputTokens: usage.outputTokens + u2.outputTokens, cachedTokens: usage.cachedTokens + u2.cachedTokens, costUsd: usage.costUsd + u2.costUsd };
                 try {
-                    json = opts.schema.parse(extractJson(repairedText));
+                    json = opts.schema.parse(unwrapEnvelope(opts.schema, extractJson(repairedText)));
                     text = repairedText;
                 } catch {
                     await logUsage({ userId: opts.userId, feature: opts.feature, model, usage, cacheHit: false, status: 'invalid_json', latencyMs: Date.now() - started });
