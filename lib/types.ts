@@ -961,29 +961,38 @@ export function intakeV1toV2(v1: IntakeFormData): IntakeFormDataV2 {
         if (timeMatch[3]) preferred_time_ampm = timeMatch[3].toUpperCase() as 'AM' | 'PM';
     }
 
-    // Parse training location
+    // Parse training location.
+    //
+    // Most specific first, which is the whole trick here. Testing `gym` early swallowed "Home Gym"
+    // and "Garage gym" into commercial_gym, and testing `park` before `calisthenics` swallowed
+    // "Calisthenics park" into outdoor — so the location came out wrong for everything except a
+    // literal "commercial gym", including on a straight round-trip from intakeV2toV1's own labels.
     let training_location: TrainingLocationType | '' = '';
-    const loc = v1.training_location.toLowerCase();
-    if (loc.includes('commercial') || loc.includes('gym')) training_location = 'commercial_gym';
-    else if (loc.includes('home')) training_location = 'home_gym';
-    else if (loc.includes('outdoor') || loc.includes('park')) training_location = 'outdoor';
-    else if (loc.includes('calisthenics')) training_location = 'calisthenics_park';
-    else if (loc.includes('hotel') || loc.includes('travel')) training_location = 'hotel_travel';
+    const loc = `${v1.training_location} ${v1.available_equipment}`.toLowerCase();
+    if (/calisthenic/.test(loc)) training_location = 'calisthenics_park';
+    else if (/hotel|travel/.test(loc)) training_location = 'hotel_travel';
+    else if (/home|garage|apartment|basement|living room/.test(loc)) training_location = 'home_gym';
+    else if (/outdoor|outside|\bpark\b|beach/.test(loc)) training_location = 'outdoor';
+    else if (/commercial|\bgym\b/.test(loc)) training_location = 'commercial_gym';
 
-    // Parse equipment
+    // Parse equipment. People list it as "barbell, dumbbells and a cable machine", so split on the
+    // conjunction too rather than leaving "dumbbells and a cable machine" as one item.
     const equipment = v1.available_equipment
-        ? v1.available_equipment.split(/[,;]/).map(e => e.trim()).filter(Boolean)
+        ? v1.available_equipment.split(/[,;\n]|\sand\s/i).map(e => e.trim()).filter(Boolean)
         : [];
 
-    // Parse athletic history
+    // Parse athletic history.
+    //
+    // Ranges before the open-ended bucket. The old order tested `'10 '` first, and "5-10 years"
+    // contains "10 " — so every 5-10 year athlete was recorded as 10+.
     let athletic_history = '';
-    const hist = (v1.sport_history + ' ' + v1.training_duration).toLowerCase();
-    if (hist.includes('never')) athletic_history = 'never';
-    else if (hist.includes('10+') || hist.includes('10 ')) athletic_history = '10+yr';
-    else if (hist.includes('5-10') || hist.includes('5 to 10')) athletic_history = '5-10yr';
-    else if (hist.includes('3-5') || hist.includes('3 to 5')) athletic_history = '3-5yr';
-    else if (hist.includes('1-3') || hist.includes('1 to 3')) athletic_history = '1-3yr';
-    else if (hist.includes('<1') || hist.includes('less than')) athletic_history = '<1yr';
+    const hist = `${v1.sport_history} ${v1.training_duration}`.toLowerCase();
+    if (/never/.test(hist)) athletic_history = 'never';
+    else if (/less than\s*(a|1)|under\s*(a|1)|<\s*1/.test(hist)) athletic_history = '<1yr';
+    else if (/1\s*(-|to)\s*3/.test(hist)) athletic_history = '1-3yr';
+    else if (/3\s*(-|to)\s*5/.test(hist)) athletic_history = '3-5yr';
+    else if (/5\s*(-|to)\s*10/.test(hist)) athletic_history = '5-10yr';
+    else if (/10\s*\+|over\s*10|more than\s*10/.test(hist)) athletic_history = '10+yr';
 
     // Parse fitness level
     let fitness_level = '';
