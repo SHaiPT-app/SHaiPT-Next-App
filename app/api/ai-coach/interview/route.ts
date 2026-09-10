@@ -62,28 +62,39 @@ const COACH_PERSONAS: Record<string, { name: string; personality: string }> = {
  * verbatim into an [OPTIONS: ...] marker. Equipment and athletic history were the two the coach
  * used to skip or ask vaguely, which is why they have the most explicit choices.
  */
-const TOPICS: { id: string; ask: string; options?: string[] }[] = [
-    { id: 'basic_info', ask: 'their first name, last name, age, height and weight' },
+const TOPICS: {
+    id: string;
+    /** How the prompt describes the topic to the coach, in the third person. */
+    ask: string;
+    /** What the mock coach actually says, in the second person. */
+    say: string;
+    options?: string[];
+}[] = [
+    { id: 'basic_info', ask: 'their first name, last name, age, height and weight', say: 'First things first — your name, age, height and weight?' },
     {
         id: 'athletic_history',
         ask: 'how long they have been training, and what sports or training styles they have done',
+        say: 'How long have you been training?',
         options: ['Never trained', 'Less than 1 year', '1-3 years', '3-5 years', '5-10 years', '10+ years'],
     },
-    { id: 'fitness_goals', ask: 'their main goal for this program' },
+    { id: 'fitness_goals', ask: 'their main goal for this program', say: 'What is your main goal for this program?' },
     {
         id: 'training_schedule',
         ask: 'how many days a week they can train, how long a session, and what time of day',
+        say: 'How many days a week can you train?',
         options: ['2 days', '3 days', '4 days', '5 days', '6 days'],
     },
     {
         id: 'equipment_location',
         ask: 'where they will train and what equipment they have there',
+        say: 'Where will you be training?',
         options: ['Commercial gym', 'Home gym', 'Garage gym', 'Outdoor', 'Calisthenics park', 'Hotel or travel'],
     },
-    { id: 'medical', ask: 'any injuries, illnesses or medical considerations' },
+    { id: 'medical', ask: 'any injuries, illnesses or medical considerations', say: 'Any injuries or medical conditions I should work around?' },
     {
         id: 'fitness_level',
         ask: 'how they would rate their current fitness level',
+        say: 'How would you rate your fitness level right now?',
         options: ['Beginner', 'Intermediate', 'Advanced'],
     },
 ];
@@ -171,28 +182,21 @@ Rules:
 - Combine related pieces of info into single fields where appropriate.
 - Return ONLY the JSON object, no markdown fences, no explanation.`;
 
-const MOCK_RESPONSES: Record<string, string[]> = {
-    intro: [
-        "Welcome! I'm excited to get to know you and build you an incredible program. Let's start with the basics -- what's your name, how old are you, and what are your height and weight?",
-    ],
-    followup: [
-        "That's great info. Now tell me about your athletic background -- have you played any sports? How long have you been training, and what does your current routine look like?",
-        "Solid. What are your main fitness goals right now? What do you want to achieve with this program?",
-        "Good to know. How many days per week can you train? How long do you like your sessions to be, and do you prefer morning, afternoon, or evening workouts?",
-        "Almost there. What equipment do you have access to? Are you training at a commercial gym, home setup, or outdoors?",
-        "Important question -- do you have any injuries, illnesses, or medical conditions I should know about?",
-        "Last one -- how would you rate your current fitness level? Beginner, intermediate, or advanced? Be honest, there's no wrong answer.",
-    ],
-};
-
-function getMockIntroResponse(coachId: string): string {
+/**
+ * Mock mode (AI_MOCK=1, or no OPENAI_API_KEY outside production).
+ *
+ * Built from TOPICS so the canned interview obeys the same contract as the real one — short, one
+ * question, real [OPTIONS:] and [STEP:] markers. The previous canned replies predated that contract
+ * and were long, marker-free and occasionally question-free, so mock mode quietly demonstrated the
+ * behaviour we were trying to remove.
+ */
+function mockTurn(coachId: string, userAnswers: number): string {
     const persona = COACH_PERSONAS[coachId] || COACH_PERSONAS['everyday-fitness'];
-    return `Hey there! I'm ${persona.name}, and I'm pumped to be your coach. Before we build your program, I need to learn about you. Let's start with the basics -- what's your name, how old are you, and what are your height and weight?`;
-}
-
-function getMockFollowupResponse(messageCount: number): string {
-    const idx = Math.min(Math.floor((messageCount - 1) / 2), MOCK_RESPONSES.followup.length - 1);
-    return MOCK_RESPONSES.followup[idx];
+    const topic = TOPICS[Math.min(userAnswers, TOPICS.length - 1)];
+    const opener = userAnswers === 0 ? `I'm ${persona.name}. ` : '';
+    const previous = userAnswers > 0 ? ` [STEP:${TOPICS[userAnswers - 1].id}]` : '';
+    const options = topic.options ? ` [OPTIONS: ${topic.options.join(' | ')}]` : '';
+    return `${opener}${topic.say}${previous}${options}`.trim();
 }
 
 const IntakeSchema = z.object({
@@ -241,15 +245,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
         }
         const { tester } = await getProfileBits(auth);
-        // Every user turn is capped and the transcript is trimmed before anything is spent: the
-        // client resends the whole conversation each turn, so an unscreened answer would be paid
-        // for on every turn after the one it arrived on. See lib/ai/guard.
-        const history = sanitizeHistory(
-            messages.filter((m) => m && typeof m.content === 'string').map((m) => ({ role: m.role, content: m.content })),
-        );
+        const incoming = messages
+            .filter((m) => m && typeof m.content === 'string')
+            .map((m) => ({ role: m.role, content: m.content }));
 
         if (action === 'extract_form_data') {
-            const conversationText = history.map((m) => `${m.role === 'user' ? 'CLIENT' : 'COACH'}: ${m.content}`).join('\n\n');
+            const conversationText = sanitizeHistory(incoming)
+                .map((m) => `${m.role === 'user' ? 'CLIENT' : 'COACH'}: ${m.content}`)
+                .join('\n\n');
             const res = await callModel<IntakeFormData>({
                 userId: auth.user.id, tester, feature: 'interview', schema: IntakeSchema, maxOutputTokens: 500, temperature: 0.1,
                 prompt: `${EXTRACT_FORM_PROMPT}\n\nConversation:\n${conversationText}`,
@@ -262,7 +265,11 @@ export async function POST(req: Request) {
 
         // Screen the answer being responded to. A rejection is returned as an ordinary coach turn
         // so the interview keeps its shape, and costs no model call at all — which is the point.
-        const userTurns = history.filter((m) => m.role === 'user');
+        //
+        // This has to read the message as sent, BEFORE sanitizeHistory truncates it: screening the
+        // truncated copy means every over-long answer arrives already trimmed to the cap and the
+        // length rule can never fire. That is exactly what happened the first time round.
+        const userTurns = incoming.filter((m) => m.role === 'user');
         const latest = userTurns[userTurns.length - 1];
         if (latest) {
             const screened = screenAnswer(latest.content, userTurns.length - 1);
@@ -277,14 +284,19 @@ export async function POST(req: Request) {
             }
         }
 
-        const isFirst = history.filter((m) => m.role === 'user').length <= 1 && history.length <= 1;
+        // Screening the newest answer is not enough on its own: the client resends the whole
+        // conversation every turn, so older turns are capped and the transcript trimmed here.
+        const history = sanitizeHistory(incoming);
         const res = await callModel({
             userId: auth.user.id, tester, feature: 'interview',
             system: buildInterviewSystemPrompt(coachId, prefilledFields),
             messages: history.length ? history : [{ role: 'user', content: 'Hello' }],
             mock: () => {
-                const done = history.length >= 12;
-                return (isFirst ? getMockIntroResponse(coachId) : getMockFollowupResponse(history.length)) + (done ? ' [INTERVIEW_COMPLETE]' : '');
+                const answered = history.filter((m) => m.role === 'user').length - 1;
+                const done = answered >= TOPICS.length;
+                return done
+                    ? `That is everything I need. [STEP:${TOPICS[TOPICS.length - 1].id}] [INTERVIEW_COMPLETE]`
+                    : mockTurn(coachId, Math.max(0, answered));
             },
         });
         const isComplete = res.text.includes('[INTERVIEW_COMPLETE]');
