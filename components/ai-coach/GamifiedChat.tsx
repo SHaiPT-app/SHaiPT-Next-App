@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send } from 'lucide-react';
+import { Send, ChevronUp, ChevronDown } from 'lucide-react';
 import type { CoachPersona } from '@/data/coaches';
 import type { IntakeFormData, IntakeFormDataV2 } from '@/lib/types';
 import ProgressBar from './ProgressBar';
+import QuickReplyChips from './QuickReplyChips';
 import IntakePhotoUpload from './IntakePhotoUpload';
 import { apiFetch, apiFetchRaw, ApiError, errorMessage } from '@/lib/apiClient';
+import { MAX_ANSWER_CHARS } from '@/lib/ai/guard';
 
 interface GamifiedChatProps {
     coach: CoachPersona;
@@ -36,13 +38,38 @@ const STEP_MARKERS: Record<string, string> = {
 };
 
 
-function stripStepMarkers(text: string): { cleaned: string; steps: string[] } {
+/**
+ * Pulls the markers out of a reply.
+ *
+ * [STEP:<id>] advances the progress bar. [OPTIONS: a | b | c] becomes the row of buttons under the
+ * message — the coach is told to send the marker *instead of* listing the choices in its sentence,
+ * so the text stays short enough to read without scrolling.
+ *
+ * The catch-all at the end is for markers the model invents. The server strips those too; this is
+ * here because the reply is rendered while it streams, and a half-written tag should never flash
+ * up on screen mid-stream.
+ */
+function parseMarkers(text: string): { cleaned: string; steps: string[]; options: string[] } {
     const steps: string[] = [];
-    const cleaned = text.replace(/\[STEP:(\w+)\]/g, (_, step) => {
+    let options: string[] = [];
+
+    let cleaned = text.replace(/\[STEP:(\w+)\]/g, (_, step) => {
         if (STEP_MARKERS[step]) steps.push(STEP_MARKERS[step]);
         return '';
     });
-    return { cleaned: cleaned.trim(), steps };
+
+    cleaned = cleaned.replace(/\[OPTIONS:([^\]]*)\]/g, (_, list: string) => {
+        options = list.split('|').map((o) => o.trim()).filter(Boolean);
+        return '';
+    });
+
+    // A tag still being streamed ("[OPT", "[STEP:equi") plus anything we never defined.
+    cleaned = cleaned
+        .replace(/\[(?!STEP:|OPTIONS:)[A-Z][A-Z0-9_ ]{2,}\]/g, '')
+        .replace(/\[[A-Z]*$/, '')
+        .replace(/[ \t]{2,}/g, ' ');
+
+    return { cleaned: cleaned.trim(), steps, options };
 }
 
 export default function GamifiedChat({
@@ -61,6 +88,10 @@ export default function GamifiedChat({
     const [photoUploadComplete, setPhotoUploadComplete] = useState(false);
     const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
     const [userMessageCount, setUserMessageCount] = useState(0);
+    /** Choices offered by the current question, from its [OPTIONS:] marker. */
+    const [options, setOptions] = useState<string[]>([]);
+    /** Whether the transcript is open. The coach's latest line is always on screen; this is the rest. */
+    const [showTranscript, setShowTranscript] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -91,9 +122,10 @@ export default function GamifiedChat({
     }, [initialFormData]);
 
     // Scroll to bottom
+    // The anchor only exists while the transcript is open, so this is a no-op when it is closed.
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, showPhotoUpload]);
+    }, [messages, showPhotoUpload, showTranscript]);
 
     // Focus input
     useEffect(() => {
@@ -210,7 +242,7 @@ export default function GamifiedChat({
 
     // Process AI response for step markers
     const processResponse = useCallback((text: string) => {
-        const { cleaned, steps } = stripStepMarkers(text);
+        const { cleaned, steps, options: parsed } = parseMarkers(text);
         if (steps.length > 0) {
             setCompletedSteps(prev => {
                 const newSet = new Set([...prev, ...steps]);
@@ -218,6 +250,7 @@ export default function GamifiedChat({
             });
             setActiveStep(steps[steps.length - 1]);
         }
+        setOptions(parsed);
         return cleaned;
     }, []);
 
@@ -294,6 +327,7 @@ export default function GamifiedChat({
         const updatedMessages = [...messagesRef.current, userMessage];
         setMessages(updatedMessages);
         setInput('');
+        setOptions([]);
         setIsLoading(true);
         setUserMessageCount(prev => prev + 1);
 
@@ -368,8 +402,12 @@ export default function GamifiedChat({
         sendMessage();
     };
 
-    // Get only the last assistant message for display in the top card
+    // The coach's latest line, which is what the card shows when the transcript is closed.
     const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant' && m.content.length > 0);
+
+    // The conversation so far. The opening "Hi, I just selected you as my coach" is synthetic — the
+    // client never typed it — so it is not part of what they scroll back through.
+    const transcript = messages.filter(m => m.content.length > 0 && !m.id.startsWith('user-init'));
 
     return (
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[var(--surface-0)]">
@@ -388,7 +426,7 @@ export default function GamifiedChat({
                         <div className="mb-[0.35rem]">
                             <ProgressBar completedSteps={completedSteps} activeStep={activeStep} />
                         </div>
-                        <div className="glass-card max-h-[30vh] overflow-y-auto p-[0.85rem]">
+                        <div className={`glass-card overflow-y-auto p-[0.85rem] ${showTranscript ? 'max-h-[58vh]' : 'max-h-[34vh]'}`}>
                             <div className="mb-2 flex items-center gap-2">
                                 <div
                                     className={`h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border-2 border-brand ${
@@ -417,9 +455,41 @@ export default function GamifiedChat({
                                         {isLoading ? 'Thinking...' : 'AI Coach'}
                                     </p>
                                 </div>
+                                {transcript.length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowTranscript(v => !v)}
+                                        aria-expanded={showTranscript}
+                                        data-testid="interview-transcript-toggle"
+                                        className="ml-auto flex cursor-pointer items-center gap-1 rounded-[8px] border border-line-soft bg-transparent px-2 py-1 text-[0.65rem] uppercase tracking-[0.08em] text-ink-low transition-colors hover:text-ink-hi"
+                                    >
+                                        {showTranscript ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+                                        {showTranscript ? 'Latest' : 'History'}
+                                    </button>
+                                )}
                             </div>
 
-                            {lastAssistantMsg ? (
+                            {showTranscript ? (
+                                <div className="flex flex-col gap-3">
+                                    {transcript.map(m => (
+                                        <div key={m.id}>
+                                            <p className="mb-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.05em] text-ink-low">
+                                                {m.role === 'user' ? 'You' : coach.nickname}
+                                            </p>
+                                            <p
+                                                className={
+                                                    m.role === 'user'
+                                                        ? 'whitespace-pre-wrap rounded-[8px] bg-[var(--brand-glow-soft)] px-2 py-1 text-[0.8rem] text-ink-hi'
+                                                        : 'coach-handwriting whitespace-pre-wrap text-ink-hi'
+                                                }
+                                            >
+                                                {m.content}
+                                            </p>
+                                        </div>
+                                    ))}
+                                    <div ref={messagesEndRef} />
+                                </div>
+                            ) : lastAssistantMsg ? (
                                 <p className="coach-handwriting whitespace-pre-wrap text-ink-hi">
                                     {lastAssistantMsg.content}
                                 </p>
@@ -452,6 +522,21 @@ export default function GamifiedChat({
                             </div>
                         )}
 
+                        {options.length > 0 && !showPhotoUpload && !isLoading && (
+                            <div className="glass-card mb-2 p-3" data-testid="interview-options">
+                                <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-ink-low">
+                                    Pick one, or type your own
+                                </p>
+                                <QuickReplyChips
+                                    options={options}
+                                    selected={[]}
+                                    onSelect={(picked) => {
+                                        if (picked[0]) sendMessage(picked[0]);
+                                    }}
+                                />
+                            </div>
+                        )}
+
                         <div className="glass-card p-3">
                             <form onSubmit={handleSubmit} className="flex gap-2">
                                 <input
@@ -464,6 +549,8 @@ export default function GamifiedChat({
                                             : 'Type your answer...'
                                     }
                                     disabled={isLoading || showPhotoUpload}
+                                    maxLength={MAX_ANSWER_CHARS}
+                                    data-testid="interview-input"
                                     className={`flex-1 rounded-[10px] border border-line-soft bg-[var(--surface-1)] px-[0.7rem] py-[0.6rem] text-[0.85rem] text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand ${
                                         showPhotoUpload ? 'opacity-50' : ''
                                     }`}
@@ -480,7 +567,6 @@ export default function GamifiedChat({
                     </div>
                 </div>
             </div>
-            <div ref={messagesEndRef} className="hidden" />
         </div>
     );
 }
