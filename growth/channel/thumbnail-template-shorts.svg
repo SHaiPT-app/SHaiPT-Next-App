@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <!--
+    ═══════════════════════════════════════════════════════════════════════════
+    SHaiPT — Shorts cover template                        1080 x 1920  (9:16)
+    ═══════════════════════════════════════════════════════════════════════════
+
+    Twin of thumbnail-template.svg. IDENTICAL token names, so one fill step
+    produces both the 16:9 tile and the vertical cover for the same video.
+
+    ── SLOTS ─────────────────────────────────────────────────────────────────
+      {{STILL}} {{KICKER}} {{HEADLINE_1}} {{HEADLINE_2}}
+      {{SCORE}} {{SCORE_DASH_S}} {{METRIC_1}} {{METRIC_2}} {{TAG}}
+
+      NOTE the arc token differs: the ring here is r=82, so
+        {{SCORE_DASH_S}} = SCORE / 100 * 515.221        (2 * pi * 82)
+      while the 16:9 file uses {{SCORE_DASH}} against 615.752 (r=98).
+      render.sh computes both.
+
+    ── READING ORDER, TOP TO BOTTOM ──────────────────────────────────────────
+      hook  ➜  proof  ➜  readout.  The headline is ABOVE the still, not below
+      it, because a Shorts tile in a grid is read from the top and the bottom
+      fifth is under the player's own UI. The claim has to land before the eye
+      reaches the footage.
+
+    ── WHY THE STILL IS A BAND, NOT FULL BLEED ───────────────────────────────
+      Gym footage is shot horizontally. Stretching a 16:9 frame over 9:16 either
+      crops the lifter's head and feet off or upscales 3x into mush. A banded
+      still, framed by the brand's corner brackets, is sharper AND closer to the
+      visual language (a film still on a title card).
+
+    ── SAFE ZONE ─────────────────────────────────────────────────────────────
+      The player and the grid tile lay title, channel row and action rail over
+      roughly the bottom 18% (below y 1574) and the top 8% (above y 155).
+      Everything that must be read lives between those lines. {{TAG}} at y 1630
+      is the one element allowed to be covered; nothing is lost if it is.
+  -->
+
+  <defs>
+    <radialGradient id="sVign" cx="0.5" cy="0.5" r="0.62">
+      <stop offset="0.42" stop-color="#050507" stop-opacity="0"/>
+      <stop offset="1"    stop-color="#050507" stop-opacity="0.72"/>
+    </radialGradient>
+    <pattern id="sScan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="2" fill="#000000" fill-opacity="0.14"/>
+    </pattern>
+  </defs>
+
+  <rect width="1080" height="1920" fill="#050507"/>
+
+  <!-- ─── SLOT: kicker (the lift) ─────────────────────────────────────────── -->
+  <g font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+     font-size="26" letter-spacing="7">
+    <circle cx="90" cy="206" r="10" fill="#da0023"/>
+    <text x="118" y="216" fill="#da0023">REC</text>
+    <text x="248" y="216" fill="#ffffff" fill-opacity="0.80">{{KICKER}}</text>
+  </g>
+
+  <!-- ─── SLOT: headline — the hook, at the top where the feed reads it ───── -->
+  <rect x="80" y="288" width="104" height="5" fill="#da0023"/>
+  <g font-family="Instrument Serif, Didot, Times New Roman, Georgia, serif" font-size="118">
+    <text x="80" y="418" fill="#ffffff">{{HEADLINE_1}}</text>
+    <text x="80" y="540" font-style="italic" fill="#da0023">{{HEADLINE_2}}</text>
+  </g>
+
+  <!-- ─── SLOT: lifting still, as a framed film band ──────────────────────── -->
+  <g>
+    <image href="{{STILL}}" xlink:href="{{STILL}}"
+           x="0" y="600" width="1080" height="700"
+           preserveAspectRatio="xMidYMid slice"/>
+    <rect x="0" y="600" width="1080" height="700" fill="url(#sVign)"/>
+    <rect x="0" y="600" width="1080" height="700" fill="url(#sScan)"/>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="3">
+      <path d="M 40 676 L 40 632 L 84 632"/>
+      <path d="M 996 632 L 1040 632 L 1040 676"/>
+      <path d="M 1040 1224 L 1040 1268 L 996 1268"/>
+      <path d="M 84 1268 L 40 1268 L 40 1224"/>
+    </g>
+  </g>
+
+  <!-- ─── SLOT: score readout ─────────────────────────────────────────────── -->
+  <g>
+    <circle cx="172" cy="1452" r="82" fill="none"
+            stroke="#ffffff" stroke-opacity="0.16" stroke-width="15"/>
+    <!-- Full circumference = 2 * pi * 82 = 515.221 -->
+    <circle cx="172" cy="1452" r="82" fill="none"
+            stroke="#da0023" stroke-width="15" stroke-linecap="butt"
+            stroke-dasharray="{{SCORE_DASH_S}} 515.221"
+            transform="rotate(-90 172 1452)"/>
+    <text x="172" y="1490" text-anchor="middle"
+          font-family="Instrument Serif, Didot, Times New Roman, Georgia, serif"
+          font-size="104" fill="#ffffff">{{SCORE}}</text>
+
+    <line x1="292" y1="1376" x2="292" y2="1528" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+
+    <g font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+       letter-spacing="5">
+      <text x="332" y="1406" font-size="22" fill="#ffffff" fill-opacity="0.50">TECHNIQUE SCORE</text>
+      <text x="332" y="1462" font-size="26" fill="#ffffff" fill-opacity="0.88">{{METRIC_1}}</text>
+      <text x="332" y="1514" font-size="26" fill="#ffffff" fill-opacity="0.88">{{METRIC_2}}</text>
+    </g>
+  </g>
+
+  <!-- ─── SLOT: tag. Below the safe line on purpose: expendable. ──────────── -->
+  <text x="80" y="1630"
+        font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+        font-size="24" letter-spacing="6.5" fill="#ffffff" fill-opacity="0.55">{{TAG}}</text>
+
+  <!-- ═══ QA GUIDES — render.sh (guides flag) turns this on ═══════════════ -->
+  <g id="crop-guides" display="none"
+     font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace" font-size="22">
+    <rect x="2" y="155" width="1076" height="1419" fill="none" stroke="#00ff88" stroke-width="4"/>
+    <text x="20" y="140" fill="#00ff88">SAFE — y 155 TO 1574</text>
+    <rect x="0" y="1574" width="1080" height="346" fill="#ff0044" fill-opacity="0.13"/>
+    <text x="20" y="1700" fill="#ff5577">PLAYER / TILE UI COVERS THIS</text>
+    <rect x="0" y="0" width="1080" height="155" fill="#ff0044" fill-opacity="0.13"/>
+  </g>
+</svg>

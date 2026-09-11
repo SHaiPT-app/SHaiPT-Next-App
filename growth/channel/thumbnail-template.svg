@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="720" viewBox="0 0 1280 720">
+  <!--
+    ═══════════════════════════════════════════════════════════════════════════
+    SHaiPT — video thumbnail template                      1280 x 720  (16:9)
+    ═══════════════════════════════════════════════════════════════════════════
+
+    For long-form, community posts and the desktop/search tile of a Short.
+    thumbnail-template-shorts.svg is the 1080 x 1920 twin; it takes the SAME
+    token names, so one fill step drives both.
+
+    ── SLOTS ─────────────────────────────────────────────────────────────────
+      {{STILL}}        path to the lifting still. ANY aspect: it is slice-fitted.
+                       Real footage only — this is the hero of the frame.
+      {{KICKER}}       the lift, ALL CAPS.  e.g.  BENCH PRESS
+      {{HEADLINE_1}}   line 1, white roman.   <= 20 characters
+      {{HEADLINE_2}}   line 2, red italic.    <= 20 characters   (the payoff)
+      {{SCORE}}        technique score, 0–100, as the app reports it
+      {{SCORE_DASH}}   arc length = SCORE / 100 * 615.752   (render.sh computes it)
+      {{METRIC_1}}     e.g.  8 REPS
+      {{METRIC_2}}     e.g.  2.1S DOWN · 0.9S UP
+      {{TAG}}          bottom-right line.  e.g.  SHAIPT.COM
+
+    Fill with sed (the medAI Times pattern) — see render.sh, function `fill`.
+
+    ── RULES ─────────────────────────────────────────────────────────────────
+      * Two lines of headline, never three. The payoff goes on line 2, in red
+        italic, because that is how the landing page sets an emphasis.
+      * Never put a score on a frame the app did not actually score.
+      * Numbers in {{METRIC_*}} are what 4Dcoach measures: reps, eccentric and
+        concentric seconds. Not invented ones.
+      * Legibility floor: this must read at 246px wide (mobile search). The
+        headline is 104px = 20px at that size; the score number is 116px = 22px.
+        The metric rows deliberately fall away at that size — they are detail
+        for the desktop tile, not the hook.
+
+    BRAND: red #da0023 flat (no gradients), ground #050507, Instrument Serif
+    with an italic red emphasis, Geist Mono caps with wide tracking, 1px corner
+    brackets, a REC dot. See app/globals.css and components/landing/*.
+  -->
+
+  <defs>
+    <linearGradient id="tVeilB" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0"    stop-color="#050507" stop-opacity="0.96"/>
+      <stop offset="0.34" stop-color="#050507" stop-opacity="0.72"/>
+      <stop offset="0.62" stop-color="#050507" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="tVeilL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0"    stop-color="#050507" stop-opacity="0.86"/>
+      <stop offset="0.58" stop-color="#050507" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="tVeilR" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#050507" stop-opacity="0.90"/>
+      <stop offset="0.6" stop-color="#050507" stop-opacity="0.62"/>
+      <stop offset="1"   stop-color="#050507" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="tScan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="2" fill="#000000" fill-opacity="0.14"/>
+    </pattern>
+  </defs>
+
+  <!-- ─── SLOT: lifting still ─────────────────────────────────────────────── -->
+  <rect width="1280" height="720" fill="#050507"/>
+  <image href="{{STILL}}" xlink:href="{{STILL}}"
+         x="0" y="0" width="1280" height="720"
+         preserveAspectRatio="xMidYMid slice"/>
+  <rect width="1280" height="720" fill="url(#tVeilB)"/>
+  <rect width="1280" height="720" fill="url(#tVeilL)"/>
+  <ellipse cx="1122" cy="240" rx="300" ry="300" fill="url(#tVeilR)"/>
+  <rect width="1280" height="720" fill="url(#tScan)"/>
+
+  <!-- ─── Frame chrome ────────────────────────────────────────────────────── -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.68" stroke-width="2">
+    <path d="M 30 66 L 30 30 L 66 30"/>
+    <path d="M 1214 30 L 1250 30 L 1250 66"/>
+    <path d="M 1250 654 L 1250 690 L 1214 690"/>
+    <path d="M 66 690 L 30 690 L 30 654"/>
+  </g>
+
+  <!-- ─── SLOT: kicker (the lift) ─────────────────────────────────────────── -->
+  <g font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+     font-size="21" letter-spacing="6">
+    <circle cx="72" cy="79" r="8" fill="#da0023"/>
+    <text x="94" y="87" fill="#da0023">REC</text>
+    <text x="194" y="87" fill="#ffffff" fill-opacity="0.80">{{KICKER}}</text>
+  </g>
+
+  <!-- ─── SLOT: score readout ─────────────────────────────────────────────── -->
+  <g>
+    <!-- track -->
+    <circle cx="1122" cy="206" r="98" fill="none"
+            stroke="#ffffff" stroke-opacity="0.16" stroke-width="16"/>
+    <!-- arc: rotated -90 so it starts at 12 o'clock and runs clockwise.
+         Full circumference = 2 * pi * 98 = 615.752 -->
+    <circle cx="1122" cy="206" r="98" fill="none"
+            stroke="#da0023" stroke-width="16" stroke-linecap="butt"
+            stroke-dasharray="{{SCORE_DASH}} 615.752"
+            transform="rotate(-90 1122 206)"/>
+    <text x="1122" y="248" text-anchor="middle"
+          font-family="Instrument Serif, Didot, Times New Roman, Georgia, serif"
+          font-size="116" fill="#ffffff">{{SCORE}}</text>
+    <text x="1124" y="352" text-anchor="middle"
+          font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+          font-size="19" letter-spacing="5" fill="#ffffff" fill-opacity="0.74">TECHNIQUE SCORE</text>
+    <line x1="1004" y1="382" x2="1216" y2="382" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+    <g font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+       font-size="19" letter-spacing="4" text-anchor="end" fill="#ffffff" fill-opacity="0.74">
+      <text x="1216" y="418">{{METRIC_1}}</text>
+      <text x="1216" y="454">{{METRIC_2}}</text>
+    </g>
+  </g>
+
+  <!-- ─── SLOT: headline ──────────────────────────────────────────────────── -->
+  <rect x="64" y="430" width="90" height="4" fill="#da0023"/>
+  <g font-family="Instrument Serif, Didot, Times New Roman, Georgia, serif" font-size="104">
+    <text x="64" y="545" fill="#ffffff">{{HEADLINE_1}}</text>
+    <text x="64" y="653" font-style="italic" fill="#da0023">{{HEADLINE_2}}</text>
+  </g>
+
+  <!-- ─── SLOT: tag ───────────────────────────────────────────────────────── -->
+  <text x="1216" y="672" text-anchor="end"
+        font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+        font-size="20" letter-spacing="5.5" fill="#ffffff" fill-opacity="0.62">{{TAG}}</text>
+
+  <!-- ═══ QA GUIDES — render.sh (guides flag) turns this on ═══════════════ -->
+  <g id="crop-guides" display="none"
+     font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace" font-size="18">
+    <!-- What is left if YouTube ever centre-crops this tile to 9:16 (405 x 720). -->
+    <rect x="437.5" y="0.5" width="405" height="719" fill="none" stroke="#ffcc00" stroke-width="3" stroke-dasharray="12 8"/>
+    <text x="449" y="716" fill="#ffcc00">9:16 CENTRE CROP</text>
+    <!-- The mobile-search legibility check: 246px wide. -->
+    <text x="40" y="716" fill="#00ff88">HEADLINE 104PX = 20PX AT 246PX WIDE</text>
+  </g>
+</svg>

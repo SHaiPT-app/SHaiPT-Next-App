@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="800" height="800" viewBox="0 0 800 800">
+  <!--
+    ═══════════════════════════════════════════════════════════════════════════
+    SHaiPT — YouTube channel avatar                                  800 x 800
+    ═══════════════════════════════════════════════════════════════════════════
+
+    YouTube crops this to a circle and shows it at 48px in comments, in the
+    Shorts feed and beside every search result. So: no words, no brackets, no
+    HUD — only the mark, big.
+
+    THE MARK is redrawn from public/logo_transparent.png (measured off the
+    original pixels, not eyeballed):
+
+      three red bars, each a little thicker than the one above, stepping left
+      a hand (three white fingers) gripping the top bar from behind
+      three white circuit nodes wired into the left end of the bottom bar
+
+    Native geometry, on the 500 x 500 canvas of the source art:
+      bar 1   x 170 → 491   y 110 → 176   (h 66)
+      bar 2   x 108 → 442   y 222 → 293   (h 71)
+      bar 3   x  64 → 387   y 343 → 421   (h 78)
+      fingers x 391 → 469   y  52 → 109
+      nodes   x   9 →  69   y 352 → 419
+      mark bbox  x 9 → 491, y 52 → 421  (482 x 369), centre (250, 236.5)
+
+    The group below keeps those native numbers and is scaled 1.16x and centred,
+    which puts the mark at 559px across — 70% of the canvas, so it still has air
+    inside the circular crop (half-diagonal 352 < radius 400).
+
+    The bars carry the whole identity at 48px. The fingers and the nodes are
+    detail for the big sizes; at thumbnail size they read as weight on the ends
+    of the bars, which is the right impression anyway.
+  -->
+
+  <!-- Ground. #050507 is the landing page's black, not pure #000, so the disc
+       has an edge against YouTube's #0f0f0f dark theme. -->
+  <rect width="800" height="800" fill="#050507"/>
+
+  <!-- Barely-there rim so the disc reads as an object in light theme too. -->
+  <circle cx="400" cy="400" r="396" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="3"/>
+
+  <g transform="translate(110, 125.66) scale(1.16)">
+
+    <!-- Hand: behind the top bar, so the bar cuts off the fingers' roots. -->
+    <g fill="#ffffff">
+      <rect x="391" y="52" width="32" height="78" rx="16"/>
+      <rect x="425" y="66" width="24" height="64" rx="12"/>
+      <rect x="450" y="86" width="20" height="44" rx="10"/>
+    </g>
+
+    <!-- Circuit traces: behind the bottom bar, so they disappear into it. -->
+    <g stroke="#ffffff" stroke-width="3.6" stroke-linecap="round">
+      <line x1="40" y1="362" x2="104" y2="362"/>
+      <line x1="29" y1="385" x2="104" y2="385"/>
+      <line x1="19" y1="408" x2="104" y2="408"/>
+    </g>
+
+    <!-- The three bars. One flat red — no gradient, per the token comment in
+         app/globals.css. -->
+    <g fill="#da0023">
+      <rect x="170" y="110" width="321" height="66" rx="33"/>
+      <rect x="108" y="222" width="334" height="71" rx="35.5"/>
+      <rect x="64"  y="343" width="323" height="78" rx="39"/>
+    </g>
+
+    <!-- Nodes last: they sit clear of the bar, so stacking order is free. -->
+    <g fill="none" stroke="#ffffff" stroke-width="4.4">
+      <circle cx="40" cy="362" r="7"/>
+      <circle cx="29" cy="385" r="7"/>
+      <circle cx="19" cy="408" r="7"/>
+    </g>
+  </g>
+
+  <!-- QA: render.sh (guides flag) shows the circular crop and the 48px legibility
+       note. Never ship a guides render. -->
+  <g id="crop-guides" display="none">
+    <circle cx="400" cy="400" r="400" fill="none" stroke="#00ff88" stroke-width="4"/>
+    <circle cx="400" cy="400" r="352" fill="none" stroke="#ffcc00" stroke-width="2" stroke-dasharray="10 8"/>
+  </g>
+</svg>

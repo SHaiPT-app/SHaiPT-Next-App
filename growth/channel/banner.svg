@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="2560" height="1440" viewBox="0 0 2560 1440">
+  <!--
+    ═══════════════════════════════════════════════════════════════════════════
+    SHaiPT — YouTube channel art (banner)                          2560 x 1440
+    ═══════════════════════════════════════════════════════════════════════════
+
+    THE CROPS YouTube applies to this one file:
+
+      TV / full art     2560 x 1440   the whole canvas
+      Desktop max       2560 x  423   x   0 → 2560, y 508.5 → 931.5
+      Tablet            1855 x  423   x 352.5 → 2207.5, same band
+      SAFE AREA         1546 x  423   x 507 → 2053, y 508.5 → 931.5   &lt;== ALL DEVICES
+
+    RULE: every element that MUST be seen lives inside the safe area. The film
+    plate, the outer brackets and the HUD ticks in the wings are bonus that only
+    desktop and TV viewers get; losing them costs nothing.
+
+    Inside the safe area we inset a further 40px, so the working box is
+      x 547 → 2013   y 549 → 891.
+
+    BRAND (app/globals.css + components/landing/ClosingBeat.tsx):
+      brand red  #da0023   — one flat red, NEVER a gradient
+      ground     #050507   (landing) / #08080C (app)
+      display    Instrument Serif, italic for the emphasis, red
+      microtype  Geist Mono, all caps, wide tracking
+      chrome     1px corner brackets, a blinking REC dot (static here)
+
+    FONTS: Instrument Serif and Geist Mono are webfonts and are usually NOT
+    installed locally. The fallbacks below (Didot, Menlo) are deliberate — Didot
+    is the closest high-contrast editorial serif macOS ships. Install the real
+    faces to render exactly as the site does; see the fonts note in render.sh.
+
+    The film plate is stills/banner-plate.jpg, cut from public/hero/bench.mp4 and
+    graded the way the site grades it (grayscale, contrast up, brightness down).
+    render.sh regenerates it; the committed copy means this file opens anywhere.
+
+    QA: render.sh (guides flag) draws the three crop rectangles on top so you can see
+    what survives. Never ship a guides render.
+  -->
+
+  <defs>
+    <!-- Top/bottom fade so the TV crop has weight at its edges. -->
+    <linearGradient id="veilV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#050507" stop-opacity="0.97"/>
+      <stop offset="0.22" stop-color="#050507" stop-opacity="0.34"/>
+      <stop offset="0.78" stop-color="#050507" stop-opacity="0.34"/>
+      <stop offset="1"    stop-color="#050507" stop-opacity="0.97"/>
+    </linearGradient>
+
+    <!-- Pool of black under the safe area so the type never fights the gym. -->
+    <radialGradient id="veilC" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#050507" stop-opacity="0.94"/>
+      <stop offset="0.55" stop-color="#050507" stop-opacity="0.80"/>
+      <stop offset="1"    stop-color="#050507" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Fine scanline. Cinematic, and it hides the upscale of a 1280px source. -->
+    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="2" fill="#000000" fill-opacity="0.16"/>
+    </pattern>
+  </defs>
+
+  <!-- ─── PLATE ──────────────────────────────────────────────────────────── -->
+  <rect width="2560" height="1440" fill="#050507"/>
+  <image href="stills/banner-plate.jpg" xlink:href="stills/banner-plate.jpg"
+         x="0" y="0" width="2560" height="1440"
+         preserveAspectRatio="xMidYMid slice" opacity="0.92"/>
+  <rect width="2560" height="1440" fill="url(#veilV)"/>
+  <ellipse cx="1280" cy="720" rx="1160" ry="430" fill="url(#veilC)"/>
+  <rect width="2560" height="1440" fill="url(#scan)"/>
+
+  <!-- ─── TV-ONLY CHROME (outside the safe area; decorative only) ─────────── -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2">
+    <path d="M 80 128 L 80 80 L 128 80"/>
+    <path d="M 2432 80 L 2480 80 L 2480 128"/>
+    <path d="M 2480 1312 L 2480 1360 L 2432 1360"/>
+    <path d="M 128 1360 L 80 1360 L 80 1312"/>
+  </g>
+  <g font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+     font-size="21" letter-spacing="5.5" fill="#ffffff" fill-opacity="0.44">
+    <text x="128" y="128">SHAIPT — 4D COACHING SYSTEM</text>
+    <text x="2432" y="128" text-anchor="end">VOL. 01 — 2026</text>
+    <text x="128" y="1330">FILM A SET. SEE IT IN 4D.</text>
+    <text x="2432" y="1330" text-anchor="end">SHAIPT.COM</text>
+  </g>
+
+  <!-- HUD ticks in the wings: only desktop and TV see these. Echoes the HUD on
+       the landing page title sequence (components/landing/TitleSequence.tsx). -->
+  <g font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+     font-size="20" letter-spacing="4.5" fill="#ffffff" fill-opacity="0.5">
+    <circle cx="132" cy="662" r="7" fill="#da0023" fill-opacity="1"/>
+    <text x="152" y="669" fill="#da0023" fill-opacity="0.95">REC 00:00:04:12</text>
+    <text x="132" y="721">POSE LOCK 98.4%</text>
+    <text x="132" y="773">BENCH PRESS — SIDE VIEW</text>
+    <text x="2428" y="669" text-anchor="end">ONE PHONE CAMERA</text>
+    <text x="2428" y="721" text-anchor="end">NO WEARABLE</text>
+    <text x="2428" y="773" text-anchor="end">NOTHING UPLOADED</text>
+  </g>
+
+  <!-- ═══ SAFE AREA 1546 x 423 — everything below survives every crop ═══════ -->
+  <g id="safe">
+    <!-- Working-box brackets, inset 40px inside the safe area. -->
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.75" stroke-width="2">
+      <path d="M 547 589 L 547 549 L 587 549"/>
+      <path d="M 1973 549 L 2013 549 L 2013 589"/>
+      <path d="M 2013 851 L 2013 891 L 1973 891"/>
+      <path d="M 587 891 L 547 891 L 547 851"/>
+    </g>
+
+    <!-- Top chrome row -->
+    <g font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+       font-size="22" letter-spacing="6">
+      <circle cx="609" cy="572" r="8" fill="#da0023"/>
+      <text x="631" y="580" fill="#da0023">REC</text>
+      <text x="731" y="580" fill="#ffffff" fill-opacity="0.66">SHAIPT — 4DCOACH</text>
+      <text x="1951" y="580" text-anchor="end" fill="#ffffff" fill-opacity="0.66">2–3 SHORTS / WEEK</text>
+    </g>
+
+    <!-- Headline. One line so it cannot be cut in half by a short crop. -->
+    <text x="1280" y="731" text-anchor="middle"
+          font-family="Instrument Serif, Didot, Times New Roman, Georgia, serif"
+          font-size="118" fill="#ffffff">Film a set. <tspan font-style="italic" fill="#da0023">See it in 4D.</tspan></text>
+
+    <!-- The one red rule. -->
+    <rect x="1232" y="772" width="96" height="4" fill="#da0023"/>
+
+    <!-- What the channel is about, in the app's own words. -->
+    <text x="1284" y="819" text-anchor="middle"
+          font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+          font-size="21" letter-spacing="5.5" fill="#ffffff" fill-opacity="0.74">REPS · TEMPO · TECHNIQUE SCORE · A REPLAY YOU CAN WALK AROUND</text>
+
+    <text x="1283" y="879" text-anchor="middle"
+          font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace"
+          font-size="22" letter-spacing="6" fill="#ffffff" fill-opacity="0.92">SHAIPT.COM</text>
+  </g>
+
+  <!-- ═══ QA GUIDES — render.sh (guides flag) turns this on ═══════════════ -->
+  <g id="crop-guides" display="none"
+     font-family="Geist Mono, SFMono-Regular, SF Mono, Menlo, DejaVu Sans Mono, monospace" font-size="24">
+    <rect x="507" y="508.5" width="1546" height="423" fill="none" stroke="#00ff88" stroke-width="3"/>
+    <text x="519" y="500" fill="#00ff88">SAFE 1546 x 423 — ALL DEVICES</text>
+    <rect x="352.5" y="508.5" width="1855" height="423" fill="none" stroke="#ffcc00" stroke-width="3" stroke-dasharray="14 10"/>
+    <text x="364" y="964" fill="#ffcc00">TABLET 1855 x 423</text>
+    <rect x="0.5" y="508.5" width="2559" height="423" fill="none" stroke="#00aaff" stroke-width="3" stroke-dasharray="6 8"/>
+    <text x="12" y="1000" fill="#00aaff">DESKTOP 2560 x 423</text>
+  </g>
+</svg>
