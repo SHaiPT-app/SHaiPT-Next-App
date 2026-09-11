@@ -19,6 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 1,
         },
         {
+            url: `${SITE_URL}/waitlist`,
+            lastModified,
+            changeFrequency: 'monthly',
+            priority: 0.9,
+        },
+        {
             url: `${SITE_URL}/login`,
             lastModified,
             changeFrequency: 'yearly',
