@@ -16,7 +16,8 @@
     "db:test-users": "tsx scripts/create-test-users.ts",
     "db:local": "docker run -d --rm --name shaipt-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17",
     "ai:smoke": "tsx scripts/ai-smoke.ts",
-    "db:sql": "tsx scripts/sql.ts"
+    "db:sql": "tsx scripts/sql.ts",
+    "waitlist:invite": "tsx scripts/invite-waitlist.ts"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.22-rc.20250304",
