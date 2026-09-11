@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase';
 import { db } from '@/lib/supabaseDb';
 import { motion } from 'framer-motion';
 import { fadeInUp, tapScale } from '@/lib/animations';
-import { Eye, EyeOff, Mail, Lock, User, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, CheckCircle, Calendar } from 'lucide-react';
+import { MINIMUM_AGE, meetsMinimumAge, latestQualifyingDob } from '@/lib/age';
 
 /**
  * Google and Apple sign-in are only offered when the Supabase project actually has those
@@ -39,6 +40,7 @@ export default function LoginForm() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [dateOfBirth, setDateOfBirth] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [resendCooldown, setResendCooldown] = useState(0);
     const [error, setError] = useState<string>('');
@@ -233,6 +235,15 @@ export default function LoginForm() {
                     return;
                 }
 
+                /* The real gate is in the database (handle_new_user, migration 0180) — anyone can
+                   call supabase.auth.signUp from a console and skip this form entirely. This check
+                   is here so an underage person gets a sentence instead of a Postgres error. */
+                if (!meetsMinimumAge(dateOfBirth)) {
+                    setError(`You must be at least ${MINIMUM_AGE} years old to use SHaiPT.`);
+                    setLoading(false);
+                    return;
+                }
+
                 // invite-only while SHaiPT is in its test phase
                 try {
                     const inviteRes = await fetch('/api/invites/check', {
@@ -290,7 +301,9 @@ export default function LoginForm() {
                     options: {
                         data: {
                             username: username,
-                            full_name: username
+                            full_name: username,
+                            // handle_new_user reads this, enforces the age and writes it onto the profile.
+                            date_of_birth: dateOfBirth
                         }
                     }
                 });
@@ -393,6 +406,34 @@ export default function LoginForm() {
                                 required
                                 className="h-12 w-full rounded-lg border border-line-soft bg-[var(--surface-1)] pl-10 pr-3 text-ink-hi outline-none transition-colors placeholder:text-ink-low focus:border-brand focus:ring-1 focus:ring-brand"
                             />
+                        </div>
+                    )}
+
+                    {/* Date of birth. `max` stops the obvious case in the picker itself; the
+                        database is what actually refuses an underage account. */}
+                    {!isLogin && (
+                        <div>
+                            <label htmlFor="signup-dob" className="mb-1 block text-xs text-ink-low">
+                                Date of birth
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-ink-low">
+                                    <Calendar size={18} />
+                                </span>
+                                <input
+                                    id="signup-dob"
+                                    type="date"
+                                    value={dateOfBirth}
+                                    onChange={(e) => setDateOfBirth(e.target.value)}
+                                    max={latestQualifyingDob()}
+                                    required
+                                    aria-describedby="signup-dob-note"
+                                    className="h-12 w-full rounded-lg border border-line-soft bg-[var(--surface-1)] pl-10 pr-3 text-ink-hi outline-none transition-colors focus:border-brand focus:ring-1 focus:ring-brand"
+                                />
+                            </div>
+                            <p id="signup-dob-note" className="mt-1 text-xs text-ink-low">
+                                SHaiPT is for people {MINIMUM_AGE} and over.
+                            </p>
                         </div>
                     )}
 

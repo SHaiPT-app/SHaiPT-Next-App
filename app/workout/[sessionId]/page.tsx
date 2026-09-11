@@ -1047,9 +1047,11 @@ export default function WorkoutExecutionPage() {
                 }
             }
 
-            // Create activity post
-            if (profile.auto_post_workouts !== false) {
-                const visibility = profile.workout_privacy || 'public';
+            // Create activity post. Same rule as WorkoutLogger: the column defaults to false and
+            // to 'private', so an absent value means the user has not opted in — it must not
+            // fall through to publishing.
+            if (profile.auto_post_workouts === true) {
+                const visibility = profile.workout_privacy || 'private';
                 await db.activityPosts.create({
                     user_id: profile.id,
                     workout_log_id: workoutLogId,

@@ -16,6 +16,7 @@
  * never through Stripe.
  */
 import { randomBytes } from 'node:crypto';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { adminClient, hasFlag } from './db';
 
 /** The value after --password, when the caller wants a specific one. */
@@ -36,6 +37,45 @@ function password(): string {
     let out = '';
     for (const b of bytes) out += alphabet[b % alphabet.length];
     return `${out.slice(0, 4)}-${out.slice(4, 8)}-${out.slice(8, 12)}-${out.slice(12, 16)}`;
+}
+
+/**
+ * Empty a user's folder in the progress-media bucket.
+ *
+ * progress_media rows cascade from profiles, but storage.objects has no foreign key to anything,
+ * so deleting an account used to leave the actual photos and videos behind — images of someone's
+ * body, in a bucket, belonging to a user who no longer exists. Migration 0180 clears the rows on
+ * profile delete as a floor; only the storage API removes the underlying blob, so that is what
+ * runs here, before the user goes.
+ *
+ * Returns the number of objects removed, or -1 if the listing itself failed — in which case the
+ * caller should not proceed, because deleting the user would strand whatever is in there.
+ */
+async function purgeProgressMedia(admin: SupabaseClient, userId: string): Promise<number> {
+    const bucket = admin.storage.from('progress-media');
+    let removed = 0;
+
+    // list() pages at 100; keep going until a page comes back short.
+    for (let offset = 0; ; offset += 100) {
+        const { data, error } = await bucket.list(userId, { limit: 100, offset });
+        if (error) {
+            console.error(`  could not list progress-media for ${userId}: ${error.message}`);
+            return -1;
+        }
+        if (!data || data.length === 0) break;
+
+        const paths = data.map((o) => `${userId}/${o.name}`);
+        const { error: rmError } = await bucket.remove(paths);
+        if (rmError) {
+            console.error(`  could not remove progress-media objects: ${rmError.message}`);
+            return -1;
+        }
+        removed += paths.length;
+        if (data.length < 100) break;
+        // Everything removed shifts the window, so re-read from the start.
+        offset = -100;
+    }
+    return removed;
 }
 
 async function main() {
@@ -62,9 +102,18 @@ async function main() {
 
         if (hasFlag('--revoke')) {
             if (!existing) { console.log(`${email}: no such user`); continue; }
+
+            // Files first: once the user is gone we no longer know which folder was theirs.
+            const purged = await purgeProgressMedia(admin, existing.id);
+            if (purged < 0) {
+                console.log(`${email}: NOT deleted — could not clear their progress media (see above)`);
+                continue;
+            }
+
             const { error } = await admin.auth.admin.deleteUser(existing.id);
             await admin.from('invites').delete().ilike('email', email);
-            console.log(`${email}: ${error ? `FAILED (${error.message})` : 'deleted with all their rows (cascade)'}`);
+            const media = purged > 0 ? `, ${purged} progress file(s) removed` : '';
+            console.log(`${email}: ${error ? `FAILED (${error.message})` : `deleted with all their rows (cascade)${media}`}`);
             continue;
         }
 

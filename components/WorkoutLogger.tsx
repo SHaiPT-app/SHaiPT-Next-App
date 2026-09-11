@@ -1082,9 +1082,14 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
                 }
             }
 
-            // Create activity post for workout (only when auto-post is explicitly on).
-            // Absent means not opted in: the column defaults to false, and treating a missing
-            // value as true published workouts for people who never asked.
+            /* Activity posts, only when auto-post is explicitly on. Absent means not opted in:
+               the column defaults to false, and treating a missing value as true published
+               workouts for people who never asked.
+
+               The PR loop used to sit outside this gate with its own `|| 'public'` fallback, so a
+               personal record published your exercise, reps and weight regardless of the setting —
+               and PRs are both more frequent and more specific than the workout post above. Both
+               kinds of post now hang off the one consent check. */
             if (profile?.auto_post_workouts === true) {
                 const visibility = profile?.workout_privacy || 'private';
 
@@ -1095,19 +1100,16 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
                     content: `Completed ${session.name}`,
                     visibility
                 });
-            }
 
-            // Create activity posts for each PR
-            for (const pr of prsDetected) {
-                const visibility = profile?.workout_privacy || 'public';
-
-                await db.activityPosts.create({
-                    user_id: userId,
-                    workout_log_id: workoutLogId,
-                    post_type: 'pr_achieved',
-                    content: `${pr.exerciseName}! ${pr.reps} reps for ${pr.weight} ${pr.unit}`,
-                    visibility
-                });
+                for (const pr of prsDetected) {
+                    await db.activityPosts.create({
+                        user_id: userId,
+                        workout_log_id: workoutLogId,
+                        post_type: 'pr_achieved',
+                        content: `${pr.exerciseName}! ${pr.reps} reps for ${pr.weight} ${pr.unit}`,
+                        visibility
+                    });
+                }
             }
 
             const logs = [...exerciseLogs.entries()];
