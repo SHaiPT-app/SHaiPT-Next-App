@@ -126,8 +126,13 @@ export default function SettingsPage() {
         if (storedUser) {
             const profile = JSON.parse(storedUser);
             setUser(profile);
-            setWorkoutPrivacy(profile.workout_privacy || 'public');
-            setAutoPostWorkouts(profile.auto_post_workouts !== false);
+            /* Match the column defaults (0001_base: "private by default ... unless they opt in").
+               This reads a cached profile out of localStorage, so these fields are routinely
+               absent — and a missing value used to fall through to public/auto-post, which the
+               next Save then wrote back to the database. Opening Settings silently published
+               your logs. An absent value means the user has not opted in. */
+            setWorkoutPrivacy(profile.workout_privacy || 'private');
+            setAutoPostWorkouts(profile.auto_post_workouts === true);
             setAllowUnsolicitedMessages(profile.allow_unsolicited_messages !== false);
             setPreferredWeightUnit(profile.preferred_weight_unit || 'lbs');
             setGender(profile.gender || '');

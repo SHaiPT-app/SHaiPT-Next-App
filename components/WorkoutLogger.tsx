@@ -1082,9 +1082,11 @@ function ActiveWorkout({ session, userId, onBack, onComplete, formCheckerEnabled
                 }
             }
 
-            // Create activity post for workout (if auto-post is enabled)
-            if (profile?.auto_post_workouts !== false) {
-                const visibility = profile?.workout_privacy || 'public';
+            // Create activity post for workout (only when auto-post is explicitly on).
+            // Absent means not opted in: the column defaults to false, and treating a missing
+            // value as true published workouts for people who never asked.
+            if (profile?.auto_post_workouts === true) {
+                const visibility = profile?.workout_privacy || 'private';
 
                 await db.activityPosts.create({
                     user_id: userId,
