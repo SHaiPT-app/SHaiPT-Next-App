@@ -13,26 +13,11 @@ if (typeof globalThis.TextEncoder === 'undefined') {
     globalThis.TextDecoder = TextDecoder;
 }
 
-// Mock framer-motion
-jest.mock('framer-motion', () => {
-    const React = require('react');
-    return {
-        motion: {
-            create: (Component: any) => {
-                return React.forwardRef((props: any, ref: any) => {
-                    // Filter out framer-motion and Chakra props that aren't valid DOM attrs
-                    const {
-                        variants, initial, animate, exit, transition,
-                        whileHover, whileTap, mode,
-                        ...rest
-                    } = props;
-                    return React.createElement(Component, { ...rest, ref });
-                });
-            },
-        },
-        AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
-    };
-});
+
+// framer-motion: one shared mock (test-utils/framerMotion.ts). The inline mock this
+// replaces defined motion.create but not motion.div, which is what the component
+// actually renders — so every test here died on render.
+jest.mock('framer-motion', () => require('@/test-utils/framerMotion').createFramerMotionMock());
 
 // Mock lucide-react
 jest.mock('lucide-react', () => ({
@@ -193,8 +178,13 @@ describe('AICoachChat', () => {
         render(<AICoachChat user={mockUser} isOpen={true} onToggle={mockToggle} />);
 
         await waitFor(() => {
+            /* Two arguments, not one: apiFetch passes an options object alongside the URL, and
+               toHaveBeenCalledWith matches the whole call. The id is deliberately absent from the
+               URL — app/api/ai-coach/chat/history derives the caller from the bearer token, and
+               its own comment records that it "used to take ?userId=", which trusted the client. */
             expect(mockFetch).toHaveBeenCalledWith(
-                expect.stringContaining('/api/ai-coach/chat/history')
+                expect.stringContaining('/api/ai-coach/chat/history'),
+                expect.anything()
             );
         });
     });

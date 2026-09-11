@@ -1,6 +1,8 @@
 # Test debt
 
-`pnpm test` is **18 suites / 92 tests red**, out of 82 suites and 908 tests. 816 pass.
+`pnpm test` is **16 suites / 68 tests red**, out of 82 suites and 908 tests. 840 pass.
+
+Was 18 / 92 when this file was written.
 
 This file is the working list. Update the counts at the top of each section as they come down,
 and delete a row when its suite goes green.
@@ -34,6 +36,25 @@ they are why this cannot simply be bulk-deleted:
 
 ## Fixed so far
 
+- [x] **`AICoachChat` — 24 tests across two suites, both now green.** The error said *"you might
+  have mixed up default and named imports"* and had nothing to do with imports. Both suites mocked
+  framer-motion with `motion.create` and `AnimatePresence` but nothing for `motion.div`, which is
+  what the component actually renders. `motion` resolves tags on property access rather than having
+  a fixed set of keys, so `motion.div` was `undefined`, React got `undefined` as an element type,
+  and every test died on render.
+
+  Replaced with one shared mock, `test-utils/framerMotion.ts`, which uses a Proxy so it answers for
+  any tag — add a `motion.section` tomorrow and nothing needs touching. **Twenty other suites still
+  carry their own inline copy**; they pass today only because their components happen to use the
+  tags those mocks remembered. Moving them onto the shared mock is cheap insurance, and is the
+  single highest-leverage thing left in this file.
+
+  Two assertions underneath were genuinely stale and are also fixed: they expected
+  `/api/ai-coach/chat/history?userId=user-1`, but that parameter was deliberately removed — the
+  route derives the caller from the bearer token, and its own comment records that it "used to take
+  `?userId=`", which trusted the client. The test now also asserts the id is *not* in the URL, so
+  the security fix stays fixed.
+
 - [x] **`window.matchMedia is not a function`** — jsdom does not implement it, so any component
   asking about a media query (including framer-motion's `prefers-reduced-motion` check) threw on
   render. Polyfilled in `jest.setup.ts`. Occurrences went 4 -> 0. It did not flip a suite green on
@@ -41,14 +62,12 @@ they are why this cannot simply be bulk-deleted:
 
 ## The list
 
-Counts are failing tests per suite and total 92. Ordered by size, which is roughly the order
+Counts are failing tests per suite and total 68. Ordered by size, which is roughly the order
 that clears the most red per hour.
 
 | Suite | Fails | Likely cause |
 |---|---:|---|
 | `LoginForm.test.tsx` | 14 | Whole suite red, including tests unrelated to the sign-up form. Check the render/mock setup before the assertions. **Note: this suite was already 12/12 red before the age-gate field was added on 2026-09-11 — the new date-of-birth input is not what broke it, but it does mean the suite must be re-pointed at a form that now has an extra required field.** |
-| `AICoachChat.test.tsx` | 13 | "Element type is invalid" — broken import or mock, not stale copy. Do this first. |
-| `ai-coach/AICoachChat.test.tsx` | 11 | Same cause as above; the two files are near-duplicates and one of them should probably go. |
 | `CoachSelectionPage.test.tsx` | 11 | Missing `data-testid="hero"` and friends. |
 | `Dashboard.test.tsx` | 8 | Stale copy assertions. |
 | `trainer-client-progress.test.tsx` | 7 | Missing `data-testid="tab-analytics"`, `tab-photos`. |

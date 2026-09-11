@@ -5,47 +5,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { Profile } from '@/lib/types';
 
-// Mock framer-motion
-jest.mock('framer-motion', () => {
-    const React = require('react');
-    return {
-        motion: {
-            create: () => {
-                return React.forwardRef((props: Record<string, unknown>, ref: React.Ref<unknown>) => {
-                    const {
-                        initial: _initial, animate: _animate, exit: _exit, transition: _transition, variants: _variants,
-                        whileHover: _whileHover, whileTap: _whileTap, whileInView: _whileInView,
-                        children,
-                        ...rest
-                    } = props;
-                    // Filter out Chakra props too
-                    const htmlProps: Record<string, unknown> = {};
-                    const chakraProps = [
-                        'px', 'py', 'mb', 'mt', 'gap', 'bg', 'borderRadius',
-                        'borderBottom', 'borderTop', 'borderColor', 'border',
-                        'alignItems', 'justifyContent', 'flexShrink', 'flexDirection',
-                        'overflowY', 'textTransform', 'letterSpacing', 'lineClamp',
-                        'lineHeight', 'whiteSpace', 'fontFamily', 'fontWeight',
-                        'fontSize', 'maxH', 'maxW', 'width', 'height', 'w', 'h',
-                        'position', 'bottom', 'right', 'top', 'left', 'zIndex',
-                        'backdropFilter', 'boxShadow', 'color', 'display', 'flex',
-                        'overflow', 'animation', 'textAlign', 'align',
-                    ];
-                    for (const [key, val] of Object.entries(rest)) {
-                        if (!chakraProps.includes(key)) {
-                            htmlProps[key] = val;
-                        }
-                    }
-                    return React.createElement('div', { ...htmlProps, ref }, children);
-                });
-            },
-        },
-        AnimatePresence: ({ children }: { children: React.ReactNode }) => {
-            const React = require('react');
-            return React.createElement(React.Fragment, null, children);
-        },
-    };
-});
+
+// framer-motion: one shared mock (test-utils/framerMotion.ts). The inline mock this
+// replaces defined motion.create but not motion.div, which is what the component
+// actually renders — so every test here died on render.
+jest.mock('framer-motion', () => require('@/test-utils/framerMotion').createFramerMotionMock());
 
 // Mock animations
 jest.mock('@/lib/animations', () => ({
@@ -186,9 +150,16 @@ describe('AICoachChat', () => {
         );
 
         await waitFor(() => {
+            /* Two arguments, not one: apiFetch passes an options object alongside the URL, and
+               toHaveBeenCalledWith matches the whole call. The id is deliberately absent from the
+               URL — app/api/ai-coach/chat/history derives the caller from the bearer token, and
+               its own comment records that it "used to take ?userId=", which trusted the client. */
             expect(mockFetch).toHaveBeenCalledWith(
-                expect.stringContaining('/api/ai-coach/chat/history?userId=user-1')
+                expect.stringContaining('/api/ai-coach/chat/history'),
+                expect.anything()
             );
+            // and prove the id is not being smuggled through the query string any more
+            expect(mockFetch.mock.calls[0][0]).not.toContain('userId=');
         });
     });
 });
