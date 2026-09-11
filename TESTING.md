@@ -95,3 +95,9 @@ The CI pipeline runs automatically on:
 5.  **Build**: Attempts to build the Next.js application to ensure no build errors.
 
 > **Note**: Currently, E2E tests are run locally. Future improvements could include adding Playwright to the CI pipeline.
+
+## Known failures
+
+`pnpm test` is currently 18 suites / 92 tests red. Almost all of it is tests asserting a version
+of the UI that was rewritten, not broken product code. The working list, with the cause for each
+suite, is in [TEST-DEBT.md](TEST-DEBT.md). Keep it updated as suites go green.
