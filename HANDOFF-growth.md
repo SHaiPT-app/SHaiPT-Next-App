@@ -169,6 +169,11 @@ form with an extra required input.
 
 ## Blocked on Ali — check these before planning work that depends on them
 
+**Status 2026-09-11 (later session):** items 1, 2, 3 and 5 are done and verified: Resend is
+installed with `send.shaipt.com` verified, Supabase confirm-email is off, Higgsfield Plus is
+active. Item 4 (the bench press set) is still open. The cast decision is in
+`growth/characters/`.
+
 1. **Accept the Resend marketplace terms** —
    https://vercel.com/alis-projects-e60465e8/~/integrations/accept-terms/resend?source=cli
    Then run `vercel integration add resend --plan free -m domain=send.shaipt.com -m region=us-east-1 --no-claim`

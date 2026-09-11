@@ -1,0 +1,15 @@
+{
+  "decided": "2026-09-11",
+  "environment": "commercial-gym-v1",
+  "palette": { "base": ["graphite", "black"], "accent": "SHaiPT red #da0023, one item per character" },
+  "pairing": {
+    "rule": "any combination",
+    "fixed": [{ "lifter": "marco", "coach": "maya" }]
+  },
+  "characters": [
+    { "slug": "maya",  "name": "Maya",  "role": "coach",  "age": "late 20s",  "energy": "sharp, analytical", "tts_voice": "sage", "accent_item": "red watch strap" },
+    { "slug": "theo",  "name": "Theo",  "role": "coach",  "age": "early 30s", "energy": "calm, precise",     "tts_voice": "onyx", "accent_item": "red silicone wristband" },
+    { "slug": "jess",  "name": "Jess",  "role": "lifter", "age": "mid 20s",   "energy": "gym-native, quick", "tts_voice": "nova", "accent_item": "red hair tie" },
+    { "slug": "marco", "name": "Marco", "role": "lifter", "age": "mid 20s",   "energy": "confident intermediate", "tts_voice": "ash", "accent_item": "red lifting belt" }
+  ]
+}
