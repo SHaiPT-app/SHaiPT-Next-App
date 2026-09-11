@@ -1,4 +1,4 @@
-# Theo — coach
+# Jake — coach
 
 **Role.** Coach. The calm one. Explains what is being measured and why it matters, without
 hurry. Usually paired with Jess; can appear with Maya as two coaches disagreeing politely.
@@ -23,8 +23,8 @@ Allowed lines: "Film one set. That's the whole setup." / "Slow it down. Rep two,
 
 ## Look
 
-- Black, deep brown skin with natural texture, warm dark eyes, calm relaxed expression.
-- Close-cropped hair with a clean low fade. Short, well-kept beard.
+- White, light skin with a slight outdoor tan and natural texture, blue-grey eyes, calm relaxed expression.
+- Short dark-blond hair, close-cropped with a clean low fade. Short, well-kept beard, a shade darker than his hair.
 - Broad athletic build, wide shoulders, about 185 cm. Not bodybuilder-sized.
 - Distinguishing marks: a short faint scar through the outer end of the left eyebrow.
 - Red accent: a plain red silicone wristband on the right wrist.
@@ -43,7 +43,7 @@ against `echo` once; then it never changes.
 ## Prompt block (copy verbatim; change only the three slots)
 
 ```
-Photorealistic [SHOT] of a Black man in his early thirties, deep brown skin with natural texture, warm dark eyes, a calm relaxed expression, close-cropped hair with a clean low fade, a short well-kept beard, a short faint scar through the outer end of his left eyebrow. Broad athletic build with wide shoulders, about 185 cm, not bodybuilder-sized. Wearing [OUTFIT] and a plain red silicone wristband on his right wrist. [ACTION]. Natural skin, no retouching, no logos, no readable text, no other people, no hats, no jewellery, no exaggerated musculature.
+Photorealistic [SHOT] of a white man in his early thirties, light skin with a slight outdoor tan and natural texture, blue-grey eyes, a calm relaxed expression, short dark-blond hair close-cropped with a clean low fade, a short well-kept beard a shade darker than his hair, a short faint scar through the outer end of his left eyebrow. Broad athletic build with wide shoulders, about 185 cm, not bodybuilder-sized. Wearing [OUTFIT] and a plain red silicone wristband on his right wrist. [ACTION]. Natural skin, no retouching, no logos, no readable text, no other people, no hats, no jewellery, no exaggerated musculature.
 ```
 
 Slots as in `maya/bible.md`.

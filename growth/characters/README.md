@@ -16,7 +16,7 @@ adds what the cast decision implies.
 | Slug | Name | Role | Age | Energy | Voice (OpenAI TTS) | Red accent |
 |---|---|---|---|---|---|---|
 | `maya` | Maya | Coach | late 20s | sharp, analytical, the numbers person | `sage` | red watch strap |
-| `theo` | Theo | Coach | early 30s | calm, precise, unhurried | `onyx` | red silicone wristband |
+| `jake` | Jake | Coach | early 30s | calm, precise, unhurried | `onyx` | red silicone wristband |
 | `jess` | Jess | Lifter | mid 20s | gym-native, quick, laughs easily | `nova` | red hair tie |
 | `marco` | Marco | Lifter | mid 20s | confident intermediate, thinks his form is fine | `ash` | red lifting belt |
 
@@ -119,7 +119,7 @@ Before `./growth/assets.sh add <clip> --usage ad-safe --subject "<Name> (AI pres
 
 - [ ] Face matches sheet frames 1 to 4: eyes, brows, nose, jaw, hairline, skin tone, marks.
 - [ ] Body matches frame 5: height relative to the rack, shoulder width, build.
-- [ ] Hair matches: colour, length, style (Maya bun, Jess ponytail, Theo fade, Marco pushed back).
+- [ ] Hair matches: colour, length, style (Maya bun, Jess ponytail, Jake fade, Marco pushed back).
 - [ ] Outfit is A, B or C exactly, with the character's red accent and nothing branded.
 - [ ] Hands: five fingers, phone held plausibly, no floating props.
 - [ ] Voice is the character's fixed TTS voice; lip-sync clips use that audio, not a tool's own voice.
@@ -161,7 +161,7 @@ growth/characters/
   README.md            this file
   cast.json            machine-readable: slug, name, role, voice, accent, pairing rule
   maya/  bible.md  sheet/   (ten frozen frames once approved)
-  theo/  bible.md  sheet/
+  jake/  bible.md  sheet/
   jess/  bible.md  sheet/
   marco/ bible.md  sheet/
 ```
