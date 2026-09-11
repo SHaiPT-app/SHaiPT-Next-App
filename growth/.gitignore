@@ -1,0 +1,13 @@
+# Secrets: the OpenAI key and the alert webhook.
+.env
+
+# Per-run working artifacts. out/ holds the generated Short and its gate reasoning,
+# logs/ the run logs. Both are regenerated every run and neither is a record worth
+# keeping in history — state/ is, and IS tracked: it remembers what has already been
+# made so the next run does not repeat a topic, which is the job medAI's daily-log did.
+out/
+logs/
+
+# Footage is large, personal, and in some cases covered by a release that is not
+# ours to redistribute. Registered through assets.sh; the registry itself is tracked.
+assets/footage/
