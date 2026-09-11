@@ -23,10 +23,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
         }
 
-        // Lookup traineeId if only username is provided (every signed-in user may read profiles)
+        // Lookup traineeId if only username is provided. public_profiles exposes the
+        // username -> id mapping without exposing anything else about them (0170).
         if (!traineeId && traineeUsername) {
             const { data: trainee, error } = await auth.supabase
-                .from('profiles')
+                .from('public_profiles')
                 .select('id')
                 .eq('username', traineeUsername)
                 .maybeSingle();
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
         // A trainer may only unlink a trainee who is actually linked to them
         if (action === 'unlink' && !callerIsTrainee) {
             const { data: trainee, error } = await auth.supabase
-                .from('profiles')
+                .from('public_profiles')
                 .select('trainer_id')
                 .eq('id', traineeId)
                 .maybeSingle();

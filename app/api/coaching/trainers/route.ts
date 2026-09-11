@@ -8,10 +8,11 @@ export async function GET(req: NextRequest) {
         if (isErrorResponse(auth)) return auth;
         const userId = auth.user.id;
 
-        // Fetch all trainer profiles (every signed-in user may read profiles)
+        // Fetch all trainer profiles. A trainer's storefront is public by design, but the
+        // rest of their row is not — public_profiles carries only the storefront columns.
         const { data: trainers, error: trainersErr } = await auth.supabase
-            .from('profiles')
-            .select('*')
+            .from('public_profiles')
+            .select('id, username, full_name, avatar_url, bio, role, trainer_id, created_at, specialties, availability_status, is_accepting_clients, rating, trainer_bio')
             .eq('role', 'trainer')
             .order('full_name', { ascending: true });
 

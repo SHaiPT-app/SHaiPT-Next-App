@@ -99,7 +99,15 @@ async function main() {
         // ---- A sees their own ----
         ok((await count(a.client, 'workout_logs')) === 1, 'A reads own workout_log');
         ok((await count(a.client, 'ai_chats')) === 1, 'A reads own ai_chat');
-        ok((await count(a.client, 'profiles')) >= 3, 'A can read profiles (search / trainer cards)');
+        /* profiles used to be readable by everyone — USING (true) — and this check asserted that
+           as if it were the requirement, so it went green while a signed-in stranger could read
+           every member's email, date of birth and body stats. 0170 split the two needs apart:
+           profiles is yours (plus the clients you actively coach), and public_profiles carries the
+           handful of columns search and the trainer cards actually want. */
+        ok((await count(a.client, 'profiles')) === 1, 'A reads only their own profile row');
+        ok((await count(a.client, 'public_profiles')) >= 3, 'A can still read public_profiles (search / trainer cards)');
+        const { error: emailLeak } = await a.client.from('public_profiles').select('email').limit(1);
+        ok(!!emailLeak, 'public_profiles exposes no email column, so select(\'*\') cannot leak one');
 
         // ---- coach: not linked → nothing; linked & active → A's logs ----
         ok((await count(coach.client, 'workout_logs')) === 0, 'unlinked coach reads 0 workout_logs');

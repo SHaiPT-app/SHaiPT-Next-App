@@ -18,9 +18,11 @@ export async function POST(req: NextRequest) {
         }
 
         // Validate coach exists and is a trainer
+        // public_profiles: the requester is not (yet) this coach's client, so they may see
+        // only the storefront columns — which is all this check needs.
         const { data: coach, error: coachErr } = await auth.supabase
-            .from('profiles')
-            .select('*')
+            .from('public_profiles')
+            .select('id, role, full_name, is_accepting_clients')
             .eq('id', coachId)
             .single();
         if (coachErr || !coach || coach.role !== 'trainer') {

@@ -14,9 +14,11 @@ export async function GET(request: Request) {
         const status = searchParams.get('status'); // 'available' or undefined
         const trainerId = searchParams.get('trainerId');
 
+        // public_profiles: a trainer browsing unassigned trainees is reading strangers.
+        // Their own athletes' full rows stay reachable through profiles under is_coach_of (0170).
         let query = auth.supabase
-            .from('profiles')
-            .select('*')
+            .from('public_profiles')
+            .select('id, username, full_name, avatar_url, bio, role, trainer_id, created_at')
             .eq('role', 'trainee');
 
         if (status === 'available') {

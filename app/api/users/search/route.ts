@@ -18,9 +18,11 @@ export async function GET(request: Request) {
         // Escape LIKE wildcards so the search is a plain substring match
         const pattern = `%${query.replace(/[\\%_]/g, '\\$&')}%`;
 
+        // public_profiles, not profiles: this searches strangers, and select('*') here used to
+        // hand back their email, date of birth, height and weight (see migration 0170).
         const { data, error } = await auth.supabase
-            .from('profiles')
-            .select('*')
+            .from('public_profiles')
+            .select('id, username, full_name, avatar_url, bio, role, trainer_id, created_at')
             .eq('role', role)
             .is('trainer_id', null) // No trainer assigned yet
             .ilike('username', pattern)
