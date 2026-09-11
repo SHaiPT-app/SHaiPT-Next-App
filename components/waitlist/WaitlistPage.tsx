@@ -17,6 +17,9 @@ type Status = 'idle' | 'sending' | 'done' | 'error';
 
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
+/** Where the first-touch campaign is remembered between visits. */
+const FIRST_TOUCH_KEY = 'shaipt.waitlist.firstTouch';
+
 /** The three facts on the page that are checkable, taken from what the app actually ships. */
 const SPECS = [
     { k: 'Input', v: 'One phone camera' },
@@ -52,11 +55,26 @@ export default function WaitlistPage() {
             if (params.get('gclid')) utm.utm_source = 'google';
             else if (params.get('fbclid')) utm.utm_source = 'meta';
         }
-        attribution.current = {
-            utm,
-            referrer: document.referrer,
-            landingPath: window.location.pathname,
-        };
+
+        /* First touch wins. Plenty of people click the ad, leave, and come back later by typing the
+           address — without this, that signup records as organic and the campaign that actually paid
+           for it looks worse than it was. Storage can throw (private windows, blocked site data), so
+           every read and write is guarded and the page works identically with none of it. */
+        let resolved = { utm, referrer: document.referrer, landingPath: window.location.pathname };
+        try {
+            const stored = window.localStorage.getItem(FIRST_TOUCH_KEY);
+            if (Object.keys(utm).length > 0) {
+                // This visit carries a campaign. It is the first touch only if nothing is stored yet.
+                if (stored) resolved = JSON.parse(stored);
+                else window.localStorage.setItem(FIRST_TOUCH_KEY, JSON.stringify(resolved));
+            } else if (stored) {
+                // An untagged visit: credit whatever brought them the first time.
+                resolved = JSON.parse(stored);
+            }
+        } catch {
+            // No storage — fall back to this visit's own parameters.
+        }
+        attribution.current = resolved;
     }, []);
 
     async function onSubmit(event: React.FormEvent) {
@@ -79,16 +97,23 @@ export default function WaitlistPage() {
                 return;
             }
 
-            setAlready(Boolean(data.already));
+            const isDuplicate = Boolean(data.already);
+            setAlready(isDuplicate);
             setStatus('done');
 
             /* Conversion signal. Both Google Ads and Meta can be pointed at a dataLayer event
                instead of a hardcoded pixel id, which keeps the ad account's plumbing out of the
-               repo — see HANDOFF-growth.md for the two lines that go in the tag manager. */
-            type DataLayerWindow = Window & { dataLayer?: unknown[] };
-            const w = window as DataLayerWindow;
-            w.dataLayer = w.dataLayer ?? [];
-            w.dataLayer.push({ event: 'waitlist_signup', utm_campaign: attribution.current.utm.utm_campaign ?? null });
+               repo — see growth/ads/tracking.md for what goes in the tag manager.
+
+               Only a genuinely new row counts. Someone who submits twice sees a friendly "already
+               on the list", but firing the event again would report a conversion the database never
+               gained — and cost-per-signup is the number the ad budget gets steered by. */
+            if (!isDuplicate) {
+                type DataLayerWindow = Window & { dataLayer?: unknown[] };
+                const w = window as DataLayerWindow;
+                w.dataLayer = w.dataLayer ?? [];
+                w.dataLayer.push({ event: 'waitlist_signup', utm_campaign: attribution.current.utm.utm_campaign ?? null });
+            }
         } catch {
             setStatus('error');
             setMessage('Network trouble. Try again in a moment.');
