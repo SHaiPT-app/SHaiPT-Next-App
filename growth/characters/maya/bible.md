@@ -4,7 +4,9 @@
 because it settles arguments. When Marco is coached, it is by her.
 
 **Age and energy.** Late 20s. Sharp, analytical, quick to the point. Not cold: she gets visibly
-pleased when the data shows something the eye missed.
+pleased when the data shows something the eye missed. On camera she is magnetic: strikingly
+attractive, confident, a slight knowing smile with engaged eyes is her resting expression (Ali,
+2026-09-12: "more attractive and charismatic").
 
 **Who she is (fictional, never claimed on screen).** Trains early, coaches a small group, reads
 bar-speed charts the way other people read box scores. No credentials are ever stated or
@@ -25,15 +27,16 @@ medical or injury-prevention claim. Any number without a source in the script.
 
 ## Look
 
-- South Asian heritage, medium-brown skin with natural texture, dark brown eyes, strong straight brows, high cheekbones, small straight nose.
+- South Asian heritage, medium-brown skin with a healthy natural glow and real texture, dark brown almond eyes, strong well-groomed straight brows, high cheekbones, a defined jawline, full lips, small straight nose.
+- Resting expression: confident slight smile, bright engaged eyes straight into the lens. Never blank.
 - Dark hair, pulled back into a low tight bun. Always the bun.
 - Small gold stud earrings. Minimal makeup, a little mascara.
-- Lean athletic build with defined shoulders, about 168 cm.
+- Lean athletic upper body with defined shoulders; a strong, visibly developed lower body: muscular thighs and prominent, well-developed glutes, the build of someone who squats heavy. About 168 cm. (Ali, 2026-09-12: "legs and glutes more prominent and bigger".)
 - Distinguishing marks: a small mole just above the left corner of her mouth.
 - Red accent: a black watch with a red strap on the left wrist.
 
 **Wardrobe.**
-- A: fitted black tank top, graphite joggers, black trainers.
+- A: fitted black tank top, fitted graphite-grey leggings, black trainers. (Leggings, not joggers, so the lower-body build reads on camera.)
 - B: charcoal long-sleeve fitted training top, black leggings.
 - C: black cropped hoodie over a graphite tank, black shorts.
 
@@ -46,7 +49,7 @@ finding, no filler words. Test against `nova` once; then it never changes.
 ## Prompt block (copy verbatim; change only the three slots)
 
 ```
-Photorealistic [SHOT] of a woman in her late twenties of South Asian heritage, medium-brown skin with natural texture, dark brown eyes, strong straight brows, high cheekbones, a small straight nose, a small mole just above the left corner of her mouth, dark hair pulled back into a low tight bun, small gold stud earrings, minimal makeup. Lean athletic build with defined shoulders, about 168 cm. Wearing [OUTFIT] and a black watch with a red strap on her left wrist. [ACTION]. Natural skin, no retouching, no logos, no readable text, no other people, no hats, no extra jewellery, no exaggerated musculature.
+Photorealistic [SHOT] of a strikingly attractive woman in her late twenties of South Asian heritage with magnetic camera presence, a confident slight smile and bright engaged eyes looking straight into the lens, medium-brown skin with a healthy natural glow and real skin texture, dark brown almond eyes, strong well-groomed straight brows, high cheekbones, a defined jawline, full lips, a small straight nose, a small mole just above the left corner of her mouth, dark hair pulled back into a sleek low tight bun, small gold stud earrings, minimal makeup with a little mascara. Lean athletic upper body with defined shoulders and a strong, visibly developed lower body with muscular thighs and prominent well-developed glutes, the build of someone who squats heavy, about 168 cm. Wearing [OUTFIT] and a black watch with a red strap on her left wrist. [ACTION]. Natural skin, no retouching, no logos, no readable text, no other people, no hats, no extra jewellery, no exaggerated musculature.
 ```
 
 Slots: `[SHOT]` from the README sheet list (frames 1 to 9 add "soft even studio light, plain mid-grey seamless background, 85 mm look, shallow depth of field"; frame 10 and all video clips add the gym paragraph from README §6 and "vertical 9:16, eye level, phone-lens look, slight handheld movement"). `[OUTFIT]` is A, B or C above. `[ACTION]` is what she is doing, in one sentence.
