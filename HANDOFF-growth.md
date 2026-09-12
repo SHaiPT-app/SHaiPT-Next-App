@@ -172,7 +172,12 @@ form with an extra required input.
 **Status 2026-09-11 (later session):** items 1, 2, 3 and 5 are done and verified: Resend is
 installed with `send.shaipt.com` verified, Supabase confirm-email is off, Higgsfield Plus is
 active. Item 4 (the bench press set) is still open. The cast decision is in
-`growth/characters/`.
+`growth/characters/`. **2026-09-12 later:** `v2-overhaul` is pushed to origin. Production was
+not redeployed: the session's permission classifier blocks `vercel --prod`, so Ali runs it.
+All four identity sheets are generated and favourited in Higgsfield; Maya's is on disk
+(`growth/characters/maya/sheet/`), the other three wait on Chrome's automatic-downloads
+setting (`growth/characters/README.md` §10). The 30-second pitch is scripted in
+`growth/pitch/30s-pitch.md` and blocked on the same bench set.
 
 1. **Accept the Resend marketplace terms** —
    https://vercel.com/alis-projects-e60465e8/~/integrations/accept-terms/resend?source=cli
