@@ -61,11 +61,11 @@ Coaches explain what is being measured. Lifters ask. The product is the proof.
 |---|---|---|
 | 1 | Bible per character (persona, speech, never-says) | written, awaiting Ali's approval |
 | 2 | Look spec per character (face, body, hair, marks, wardrobe A/B/C) | written, awaiting Ali's approval |
-| 3 | Identity sheet: ten reference frames per character, generated in Higgsfield, iterated to approval, then frozen | **Maya: done, committed in `maya/sheet/`.** **Jake: all ten generated and favourited in the Higgsfield account, not yet on disk** (see §10). Jess, Marco: not started |
+| 3 | Identity sheet: ten reference frames per character, generated in Higgsfield, iterated to approval, then frozen | **Maya: done, committed in `maya/sheet/`.** **Jake, Jess, Marco: all ten frames each generated and favourited in the Higgsfield account, not yet on disk** (see §10) |
 | 4 | Lock: register the frozen sheet as a Higgsfield consistent character; the prompt block in each bible is copied verbatim from then on | not started |
 | 5 | Voice: one fixed OpenAI TTS voice per character (proposed above); 30-second test of each, then never changed | not started |
 | 6 | Motion tests: five short clips each (talk to camera, point at phone, react, walk in the gym, sit on a bench); check drift; tune the prompt block once | not started |
-| 7 | Wardrobe variants: outfits B and C each get their own reference frame in the sheet | folded into step 3; done for Maya and Jake |
+| 7 | Wardrobe variants: outfits B and C each get their own reference frame in the sheet | folded into step 3; done for all four |
 | 8 | QA checklist (§5) passed before any clip is registered `ad-safe` with `./growth/assets.sh add` | not started |
 | 9 | Disclosure: on-screen "AI presenter" label, YouTube synthetic-content toggle, Meta's equivalent, no real-person resemblance | rules exist; per-clip |
 | 10 | Repo: this folder, one subfolder per character, frozen sheets committed | this commit |
@@ -191,5 +191,14 @@ characters without a single re-roll for drift.
 → Download. After that, Chrome stopped saving anything from higgsfield.ai (bulk and single),
 which is the browser's automatic-downloads block, not a Higgsfield fault. Fix on the Mac:
 Chrome → Settings → Privacy and security → Site settings → Automatic downloads → allow
-`higgsfield.ai`, or click Allow on the bubble by the address bar. Then Favorites → select the
-ten → Download works again. Jake's ten are the newest ten in Favorites.
+`higgsfield.ai`, or click Allow on the bubble by the address bar. Then Favorites → select ten at
+a time → Download works again (a twenty-file archive never arrived; ten did). Favorites holds
+forty: newest first they are Marco's ten, Jess's ten, Jake's ten, then Maya's ten (already on
+disk). Frames within a character are in generation order: anchor, smile/laugh, three-quarter,
+profile, full body, gesture, selfie, outfit B, outfit C, gym; `file-frame.sh` or the bash block
+that filed Maya's set names them.
+
+**Anchor picks, so they can be swapped.** Maya: the arms-crossed slight-smile Soul candidate (Ali's
+direction). Jake: the darker-bearded, strong-jaw candidate. Jess: the plain-tee freckled
+half-smile (two other candidates grew printed text on the shirt, which the rules forbid).
+Marco: the wavy-haired grin in the open hoodie over the grey tee, no text.
