@@ -61,11 +61,11 @@ Coaches explain what is being measured. Lifters ask. The product is the proof.
 |---|---|---|
 | 1 | Bible per character (persona, speech, never-says) | written, awaiting Ali's approval |
 | 2 | Look spec per character (face, body, hair, marks, wardrobe A/B/C) | written, awaiting Ali's approval |
-| 3 | Identity sheet: ten reference frames per character, generated in Higgsfield, iterated to approval, then frozen | not started; Higgsfield Plus is active |
+| 3 | Identity sheet: ten reference frames per character, generated in Higgsfield, iterated to approval, then frozen | **Maya: done, committed in `maya/sheet/`.** **Jake: all ten generated and favourited in the Higgsfield account, not yet on disk** (see §10). Jess, Marco: not started |
 | 4 | Lock: register the frozen sheet as a Higgsfield consistent character; the prompt block in each bible is copied verbatim from then on | not started |
 | 5 | Voice: one fixed OpenAI TTS voice per character (proposed above); 30-second test of each, then never changed | not started |
 | 6 | Motion tests: five short clips each (talk to camera, point at phone, react, walk in the gym, sit on a bench); check drift; tune the prompt block once | not started |
-| 7 | Wardrobe variants: outfits B and C each get their own reference frame in the sheet | folded into step 3 |
+| 7 | Wardrobe variants: outfits B and C each get their own reference frame in the sheet | folded into step 3; done for Maya and Jake |
 | 8 | QA checklist (§5) passed before any clip is registered `ad-safe` with `./growth/assets.sh add` | not started |
 | 9 | Disclosure: on-screen "AI presenter" label, YouTube synthetic-content toggle, Meta's equivalent, no real-person resemblance | rules exist; per-clip |
 | 10 | Repo: this folder, one subfolder per character, frozen sheets committed | this commit |
@@ -174,3 +174,22 @@ growth/characters/
 2. Run the 30-second voice test for the four proposed TTS voices and confirm or swap.
 3. Generate the identity sheets in Higgsfield from each bible's prompt block. Approve one set
    per character. Commit the ten frames to `sheet/`.
+
+---
+
+## 10. Session log
+
+**2026-09-12.** Anchors are made with Soul 2.0 from the bible's prompt block, four candidates,
+one picked (Ali picked Maya's from the phone; Maya was then regenerated once for "more
+attractive and charismatic", and her full-body frames once more for a stronger lower body).
+The other nine frames are made with Nano Banana Pro at 2K with the anchor attached via the
+tile's own **Reference** button, two candidates per frame, the pick marked with the tile's
+heart so the **Favorites** view holds exactly the sheet. Identity held on every frame for both
+characters without a single re-roll for drift.
+
+**Getting files out.** The first ten-image archive downloaded fine from Favorites → select all
+→ Download. After that, Chrome stopped saving anything from higgsfield.ai (bulk and single),
+which is the browser's automatic-downloads block, not a Higgsfield fault. Fix on the Mac:
+Chrome → Settings → Privacy and security → Site settings → Automatic downloads → allow
+`higgsfield.ai`, or click Allow on the bubble by the address bar. Then Favorites → select the
+ten → Download works again. Jake's ten are the newest ten in Favorites.
